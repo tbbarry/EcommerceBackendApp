@@ -22,4 +22,8 @@ public class Product {
  @OneToMany(mappedBy = "product")
  private List<ProductImage> images;
 
+@ManyToOne
+ @JoinColumn(name = "category_id")
+ private Category category;
+
 }

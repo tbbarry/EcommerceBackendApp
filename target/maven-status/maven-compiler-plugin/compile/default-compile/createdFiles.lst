@@ -1,0 +1,17 @@
+com\example\ecommerce\service\ProductService.class
+com\example\ecommerce\service\impl\CategoryServiceImpl.class
+com\example\ecommerce\service\CategoryService.class
+com\example\ecommerce\controller\ProductController.class
+com\example\ecommerce\entity\ProductImage.class
+com\example\ecommerce\entity\Inventory.class
+com\example\ecommerce\EcommerceApplication.class
+com\example\ecommerce\entity\Product.class
+com\example\ecommerce\repository\ProductVariantRepository.class
+com\example\ecommerce\service\impl\ProductServiceImpl.class
+com\example\ecommerce\entity\ProductVariant.class
+com\example\ecommerce\repository\ProductRepository.class
+com\example\ecommerce\DT0\ProductRequestDTO.class
+com\example\ecommerce\entity\Category.class
+com\example\ecommerce\repository\CategoryRepository.class
+com\example\ecommerce\DT0\ProductResponseDTO.class
+com\example\ecommerce\controller\CategoryController.class

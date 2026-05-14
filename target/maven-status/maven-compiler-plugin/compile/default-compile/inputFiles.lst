@@ -1,0 +1,17 @@
+C:\Users\tbbar\Documents\EcommerceApp\BackendApp\src\main\java\com\example\ecommerce\entity\Product.java
+C:\Users\tbbar\Documents\EcommerceApp\BackendApp\src\main\java\com\example\ecommerce\entity\ProductVariant.java
+C:\Users\tbbar\Documents\EcommerceApp\BackendApp\src\main\java\com\example\ecommerce\entity\Inventory.java
+C:\Users\tbbar\Documents\EcommerceApp\BackendApp\src\main\java\com\example\ecommerce\controller\ProductController.java
+C:\Users\tbbar\Documents\EcommerceApp\BackendApp\src\main\java\com\example\ecommerce\EcommerceApplication.java
+C:\Users\tbbar\Documents\EcommerceApp\BackendApp\src\main\java\com\example\ecommerce\entity\ProductImage.java
+C:\Users\tbbar\Documents\EcommerceApp\BackendApp\src\main\java\com\example\ecommerce\repository\ProductRepository.java
+C:\Users\tbbar\Documents\EcommerceApp\BackendApp\src\main\java\com\example\ecommerce\entity\Category.java
+C:\Users\tbbar\Documents\EcommerceApp\BackendApp\src\main\java\com\example\ecommerce\service\impl\ProductServiceImpl.java
+C:\Users\tbbar\Documents\EcommerceApp\BackendApp\src\main\java\com\example\ecommerce\controller\CategoryController.java
+C:\Users\tbbar\Documents\EcommerceApp\BackendApp\src\main\java\com\example\ecommerce\repository\CategoryRepository.java
+C:\Users\tbbar\Documents\EcommerceApp\BackendApp\src\main\java\com\example\ecommerce\repository\ProductVariantRepository.java
+C:\Users\tbbar\Documents\EcommerceApp\BackendApp\src\main\java\com\example\ecommerce\DT0\ProductRequestDTO.java
+C:\Users\tbbar\Documents\EcommerceApp\BackendApp\src\main\java\com\example\ecommerce\service\CategoryService.java
+C:\Users\tbbar\Documents\EcommerceApp\BackendApp\src\main\java\com\example\ecommerce\service\ProductService.java
+C:\Users\tbbar\Documents\EcommerceApp\BackendApp\src\main\java\com\example\ecommerce\service\impl\CategoryServiceImpl.java
+C:\Users\tbbar\Documents\EcommerceApp\BackendApp\src\main\java\com\example\ecommerce\DT0\ProductResponseDTO.java
