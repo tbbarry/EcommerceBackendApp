@@ -6,6 +6,7 @@ import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.UserRepository;
 import com.backend.ecommerce.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,8 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional(readOnly = true)
@@ -60,7 +63,10 @@ public class UserServiceImpl implements UserService {
         entity.setLastname(dto.getLastname());
         entity.setEmail(dto.getEmail());
         entity.setPhone(dto.getPhone());
-        entity.setPassword(dto.getPassword());
+
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            entity.setPassword(passwordEncoder.encode(dto.getPassword()));
+        }
     }
 
     private UserDto toDto(User entity) {
