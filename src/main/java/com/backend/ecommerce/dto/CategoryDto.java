@@ -1,0 +1,20 @@
+package com.backend.ecommerce.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import java.time.LocalDateTime;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class CategoryDto {
+    private Integer id;
+    private String name;
+    private Integer categoryId;
+    private String description;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+}
