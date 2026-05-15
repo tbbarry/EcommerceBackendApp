@@ -10,7 +10,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CartItem extends BaseEntity{
+public class CartItem extends BaseEntity {
+
+    private Integer quantity;
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
