@@ -25,14 +25,17 @@ services:
   ecommerceapp:
     build:
       context: .
-      dockerfile: /Dockerfiles/app/Dockerfile
+      dockerfile: Dockerfiles/app/Dockerfile
     container_name: ecommerce_app
     depends_on:
       - postgres
+    environment:
+      SERVER_PORT: ${SERVER_PORT:-8080}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "8080:8080"
-    volumes:
-      - ecommerceappdata:/usr/local/tomcat/webapps
+      - "${APP_HOST_PORT}:8080"
 
   sonarqube:
     image: sonarqube:community
@@ -81,7 +84,6 @@ services:
 
 
 volumes:
-  ecommerceappdata:
   postgres_data:
   sonar_postgres_data:
   sonarqube_data:
