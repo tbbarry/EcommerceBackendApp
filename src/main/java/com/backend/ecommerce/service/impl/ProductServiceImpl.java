@@ -1,5 +1,8 @@
 package com.backend.ecommerce.service.impl;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import com.backend.ecommerce.dto.ProductDto;
 import com.backend.ecommerce.entity.Product;
 import com.backend.ecommerce.exception.ResourceNotFoundException;
@@ -74,5 +77,14 @@ public class ProductServiceImpl implements ProductService {
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());
         return dto;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductDto> findAllPaginated(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        return productRepository.findAll(pageable)
+                .map(this::toDto);
     }
 }
