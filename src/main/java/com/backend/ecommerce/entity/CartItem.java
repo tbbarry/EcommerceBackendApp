@@ -20,6 +20,8 @@ public class CartItem extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cartId")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Cart cart;
 
     @ManyToOne(fetch = FetchType.LAZY)
