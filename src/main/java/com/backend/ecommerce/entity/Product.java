@@ -31,9 +31,6 @@ public class Product extends BaseEntity {
     private List<Variant> variants;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
-    private List<Image> images;
-
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     private List<ProductCategory> productCategories;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)

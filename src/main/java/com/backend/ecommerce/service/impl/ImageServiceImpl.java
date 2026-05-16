@@ -4,7 +4,7 @@ import com.backend.ecommerce.dto.ImageDto;
 import com.backend.ecommerce.entity.Image;
 import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.ImageRepository;
-import com.backend.ecommerce.repository.ProductRepository;
+import com.backend.ecommerce.repository.VariantRepository;
 import com.backend.ecommerce.service.ImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,7 +18,7 @@ import java.util.List;
 public class ImageServiceImpl implements ImageService {
 
     private final ImageRepository imageRepository;
-    private final ProductRepository productRepository;
+    private final VariantRepository variantRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -60,12 +60,11 @@ public class ImageServiceImpl implements ImageService {
     private void applyDtoToEntity(ImageDto dto, Image entity) {
         entity.setUrl(dto.getUrl());
         entity.setAlt(dto.getAlt());
-        if (dto.getProductId() != null) {
-            entity.setProduct(productRepository.findById(dto.getProductId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + dto.getProductId())));
-        } else {
-            entity.setProduct(null);
+        if (dto.getVariantId() == null) {
+            throw new IllegalArgumentException("variantId is required for image");
         }
+        entity.setVariant(variantRepository.findById(dto.getVariantId())
+                .orElseThrow(() -> new ResourceNotFoundException("Variant not found with id: " + dto.getVariantId())));
     }
 
     private ImageDto toDto(Image entity) {
@@ -73,7 +72,7 @@ public class ImageServiceImpl implements ImageService {
         dto.setId(entity.getId());
         dto.setUrl(entity.getUrl());
         dto.setAlt(entity.getAlt());
-        dto.setProductId(entity.getProduct() != null ? entity.getProduct().getId() : null);
+        dto.setVariantId(entity.getVariant() != null ? entity.getVariant().getId() : null);
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());
         return dto;
