@@ -14,7 +14,7 @@ public class ImageDto {
     private Integer id;
     private String url;
     private String alt;
-    private Integer productId;
+    private Integer variantId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
