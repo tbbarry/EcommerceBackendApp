@@ -23,10 +23,6 @@ public class Product extends BaseEntity {
     private String slug;
     private String brand;
 
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     private List<Variant> variants;
 
