@@ -2,11 +2,10 @@
 -- USERS
 -- Mot de passe BCrypt = password123
 -- =========================
-INSERT INTO users (id, created_at, updated_at, email, firstname, lastname, password, phone) VALUES
-                                                                                                (1, NOW(), NOW(), 'alice@test.com', 'Alice', 'Martin', '$2y$10$BpUnIUv.AR.MA6jSmG5ECOm/YHYyFOD4AiI7cJncP27qO9ox1RKpe', '0600000001'),
-                                                                                                (2, NOW(), NOW(), 'karim@test.com', 'Karim', 'Benali', '$2y$10$BpUnIUv.AR.MA6jSmG5ECOm/YHYyFOD4AiI7cJncP27qO9ox1RKpe', '0600000002'),
-                                                                                                (3, NOW(), NOW(), 'sophie@test.com', 'Sophie', 'Durand', '$2y$10$BpUnIUv.AR.MA6jSmG5ECOm/YHYyFOD4AiI7cJncP27qO9ox1RKpe', '0600000003')
-    ON CONFLICT (id) DO NOTHING;
+INSERT INTO users (id, created_at, updated_at, email, firstname, lastname, password, phone, role) VALUES
+                                                                                                (1, NOW(), NOW(), 'alice@test.com', 'Alice', 'Martin', '$2a$10$hqgMf5mksavpAEjscqq83uPUu2kGIknuHaYGfZ35KeNFEHAnPHcRC', '0600000001', 'ADMIN'),
+                                                                                                (2, NOW(), NOW(), 'karim@test.com', 'Karim', 'Benali', '$2a$10$MrwAn5oQQAXmqbPINmd0TO5UfRi76RfYPeVdNY3ysZMwwu3aaDh8K', '0600000002', 'USER'),
+                                                                                                (3, NOW(), NOW(), 'sophie@test.com', 'Sophie', 'Durand', '$2a$10$MrwAn5oQQAXmqbPINmd0TO5UfRi76RfYPeVdNY3ysZMwwu3aaDh8K', '0600000003', 'USER');
 
 -- =========================
 -- DELIVERY ADDRESSES
