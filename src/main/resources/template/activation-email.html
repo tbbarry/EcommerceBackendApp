@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Activation de compte</title>
+</head>
+<body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f4f4f4;">
+
+  <table width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f4; padding:20px;">
+    <tr>
+      <td align="center">
+
+        <table width="600" cellspacing="0" cellpadding="0" style="background:#ffffff; border-radius:8px; overflow:hidden;">
+
+          <!-- HEADER -->
+          <tr>
+            <td style="background:#111; color:#fff; padding:20px; text-align:center;">
+              <h1 style="margin:0;">{{site_name}}</h1>
+            </td>
+          </tr>
+
+          <!-- CONTENT -->
+          <tr>
+            <td style="padding:30px;">
+              <h2>Bienvenue {{user_name}} 👋</h2>
+
+              <p>
+                Merci de vous être inscrit sur <b>{{site_name}}</b>.
+              </p>
+
+              <p>
+                Pour activer votre compte, cliquez sur le bouton ci-dessous :
+              </p>
+
+              <p style="text-align:center; margin:30px 0;">
+                <a href="{{link}}"
+                   style="background:#007bff; color:#fff; padding:12px 20px; text-decoration:none; border-radius:5px;">
+                  Activer mon compte
+                </a>
+              </p>
+
+              <p style="word-break:break-all; color:#555;">
+                {{link}}
+              </p>
+
+              <p>
+                Ce lien expirera dans 24 heures.
+              </p>
+
+              <p>
+                À bientôt,<br>
+                L'équipe {{site_name}}
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="background:#f0f0f0; padding:20px; text-align:center; font-size:12px; color:#777;">
+              © 2026 {{site_name}} - Tous droits réservés
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

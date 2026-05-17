@@ -16,9 +16,24 @@ spring:
       ddl-auto: create
     show-sql: true
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  mail:
+      host: localhost
+      port: 1025
+      username: ""
+      password: ""
+      properties:
+        mail:
+          smtp:
+            auth: false
+            starttls:
+              enable: false
     
 server:
   port: ${SERVER_PORT}
+app:
+  url: http://localhost:${SERVER_PORT}
+  name: EcommerceApp
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION_MS}
