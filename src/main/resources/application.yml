@@ -16,9 +16,24 @@ spring:
       ddl-auto: create
     show-sql: true
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  mail:
+    host: sandbox.smtp.mailtrap.io
+    port: 2525
+    username: a513d95063c91d
+    password: dbdb9605c78f76
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
     
 server:
   port: ${SERVER_PORT}
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION_MS}
+
+app:
+  url: "http://localhost:${SERVER_PORT}"
