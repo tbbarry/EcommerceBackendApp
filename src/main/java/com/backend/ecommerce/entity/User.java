@@ -2,7 +2,6 @@ package com.backend.ecommerce.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -22,14 +21,9 @@ public class User extends BaseEntity {
     private String password;
     @Column(nullable = false)
     private String role;
-<<<<<<< HEAD
+ 
     private boolean enabled;
-=======
-
->>>>>>> develop
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+ 
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<DeliveryAddress> deliveryAddresses;

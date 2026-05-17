@@ -1,9 +1,12 @@
 package com.backend.ecommerce.controller;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.*;
 import org.springframework.web.bind.annotation.*;
 
+import com.backend.ecommerce.dto.ForgotPasswordRequest;
 import com.backend.ecommerce.dto.LoginRequest;
+import com.backend.ecommerce.dto.ResetPasswordRequest;
 import com.backend.ecommerce.dto.UserDto;
 import com.backend.ecommerce.security.JwtUtil;
 import com.backend.ecommerce.service.AuthService;
@@ -42,13 +45,29 @@ public class AuthController {
     @PostMapping("/register")
     public String register(@RequestBody UserDto userDto) {
         authService.register(userDto);
-        return "Utilisateur créé ✅ Vérifiez votre email";
+        return "Utilisateur créé  Vérifiez votre email";
     }
 
-    // 📩 VERIFY EMAIL
+    // VERIFY EMAIL
     @GetMapping("/verify")
     public String verify(@RequestParam String token) {
         authService.verifyAccount(token);
-        return "Compte activé ✅";
+        return "Compte activé ";
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+
+        authService.forgotPassword(request.getEmail());
+
+        return ResponseEntity.ok("Email envoyé !");
+    }
+    
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest request) {
+
+        authService.resetPassword(request.getToken(), request.getNewPassword());
+
+        return ResponseEntity.ok("Mot de passe mis à jour !");
     }
 }
