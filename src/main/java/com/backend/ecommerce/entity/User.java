@@ -22,7 +22,11 @@ public class User extends BaseEntity {
     private String password;
     @Column(nullable = false)
     private String role;
+<<<<<<< HEAD
     private boolean enabled;
+=======
+
+>>>>>>> develop
     @Column(updatable = false)
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

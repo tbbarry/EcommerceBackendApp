@@ -34,6 +34,3 @@ server:
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION_MS}
-
-app:
-  url: "http://localhost:${SERVER_PORT}"
