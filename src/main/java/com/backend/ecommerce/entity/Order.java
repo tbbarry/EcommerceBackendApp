@@ -2,6 +2,7 @@ package com.backend.ecommerce.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -65,7 +66,11 @@ public class Order extends BaseEntity {
     private List<Payment> payments = new ArrayList<>();
 
     @Valid
-    @NotNull
     @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
     private Invoice invoice;
+
+    @NotNull
+    @DecimalMin(value = "0.0", inclusive = true)
+    @Column(nullable = false)
+    private BigDecimal taxRate;
 }

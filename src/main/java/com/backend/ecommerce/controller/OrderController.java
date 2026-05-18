@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -30,6 +31,12 @@ public class OrderController {
     @GetMapping
     public ResponseEntity<List<OrderDto>> findAll() {
         return ResponseEntity.ok(orderService.findAll());
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/stats/total-amount-paid")
+    public ResponseEntity<BigDecimal> getTotalPaidOrdersAmount() {
+        return ResponseEntity.ok(orderService.getTotalPaidOrdersAmount());
     }
 
     // ADMIN ou propriétaire de la commande
