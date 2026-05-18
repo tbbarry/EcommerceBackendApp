@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,26 +25,34 @@ public class VariantController {
 
     private final VariantService variantService;
 
+    // Public : voir toutes les variantes
     @GetMapping
     public ResponseEntity<List<VariantDto>> findAll() {
         return ResponseEntity.ok(variantService.findAll());
     }
 
+    // Public : voir une variante
     @GetMapping("/{id}")
     public ResponseEntity<VariantDto> findById(@PathVariable Integer id) {
         return ResponseEntity.ok(variantService.findById(id));
     }
 
+    // ADMIN uniquement : créer une variante
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<VariantDto> create(@Valid @RequestBody VariantDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(variantService.create(dto));
     }
 
+    // ADMIN uniquement : modifier une variante
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<VariantDto> update(@PathVariable Integer id, @Valid @RequestBody VariantDto dto) {
         return ResponseEntity.ok(variantService.update(id, dto));
     }
 
+    // ADMIN uniquement : supprimer une variante
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
         variantService.delete(id);

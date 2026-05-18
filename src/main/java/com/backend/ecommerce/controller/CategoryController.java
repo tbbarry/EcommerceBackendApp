@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,26 +25,34 @@ public class CategoryController {
 
     private final CategoryService categoryService;
 
+    // PUBLIC : voir toutes les catégories
     @GetMapping
     public ResponseEntity<List<CategoryDto>> findAll() {
         return ResponseEntity.ok(categoryService.findAll());
     }
 
+    // PUBLIC : voir une catégorie
     @GetMapping("/{id}")
     public ResponseEntity<CategoryDto> findById(@PathVariable Integer id) {
         return ResponseEntity.ok(categoryService.findById(id));
     }
 
+    // ADMIN uniquement : créer une catégorie
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<CategoryDto> create(@Valid @RequestBody CategoryDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(categoryService.create(dto));
     }
 
+    // ADMIN uniquement : modifier une catégorie
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<CategoryDto> update(@PathVariable Integer id, @Valid @RequestBody CategoryDto dto) {
         return ResponseEntity.ok(categoryService.update(id, dto));
     }
 
+    // ADMIN uniquement : supprimer une catégorie
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
         categoryService.delete(id);

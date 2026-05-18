@@ -16,6 +16,7 @@ public class ProductController {
 
     private final ProductService productService;
 
+    // PUBLIC : voir tous les produits
     @GetMapping
     public ResponseEntity<?> findAll(@RequestParam(required = false) Integer page,
                                      @RequestParam(required = false) Integer size) {
@@ -26,22 +27,28 @@ public class ProductController {
         return ResponseEntity.ok(productService.findAll());
     }
 
+    // PUBLIC : voir le détail d'un produit
     @GetMapping("/{id}")
     public ResponseEntity<ProductDto> findById(@PathVariable Integer id) {
         return ResponseEntity.ok(productService.findById(id));
     }
 
+    // ADMIN uniquement : créer un produit
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')") // Seuls les ADMIN peuvent créer des produits 
     public ResponseEntity<ProductDto> create(@Valid @RequestBody ProductDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(productService.create(dto));
     }
 
+    // ADMIN uniquement : modifier un produit
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<ProductDto> update(@PathVariable Integer id, @Valid @RequestBody ProductDto dto) {
         return ResponseEntity.ok(productService.update(id, dto));
     }
 
+    // ADMIN uniquement : supprimer un produit
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
         productService.delete(id);
