@@ -17,10 +17,6 @@ public class Invoice extends BaseEntity {
     private BigDecimal total;
     private String invoiceNumber;
 
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")
     private Order order;

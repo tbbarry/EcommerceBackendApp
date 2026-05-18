@@ -18,10 +18,6 @@ public class Payment extends BaseEntity{
     private LocalDateTime paidAt;
     private String status;
 
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "orderId")
     private Order order;

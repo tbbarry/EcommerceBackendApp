@@ -17,10 +17,6 @@ public class OrderItem extends BaseEntity {
     private BigDecimal totalPrice;
     private BigDecimal unitPrice;
 
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "orderId")
     private Order order;

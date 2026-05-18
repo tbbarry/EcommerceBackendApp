@@ -18,10 +18,6 @@ public class Category extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "categoryId")
     private Category parentCategory;

@@ -22,10 +22,6 @@ public class Order extends BaseEntity {
     private BigDecimal total;
     private String status;
 
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "userId")
     private User user;

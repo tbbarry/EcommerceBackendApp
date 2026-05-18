@@ -20,10 +20,6 @@ public class Promo extends BaseEntity {
     private LocalDateTime endDate;
     private Boolean isActive;
 
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
     @OneToMany(mappedBy = "promo", cascade = CascadeType.ALL)
     private List<ProductPromo> productPromos;
 }

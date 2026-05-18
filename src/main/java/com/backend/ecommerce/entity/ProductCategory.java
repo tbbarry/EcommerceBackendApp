@@ -12,10 +12,6 @@ import java.time.LocalDateTime;
 @Builder
 public class ProductCategory extends BaseEntity {
 
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "productId")
     private Product product;

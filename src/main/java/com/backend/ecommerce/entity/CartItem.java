@@ -14,10 +14,6 @@ public class CartItem extends BaseEntity {
 
     private Integer quantity;
 
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cartId")
     @ToString.Exclude
