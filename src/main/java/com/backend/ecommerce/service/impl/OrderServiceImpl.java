@@ -1,11 +1,15 @@
 package com.backend.ecommerce.service.impl;
 
 import com.backend.ecommerce.dto.OrderDto;
+import com.backend.ecommerce.dto.OrderItemDto;
 import com.backend.ecommerce.entity.Order;
+import com.backend.ecommerce.entity.OrderItem;
+import com.backend.ecommerce.entity.Variant;
 import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.OrderRepository;
 import com.backend.ecommerce.repository.UserRepository;
 import com.backend.ecommerce.repository.DeliveryAddressRepository;
+import com.backend.ecommerce.repository.VariantRepository;
 import com.backend.ecommerce.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +29,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final DeliveryAddressRepository deliveryAddressRepository;
+    private final VariantRepository variantRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -66,17 +71,7 @@ public class OrderServiceImpl implements OrderService {
     private void applyDtoToEntity(OrderDto dto, Order entity) {
         entity.setOrderNumber(dto.getOrderNumber());
         entity.setDateOrder(dto.getDateOrder());
-
-        entity.setSubtotal(dto.getSubtotal());
         entity.setShippingOrder(dto.getShippingOrder());
-
-        // Si c'est une nouvelle commande, on récupère la taxe actuelle
-        // Si c'est un update, on garde l'ancienne taxRate déjà enregistrée
-        if (entity.getTaxRate() == null) {
-            entity.setTaxRate(taxServiceImpl.getCurrentTaxRate());
-        }
-        calculateOrderAmounts(entity);
-
         entity.setStatus(dto.getStatus());
 
         if (dto.getUserId() != null) {
@@ -92,6 +87,43 @@ public class OrderServiceImpl implements OrderService {
         } else {
             entity.setDeliveryAddress(null);
         }
+
+        if (entity.getTaxRate() == null) {
+            entity.setTaxRate(taxServiceImpl.getCurrentTaxRate());
+        }
+
+        calculateOrderItemsAndSubtotal(dto, entity);
+        calculateOrderAmounts(entity);
+    }
+
+    private void calculateOrderItemsAndSubtotal(OrderDto dto, Order order) {
+        BigDecimal subtotal = BigDecimal.ZERO;
+
+        order.getOrderItems().clear();
+
+        for (OrderItemDto itemDto : dto.getItems()) {
+            Variant variant = variantRepository.findById(itemDto.getVariantId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Variant not found with id: " + itemDto.getVariantId()));
+
+            BigDecimal unitPrice = variant.getPrice();
+
+            BigDecimal totalPrice = unitPrice
+                    .multiply(BigDecimal.valueOf(itemDto.getQuantity()))
+                    .setScale(2, RoundingMode.HALF_UP);
+
+            OrderItem orderItem = new OrderItem();
+            orderItem.setOrder(order);
+            orderItem.setVariant(variant);
+            orderItem.setQuantity(itemDto.getQuantity());
+            orderItem.setUnitPrice(unitPrice);
+            orderItem.setTotalPrice(totalPrice);
+
+            order.getOrderItems().add(orderItem);
+
+            subtotal = subtotal.add(totalPrice);
+        }
+
+        order.setSubtotal(subtotal.setScale(2, RoundingMode.HALF_UP));
     }
 
     private OrderDto toDto(Order entity) {

@@ -58,7 +58,7 @@ public class Order extends BaseEntity {
     private DeliveryAddress deliveryAddress;
 
     @Valid
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
 
     @Valid
