@@ -34,6 +34,9 @@ server:
 app:
   url: http://localhost:${SERVER_PORT}
   name: EcommerceApp
+  tax:
+    rate: 0.20
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION_MS}
+

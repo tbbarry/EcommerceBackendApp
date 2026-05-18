@@ -11,12 +11,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class OrderServiceImpl implements OrderService {
+
+    private final TaxServiceImpl taxServiceImpl;
 
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
@@ -62,17 +66,26 @@ public class OrderServiceImpl implements OrderService {
     private void applyDtoToEntity(OrderDto dto, Order entity) {
         entity.setOrderNumber(dto.getOrderNumber());
         entity.setDateOrder(dto.getDateOrder());
-        entity.setTaxAmount(dto.getTaxAmount());
+
         entity.setSubtotal(dto.getSubtotal());
         entity.setShippingOrder(dto.getShippingOrder());
-        entity.setTotal(dto.getTotal());
+
+        // Si c'est une nouvelle commande, on récupère la taxe actuelle
+        // Si c'est un update, on garde l'ancienne taxRate déjà enregistrée
+        if (entity.getTaxRate() == null) {
+            entity.setTaxRate(taxServiceImpl.getCurrentTaxRate());
+        }
+        calculateOrderAmounts(entity);
+
         entity.setStatus(dto.getStatus());
+
         if (dto.getUserId() != null) {
             entity.setUser(userRepository.findById(dto.getUserId())
                     .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + dto.getUserId())));
         } else {
             entity.setUser(null);
         }
+
         if (dto.getDeliveryAddressId() != null) {
             entity.setDeliveryAddress(deliveryAddressRepository.findById(dto.getDeliveryAddressId())
                     .orElseThrow(() -> new ResourceNotFoundException("DeliveryAddress not found with id: " + dto.getDeliveryAddressId())));
@@ -86,6 +99,7 @@ public class OrderServiceImpl implements OrderService {
         dto.setId(entity.getId());
         dto.setOrderNumber(entity.getOrderNumber());
         dto.setDateOrder(entity.getDateOrder());
+        dto.setTaxRate(entity.getTaxRate());
         dto.setTaxAmount(entity.getTaxAmount());
         dto.setSubtotal(entity.getSubtotal());
         dto.setShippingOrder(entity.getShippingOrder());
@@ -96,5 +110,28 @@ public class OrderServiceImpl implements OrderService {
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());
         return dto;
+    }
+
+    @Override
+    public BigDecimal getTotalPaidOrdersAmount() {
+        return orderRepository.getTotalPaidOrdersAmount();
+    }
+
+    private void calculateOrderAmounts(Order order) {
+        BigDecimal subtotal = order.getSubtotal();
+        BigDecimal shippingOrder = order.getShippingOrder();
+        BigDecimal taxRate = order.getTaxRate();
+
+        BigDecimal taxAmount = subtotal
+                .multiply(taxRate)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal total = subtotal
+                .add(shippingOrder)
+                .add(taxAmount)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        order.setTaxAmount(taxAmount);
+        order.setTotal(total);
     }
 }

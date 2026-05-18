@@ -1,6 +1,7 @@
 package com.backend.ecommerce.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import java.time.LocalDateTime;
 
@@ -12,16 +13,23 @@ import java.time.LocalDateTime;
 @Builder
 public class DeliveryAddress extends BaseEntity{
 
+    @NotBlank
+    @Column(nullable = false)
     private String address;
+
+    @NotBlank
+    @Column(nullable = false)
     private String zipcode;
+
+    @NotBlank
+    @Column(nullable = false)
     private String city;
+
+    @NotBlank
+    @Column(nullable = false)
     private String state;
 
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userId")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "userId", nullable = false)
     private User user;
 }

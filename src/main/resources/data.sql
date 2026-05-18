@@ -146,15 +146,24 @@ INSERT INTO product_promos (id, product_id, promo_id, created_at, updated_at) VA
     ON CONFLICT (id) DO NOTHING;
 
 -- =========================
+-- TAX SETTINGS
+-- =========================
+INSERT INTO tax_settings (
+    id, rate, active, created_at, updated_at
+) VALUES
+    (1, 0.20, true, NOW(), NOW())
+    ON CONFLICT (id) DO NOTHING;
+
+-- =========================
 -- ORDERS
 -- =========================
 INSERT INTO orders (
-    id, delivery_address_id, shipping_order, subtotal, tax_amount, total,
+    id, delivery_address_id, shipping_order, subtotal, tax_rate, tax_amount, total,
     user_id, created_at, date_order, updated_at, order_number, status
 ) VALUES
-      (1, 1, 5.99, 109.98, 21.99, 137.96, 1, NOW(), '2026-05-10 14:00:00', NOW(), 'ORD-2026-0001', 'PAID'),
-      (2, 2, 4.99, 59.99, 12.00, 76.98, 2, NOW(), '2026-05-11 10:30:00', NOW(), 'ORD-2026-0002', 'PENDING'),
-      (3, 3, 6.99, 209.96, 42.00, 258.95, 3, NOW(), '2026-05-12 16:45:00', NOW(), 'ORD-2026-0003', 'SHIPPED')
+      (1, 1, 5.99, 109.98, 0.20, 22.00, 137.97, 1, NOW(), '2026-05-10 14:00:00', NOW(), 'ORD-2026-0001', 'PAID'),
+      (2, 2, 4.99, 59.99, 0.20, 12.00, 76.98, 2, NOW(), '2026-05-11 10:30:00', NOW(), 'ORD-2026-0002', 'PENDING'),
+      (3, 3, 6.99, 209.96, 0.20, 41.99, 258.94, 3, NOW(), '2026-05-12 16:45:00', NOW(), 'ORD-2026-0003', 'SHIPPED')
     ON CONFLICT (id) DO NOTHING;
 
 -- =========================
@@ -194,3 +203,24 @@ INSERT INTO invoices (
       (2, 2, 76.98, NOW(), '2026-05-11', NOW(), 'INV-2026-0002'),
       (3, 3, 258.95, NOW(), '2026-05-12', NOW(), 'INV-2026-0003')
     ON CONFLICT (id) DO NOTHING;
+
+-- =========================
+-- RESET SEQUENCES
+-- =========================
+SELECT setval(pg_get_serial_sequence('users', 'id'), COALESCE((SELECT MAX(id) FROM users), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('delivery_addresses', 'id'), COALESCE((SELECT MAX(id) FROM delivery_addresses), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('carts', 'id'), COALESCE((SELECT MAX(id) FROM carts), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('categories', 'id'), COALESCE((SELECT MAX(id) FROM categories), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('products', 'id'), COALESCE((SELECT MAX(id) FROM products), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('product_categories', 'id'), COALESCE((SELECT MAX(id) FROM product_categories), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('variants', 'id'), COALESCE((SELECT MAX(id) FROM variants), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('images', 'id'), COALESCE((SELECT MAX(id) FROM images), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('stocks', 'id'), COALESCE((SELECT MAX(id) FROM stocks), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('cart_items', 'id'), COALESCE((SELECT MAX(id) FROM cart_items), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('promos', 'id'), COALESCE((SELECT MAX(id) FROM promos), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('product_promos', 'id'), COALESCE((SELECT MAX(id) FROM product_promos), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('orders', 'id'), COALESCE((SELECT MAX(id) FROM orders), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('order_items', 'id'), COALESCE((SELECT MAX(id) FROM order_items), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('payments', 'id'), COALESCE((SELECT MAX(id) FROM payments), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('invoices', 'id'), COALESCE((SELECT MAX(id) FROM invoices), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('tax_settings', 'id'), COALESCE((SELECT MAX(id) FROM tax_settings), 0) + 1, false);

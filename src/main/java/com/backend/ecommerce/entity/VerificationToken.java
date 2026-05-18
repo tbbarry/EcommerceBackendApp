@@ -1,6 +1,8 @@
 package com.backend.ecommerce.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -17,14 +19,16 @@ public class VerificationToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank
     @Column(nullable = false, unique = true)
     private String token;
 
+    @NotNull
     @Column(nullable = false)
     private LocalDateTime expirationDate;
 
-    // 🔗 relation avec User
-    @OneToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @NotNull
+    @OneToOne(optional = false)
+    @JoinColumn(name = "userId", nullable = false)
     private User user;
 }

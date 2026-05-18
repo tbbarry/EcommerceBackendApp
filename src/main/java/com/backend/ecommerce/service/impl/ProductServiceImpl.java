@@ -62,7 +62,7 @@ public class ProductServiceImpl implements ProductService {
         entity.setName(dto.getName());
         entity.setDescription(dto.getDescription());
         entity.setPrice(dto.getPrice());
-        entity.setSlug(dto.getSlug());
+        entity.setSlug(generateSlug(entity.getBrand(), entity.getName()));
         entity.setBrand(dto.getBrand());
     }
 
@@ -86,5 +86,16 @@ public class ProductServiceImpl implements ProductService {
 
         return productRepository.findAll(pageable)
                 .map(this::toDto);
+    }
+
+    private String generateSlug(String brand, String name) {
+        String value = brand + "_" + name;
+
+        return java.text.Normalizer.normalize(value, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")              // enlève les accents
+                .toLowerCase()
+                .trim()
+                .replaceAll("[^a-z0-9]+", "_")         // remplace espaces/symboles par _
+                .replaceAll("^_+|_+$", "");            // enlève _ au début/fin
     }
 }
