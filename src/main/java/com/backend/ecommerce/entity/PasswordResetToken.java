@@ -2,11 +2,9 @@ package com.backend.ecommerce.entity;
 
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,10 +23,16 @@ public class PasswordResetToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @NotBlank
+    @Column(nullable = false, unique = true)
     private String token;
 
-    @OneToOne
+    @NotNull
+    @OneToOne(optional = false)
+    @JoinColumn(nullable = false)
     private User user;
 
+    @NotNull
+    @Column(nullable = false)
     private LocalDateTime expirationDate;
 }

@@ -1,6 +1,8 @@
 package com.backend.ecommerce.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import java.time.LocalDateTime;
 
@@ -12,15 +14,20 @@ import java.time.LocalDateTime;
 @Builder
 public class CartItem extends BaseEntity {
 
+    @NotNull
+    @Min(1)
+    @Column(nullable = false)
     private Integer quantity;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cartId")
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "cartId", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Cart cart;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "variantId")
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "variantId", nullable = false)
     private Variant variant;
 }

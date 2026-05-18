@@ -2,8 +2,9 @@ package com.backend.ecommerce.entity;
 
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "stocks")
@@ -13,9 +14,13 @@ import java.time.LocalDateTime;
 @Builder
 public class Stock extends BaseEntity {
 
+    @NotNull
+    @Min(0)
+    @Column(nullable = false)
     private Integer quantity;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "variantId")
+    @NotNull
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "variantId", nullable = false)
     private Variant variant;
 }
