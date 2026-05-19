@@ -55,7 +55,6 @@ public class User extends BaseEntity {
     private List<Order> orders = new ArrayList<>();
 
     @Valid
-    @NotNull
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Cart cart;
 }

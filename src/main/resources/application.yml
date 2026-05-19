@@ -33,10 +33,15 @@ server:
   port: ${SERVER_PORT}
 app:
   url: http://localhost:${SERVER_PORT}
+  frontend-url: ${APP_FRONTEND_URL:http://localhost:${APP_FRONTEND_PORT}}
   name: EcommerceApp
   tax:
     rate: 0.20
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION_MS}
+
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
 

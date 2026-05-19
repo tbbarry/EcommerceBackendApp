@@ -66,6 +66,10 @@ public class SecurityConfig {
                         // Auth public
                          .requestMatchers("/auth/**").permitAll()
 
+                        // Stripe public
+                        .requestMatchers("/api/stripe/webhook").permitAll()
+                        .requestMatchers("/api/payments/stripe/**").permitAll()
+
                         // Lecture publique boutique
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
