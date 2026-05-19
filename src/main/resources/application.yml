@@ -34,6 +34,7 @@ server:
 app:
   url: http://localhost:${SERVER_PORT}
   frontend-url: ${APP_FRONTEND_URL:http://localhost:${APP_FRONTEND_PORT}}
+  frontend_app: ${FRONTEND_APP}
   name: EcommerceApp
   tax:
     rate: 0.20
