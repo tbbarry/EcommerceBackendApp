@@ -79,6 +79,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/stripe/webhook").permitAll()
                         .requestMatchers("/api/payments/stripe/**").permitAll()
 
+                        //Swagger doc 
+                         .requestMatchers( "/swagger-ui/**",
+                            "/v3/api-docs/**",
+                            "/v3/api-docs",
+                            "/swagger-resources/**",
+                            "/webjars/**").permitAll()
+
+
                         // Lecture publique boutique
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
