@@ -57,4 +57,9 @@ public class User extends BaseEntity {
     @Valid
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Cart cart;
+
+    @Valid
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "userId")
+    private List<Conversation> conversation = new ArrayList<>();
 }

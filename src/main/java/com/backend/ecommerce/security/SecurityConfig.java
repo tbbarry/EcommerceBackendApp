@@ -87,6 +87,18 @@ public class SecurityConfig {
                             "/webjars/**").permitAll()
 
 
+                        //Conversation & messages public (pour le chat en direct)
+                        .requestMatchers(HttpMethod.GET, "/api/conversations/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/conversations/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/conversations/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/conversations/**").hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.GET, "/api/messages/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/messages/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/messages/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/messages/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/messages/**").hasRole("ADMIN")
+
                         // Lecture publique boutique
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()

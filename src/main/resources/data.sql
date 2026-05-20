@@ -189,7 +189,7 @@ INSERT INTO payments (
     id, amount, order_id, created_at, paid_at, updated_at, payment_method, status
 ) VALUES
       (1, 137.96, 1, NOW(), '2026-05-10 14:30:00', NOW(), 'CARD', 'PAID'),
-      (2, 76.98, 2, NOW(), NULL, NOW(), 'PAYPAL', 'PENDING'),
+      (2, 76.98, 2, NOW(), NULL, NOW(), 'CARD', 'PENDING'),
       (3, 258.95, 3, NOW(), '2026-05-12 17:15:00', NOW(), 'CARD', 'PAID')
     ON CONFLICT (id) DO NOTHING;
 
@@ -203,6 +203,24 @@ INSERT INTO invoices (
       (2, 2, 76.98, NOW(), '2026-05-11', NOW(), 'INV-2026-0002'),
       (3, 3, 258.95, NOW(), '2026-05-12', NOW(), 'INV-2026-0003')
     ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO conversations (id, user_id, subject, created_at, updated_at) VALUES
+                                                                             (1, 1, 'Problème avec ma commande', NOW(), NOW()),
+                                                                             (2, 1, 'Question sur un remboursement', NOW(), NOW()),
+                                                                             (3, 2, 'Demande d’information produit', NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO messages (id, conversation_id, content, send_date, is_read, created_at, updated_at) VALUES
+                                                                                                    (1, 1, 'Bonjour, je voudrais savoir où est ma commande.', NOW(), FALSE, NOW(), NOW()),
+                                                                                                    (2, 1, 'Bonjour, votre commande est en cours de préparation.', NOW(), TRUE, NOW(), NOW()),
+                                                                                                    (3, 1, 'Merci pour votre réponse.', NOW(), FALSE, NOW(), NOW()),
+
+                                                                                                    (4, 2, 'Bonjour, je souhaite demander un remboursement.', NOW(), FALSE, NOW(), NOW()),
+                                                                                                    (5, 2, 'Votre demande a bien été reçue.', NOW(), TRUE, NOW(), NOW()),
+
+                                                                                                    (6, 3, 'Bonjour, ce produit existe-t-il en taille 42 ?', NOW(), FALSE, NOW(), NOW()),
+                                                                                                    (7, 3, 'Oui, ce variant est disponible en taille 42.', NOW(), TRUE, NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
 
 -- =========================
 -- RESET SEQUENCES
@@ -224,3 +242,5 @@ SELECT setval(pg_get_serial_sequence('order_items', 'id'), COALESCE((SELECT MAX(
 SELECT setval(pg_get_serial_sequence('payments', 'id'), COALESCE((SELECT MAX(id) FROM payments), 0) + 1, false);
 SELECT setval(pg_get_serial_sequence('invoices', 'id'), COALESCE((SELECT MAX(id) FROM invoices), 0) + 1, false);
 SELECT setval(pg_get_serial_sequence('tax_settings', 'id'), COALESCE((SELECT MAX(id) FROM tax_settings), 0) + 1, false);
+SELECT setval('conversations_id_seq', (SELECT MAX(id) FROM conversations));
+SELECT setval('messages_id_seq', (SELECT MAX(id) FROM messages));

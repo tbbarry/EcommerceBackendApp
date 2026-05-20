@@ -1,22 +1,20 @@
 package com.backend.ecommerce.dto;
 
-import com.backend.ecommerce.entity.CartItem;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class CartDto {
+public class ConversationDto {
     private Integer id;
     private Integer userId;
+    private String subject;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private List<CartItem> cartItems = new ArrayList<>();
 }

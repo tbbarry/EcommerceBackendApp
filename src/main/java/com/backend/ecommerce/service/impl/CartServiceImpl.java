@@ -78,6 +78,7 @@ public class CartServiceImpl implements CartService {
         CartDto dto = new CartDto();
         dto.setId(entity.getId());
         dto.setUserId(entity.getUser() != null ? entity.getUser().getId() : null);
+        dto.setCartItems(entity.getCartItems());
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());
         return dto;
