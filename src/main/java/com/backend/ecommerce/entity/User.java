@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.util.ArrayList;
@@ -30,10 +29,6 @@ public class User extends BaseEntity {
     @Email
     @Column(nullable = false, unique = true)
     private String email;
-
-    @NotBlank
-    @Column(nullable = false)
-    private String phone;
 
     @NotBlank
     @Column(nullable = false)
