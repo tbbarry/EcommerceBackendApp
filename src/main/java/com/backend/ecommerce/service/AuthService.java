@@ -11,6 +11,7 @@ import com.backend.ecommerce.dto.RegisterDto;
 import com.backend.ecommerce.entity.PasswordResetToken;
 import com.backend.ecommerce.entity.User;
 import com.backend.ecommerce.entity.VerificationToken;
+import com.backend.ecommerce.exception.BusinessException;
 import com.backend.ecommerce.repository.PasswordResetTokenRepository;
 import com.backend.ecommerce.repository.UserRepository;
 import com.backend.ecommerce.repository.VerificationTokenRepository;
@@ -47,6 +48,10 @@ public class AuthService {
 
     // 🔥 REGISTER + EMAIL
     public void register(RegisterDto request) {
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new BusinessException("Cet email est déjà utilisé");
+        }
     
 
         // 1️⃣ Création user

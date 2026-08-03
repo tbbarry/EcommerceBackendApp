@@ -2,6 +2,7 @@ package com.backend.ecommerce.exception;
 
 import com.backend.ecommerce.dto.error.ErrorResponse;
 import com.backend.ecommerce.dto.error.FieldErrorResponse;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -48,6 +49,40 @@ public class GlobalExceptionHandler {
                 .toList();
 
         error.setErrors(fieldErrors);
+
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ErrorResponse> handleBusiness(BusinessException ex) {
+
+        ErrorResponse error = new ErrorResponse();
+
+        error.setTimestamp(LocalDateTime.now());
+        error.setStatus(HttpStatus.BAD_REQUEST.value());
+        error.setError(HttpStatus.BAD_REQUEST.getReasonPhrase());
+        error.setMessage(ex.getMessage());
+        error.setErrors(null);
+
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
+
+        String message = ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage();
+        if (message != null && message.contains("users_email_key")) {
+            message = "Cet email est déjà utilisé";
+        } else {
+            message = "Une contrainte de base de données a été violée";
+        }
+
+        ErrorResponse error = new ErrorResponse();
+        error.setTimestamp(LocalDateTime.now());
+        error.setStatus(HttpStatus.BAD_REQUEST.value());
+        error.setError(HttpStatus.BAD_REQUEST.getReasonPhrase());
+        error.setMessage(message);
+        error.setErrors(null);
 
         return ResponseEntity.badRequest().body(error);
     }
