@@ -11,6 +11,8 @@ import com.backend.ecommerce.dto.UserDto;
 import com.backend.ecommerce.security.JwtUtil;
 import com.backend.ecommerce.service.AuthService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -43,7 +45,7 @@ public class AuthController {
 
     // 🆕 REGISTER
     @PostMapping("/register")
-    public String register(@RequestBody UserDto userDto) {
+    public String register(@Valid @RequestBody UserDto userDto) {
         authService.register(userDto);
         return "Utilisateur créé  Vérifiez votre email";
     }
@@ -64,7 +66,7 @@ public class AuthController {
     }
     
     @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest request) {
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
 
         authService.resetPassword(request.getToken(), request.getNewPassword());
 
