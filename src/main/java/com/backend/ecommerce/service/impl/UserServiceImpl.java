@@ -78,8 +78,6 @@ public class UserServiceImpl implements UserService {
         dto.setLastname(entity.getLastname());
         dto.setEmail(entity.getEmail());
         dto.setPassword(entity.getPassword());
-        dto.setCreatedAt(entity.getCreatedAt());
-        dto.setUpdatedAt(entity.getUpdatedAt());
         return dto;
     }
 

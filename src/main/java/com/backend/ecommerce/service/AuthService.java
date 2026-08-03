@@ -27,7 +27,7 @@ public class AuthService {
     private final PasswordResetTokenRepository resetTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
-    @Value("${app.url}")
+    @Value("${app.frontend_app}")
     private String appUrl;
     @Value("${app.name}")
     private String appName;
