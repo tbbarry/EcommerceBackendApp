@@ -1,5 +1,6 @@
 package com.backend.ecommerce.controller;
 
+import com.backend.ecommerce.dto.ChangePasswordRequest;
 import com.backend.ecommerce.dto.UserDto;
 import com.backend.ecommerce.service.UserService;
 import jakarta.validation.Valid;
@@ -7,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -60,5 +62,18 @@ public class UserController {
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
         userService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
+
+        String email = SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getName();
+
+        userService.changePassword(email, request);
+
+        return ResponseEntity.ok("Mot de passe modifié avec succès");
     }
 }

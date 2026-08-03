@@ -1,10 +1,13 @@
 package com.backend.ecommerce.service.impl;
 
+import com.backend.ecommerce.dto.ChangePasswordRequest;
 import com.backend.ecommerce.dto.UserDto;
 import com.backend.ecommerce.entity.User;
 import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.UserRepository;
 import com.backend.ecommerce.service.UserService;
+
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -80,5 +83,26 @@ public class UserServiceImpl implements UserService {
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());
         return dto;
+    }
+
+    @Override
+    public void changePassword(String email, @Valid ChangePasswordRequest request) {
+        User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+
+        // vérifier ancien mot de passe
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Ancien mot de passe incorrect");
+        }
+
+        // éviter même mot de passe
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Le nouveau mot de passe doit être différent");
+        }
+
+        //  encoder nouveau mot de passe
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+
+        userRepository.save(user);
     }
 }
