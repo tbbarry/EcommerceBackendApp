@@ -1,7 +1,7 @@
 package com.backend.ecommerce.service.impl;
 
 import com.backend.ecommerce.dto.ChangePasswordRequest;
-import com.backend.ecommerce.dto.UserDto;
+import com.backend.ecommerce.dto.RegisterDto;
 import com.backend.ecommerce.entity.User;
 import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.UserRepository;
@@ -26,25 +26,25 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserDto> findAll() {
+    public List<RegisterDto> findAll() {
         return userRepository.findAll().stream().map(this::toDto).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public UserDto findById(Integer id) {
+    public RegisterDto findById(Integer id) {
         return toDto(getEntityById(id));
     }
 
     @Override
-    public UserDto create(UserDto dto) {
+    public RegisterDto create(RegisterDto dto) {
         User entity = new User();
         applyDtoToEntity(dto, entity);
         return toDto(userRepository.save(entity));
     }
 
     @Override
-    public UserDto update(Integer id, UserDto dto) {
+    public RegisterDto update(Integer id, RegisterDto dto) {
         User entity = getEntityById(id);
         applyDtoToEntity(dto, entity);
         return toDto(userRepository.save(entity));
@@ -61,27 +61,23 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
 
-    private void applyDtoToEntity(UserDto dto, User entity) {
+    private void applyDtoToEntity(RegisterDto dto, User entity) {
         entity.setFirstname(dto.getFirstname());
         entity.setLastname(dto.getLastname());
         entity.setEmail(dto.getEmail());
-        entity.setPhone(dto.getPhone());
 
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
             entity.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
     }
 
-    private UserDto toDto(User entity) {
-        UserDto dto = new UserDto();
+    private RegisterDto toDto(User entity) {
+        RegisterDto dto = new RegisterDto();
         dto.setId(entity.getId());
         dto.setFirstname(entity.getFirstname());
         dto.setLastname(entity.getLastname());
         dto.setEmail(entity.getEmail());
-        dto.setPhone(entity.getPhone());
         dto.setPassword(entity.getPassword());
-        dto.setCreatedAt(entity.getCreatedAt());
-        dto.setUpdatedAt(entity.getUpdatedAt());
         return dto;
     }
 

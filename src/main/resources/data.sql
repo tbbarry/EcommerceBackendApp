@@ -2,10 +2,10 @@
 -- USERS
 -- Mot de passe BCrypt = password123
 -- =========================
-INSERT INTO users (created_at, updated_at, email, firstname, lastname, password, phone, role, enabled) VALUES
-                                                                                                (NOW(), NOW(), 'alice@test.com', 'Alice', 'Martin', '$2a$10$hqgMf5mksavpAEjscqq83uPUu2kGIknuHaYGfZ35KeNFEHAnPHcRC', '0600000001', 'ADMIN', true),
-                                                                                                (NOW(), NOW(), 'karim@test.com', 'Karim', 'Benali', '$2a$10$MrwAn5oQQAXmqbPINmd0TO5UfRi76RfYPeVdNY3ysZMwwu3aaDh8K', '0600000002', 'USER', true),
-                                                                                                (NOW(), NOW(), 'sophie@test.com', 'Sophie', 'Durand', '$2a$10$MrwAn5oQQAXmqbPINmd0TO5UfRi76RfYPeVdNY3ysZMwwu3aaDh8K', '0600000003', 'USER', true);
+INSERT INTO users (created_at, updated_at, email, firstname, lastname, password, role, enabled) VALUES
+                                                                                                (NOW(), NOW(), 'alice@test.com', 'Alice', 'Martin', '$2a$10$hqgMf5mksavpAEjscqq83uPUu2kGIknuHaYGfZ35KeNFEHAnPHcRC', 'ADMIN', true),
+                                                                                                (NOW(), NOW(), 'karim@test.com', 'Karim', 'Benali', '$2a$10$MrwAn5oQQAXmqbPINmd0TO5UfRi76RfYPeVdNY3ysZMwwu3aaDh8K', 'USER', true),
+                                                                                                (NOW(), NOW(), 'sophie@test.com', 'Sophie', 'Durand', '$2a$10$MrwAn5oQQAXmqbPINmd0TO5UfRi76RfYPeVdNY3ysZMwwu3aaDh8K', 'USER', true);
 
 -- =========================
 -- DELIVERY ADDRESSES

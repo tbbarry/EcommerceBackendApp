@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import java.time.LocalDateTime;
+
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -15,15 +15,13 @@ import jakarta.validation.constraints.Size;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDto {
+public class RegisterDto {
     private Integer id;
     private String firstname;
     private String lastname;
     @NotBlank
     @Email(message = "Email invalide")
     private String email;
-    private String phone;
-    
     @NotBlank
     @Size(min = 8)
     @Pattern(
@@ -31,6 +29,4 @@ public class UserDto {
       message = "Weak password"
     )
     private String password;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

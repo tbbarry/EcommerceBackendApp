@@ -7,10 +7,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.backend.ecommerce.dto.UserDto;
+import com.backend.ecommerce.dto.RegisterDto;
 import com.backend.ecommerce.entity.PasswordResetToken;
 import com.backend.ecommerce.entity.User;
 import com.backend.ecommerce.entity.VerificationToken;
+import com.backend.ecommerce.exception.BusinessException;
 import com.backend.ecommerce.repository.PasswordResetTokenRepository;
 import com.backend.ecommerce.repository.UserRepository;
 import com.backend.ecommerce.repository.VerificationTokenRepository;
@@ -27,7 +28,7 @@ public class AuthService {
     private final PasswordResetTokenRepository resetTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
-    @Value("${app.url}")
+    @Value("${app.frontend_app}")
     private String appUrl;
     @Value("${app.name}")
     private String appName;
@@ -46,7 +47,11 @@ public class AuthService {
     }
 
     // 🔥 REGISTER + EMAIL
-    public void register(UserDto request) {
+    public void register(RegisterDto request) {
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new BusinessException("Cet email est déjà utilisé");
+        }
     
 
         // 1️⃣ Création user
@@ -57,7 +62,6 @@ public class AuthService {
         user.setEnabled(false);
         user.setFirstname(request.getFirstname());
         user.setLastname(request.getLastname());
-        user.setPhone(request.getPhone());
 
         userRepository.save(user);
 

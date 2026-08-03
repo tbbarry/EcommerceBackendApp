@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import com.backend.ecommerce.dto.ForgotPasswordRequest;
 import com.backend.ecommerce.dto.LoginRequest;
 import com.backend.ecommerce.dto.ResetPasswordRequest;
-import com.backend.ecommerce.dto.UserDto;
+import com.backend.ecommerce.dto.RegisterDto;
 import com.backend.ecommerce.security.JwtUtil;
 import com.backend.ecommerce.service.AuthService;
 
@@ -45,7 +45,7 @@ public class AuthController {
 
     // 🆕 REGISTER
     @PostMapping("/register")
-    public String register(@Valid @RequestBody UserDto userDto) {
+    public String register(@Valid @RequestBody RegisterDto userDto) {
         authService.register(userDto);
         return "Utilisateur créé  Vérifiez votre email";
     }
