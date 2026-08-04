@@ -25,10 +25,14 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService userDetailsService;
+    private final ObjectMapper objectMapper;
 
-    public JwtFilter(JwtUtil jwtUtil, CustomUserDetailsService userDetailsService) {
+    public JwtFilter(JwtUtil jwtUtil,
+                     CustomUserDetailsService userDetailsService,
+                     ObjectMapper objectMapper) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -98,6 +102,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
 
         ErrorResponse error = new ErrorResponse();
         error.setTimestamp(LocalDateTime.now());
@@ -106,6 +111,6 @@ public class JwtFilter extends OncePerRequestFilter {
         error.setMessage(message);
         error.setErrors(null);
 
-        new ObjectMapper().writeValue(response.getOutputStream(), error);
+        objectMapper.writeValue(response.getOutputStream(), error);
     }
 }

@@ -5,6 +5,7 @@ import com.backend.ecommerce.dto.OrderItemDto;
 import com.backend.ecommerce.entity.Order;
 import com.backend.ecommerce.entity.OrderItem;
 import com.backend.ecommerce.entity.Variant;
+import com.backend.ecommerce.exception.BusinessException;
 import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.OrderRepository;
 import com.backend.ecommerce.repository.UserRepository;
@@ -74,6 +75,10 @@ public class OrderServiceImpl implements OrderService {
         entity.setShippingOrder(dto.getShippingOrder());
         entity.setStatus(dto.getStatus());
 
+        if (dto.getDeliveryAddressId() == null) {
+            throw new BusinessException("Une adresse de livraison est obligatoire pour valider la commande");
+        }
+
         if (dto.getUserId() != null) {
             entity.setUser(userRepository.findById(dto.getUserId())
                     .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + dto.getUserId())));
@@ -82,7 +87,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         if (dto.getDeliveryAddressId() != null) {
-            entity.setDeliveryAddress(deliveryAddressRepository.findById(dto.getDeliveryAddressId())
+            entity.setDeliveryAddress(deliveryAddressRepository.findByIdAndDeletedFalse(dto.getDeliveryAddressId())
                     .orElseThrow(() -> new ResourceNotFoundException("DeliveryAddress not found with id: " + dto.getDeliveryAddressId())));
         } else {
             entity.setDeliveryAddress(null);

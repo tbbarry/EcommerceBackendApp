@@ -3,17 +3,17 @@
 -- Mot de passe BCrypt = password123
 -- =========================
 INSERT INTO users (created_at, updated_at, email, firstname, lastname, password, role, enabled) VALUES
-                                                                                                (NOW(), NOW(), 'alice@test.com', 'Alice', 'Martin', '$2a$10$hqgMf5mksavpAEjscqq83uPUu2kGIknuHaYGfZ35KeNFEHAnPHcRC', 'ADMIN', true),
-                                                                                                (NOW(), NOW(), 'karim@test.com', 'Karim', 'Benali', '$2a$10$MrwAn5oQQAXmqbPINmd0TO5UfRi76RfYPeVdNY3ysZMwwu3aaDh8K', 'USER', true),
+                                                                                                (NOW(), NOW(), 'e@gmail.com', 'Alice', 'Martin', '$2a$10$hqgMf5mksavpAEjscqq83uPUu2kGIknuHaYGfZ35KeNFEHAnPHcRC', 'ADMIN', true),
+                                                                                                (NOW(), NOW(), 't@test.com', 'Karim', 'Benali', '$2a$10$MrwAn5oQQAXmqbPINmd0TO5UfRi76RfYPeVdNY3ysZMwwu3aaDh8K', 'USER', true),
                                                                                                 (NOW(), NOW(), 'sophie@test.com', 'Sophie', 'Durand', '$2a$10$MrwAn5oQQAXmqbPINmd0TO5UfRi76RfYPeVdNY3ysZMwwu3aaDh8K', 'USER', true);
 
 -- =========================
 -- DELIVERY ADDRESSES
 -- =========================
-INSERT INTO delivery_addresses (user_id, created_at, updated_at, address, city, state, zipcode) VALUES
-                                                                                                        ( 1, NOW(), NOW(), '12 Rue de Paris', 'Paris', 'Île-de-France', '75001'),
-                                                                                                        ( 2, NOW(), NOW(), '8 Avenue Victor Hugo', 'Lyon', 'Auvergne-Rhône-Alpes', '69002'),
-                                                                                                        (3, NOW(), NOW(), '25 Rue Nationale', 'Marseille', 'Provence-Alpes-Côte d’Azur', '13001')
+INSERT INTO delivery_addresses (user_id, created_at, updated_at, address, city, state, zipcode, phone, label, is_default, deleted) VALUES
+                                                                                                        (1, NOW(), NOW(), '12 Market Street', 'San Francisco', 'CA', '94105', '415-555-0101', 'home', true, false),
+                                                                                                        (2, NOW(), NOW(), '8 Madison Avenue', 'New York', 'NY', '10010', '212-555-0102', 'work', true, false),
+                                                                                                        (3, NOW(), NOW(), '25 Lakeshore Drive', 'Chicago', 'IL', '60601', '312-555-0103', 'home', true, false)
     ON CONFLICT (id) DO NOTHING;
 
 -- =========================

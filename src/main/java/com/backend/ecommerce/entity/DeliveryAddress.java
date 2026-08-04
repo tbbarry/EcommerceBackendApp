@@ -3,7 +3,6 @@ package com.backend.ecommerce.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "delivery_addresses")
@@ -28,6 +27,20 @@ public class DeliveryAddress extends BaseEntity{
     @NotBlank
     @Column(nullable = false)
     private String state;
+
+    @NotBlank
+    @Column(nullable = false)
+    private String phone;
+
+    @NotBlank
+    @Column(nullable = false, length = 30)
+    private String label;
+
+    @Column(name = "is_default", nullable = false)
+    private boolean defaultAddress;
+
+    @Column(nullable = false)
+    private boolean deleted;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "userId", nullable = false)

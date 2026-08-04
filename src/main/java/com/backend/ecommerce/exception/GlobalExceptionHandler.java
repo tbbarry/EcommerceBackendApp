@@ -6,6 +6,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -49,6 +50,20 @@ public class GlobalExceptionHandler {
                 .toList();
 
         error.setErrors(fieldErrors);
+
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidJson(HttpMessageNotReadableException ex) {
+
+        ErrorResponse error = new ErrorResponse();
+
+        error.setTimestamp(LocalDateTime.now());
+        error.setStatus(HttpStatus.BAD_REQUEST.value());
+        error.setError(HttpStatus.BAD_REQUEST.getReasonPhrase());
+        error.setMessage("JSON invalide dans la requete (verifiez les guillemets, virgules et retours a la ligne)");
+        error.setErrors(null);
 
         return ResponseEntity.badRequest().body(error);
     }
