@@ -1,20 +1,22 @@
 package com.backend.ecommerce.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import java.time.LocalDateTime;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class DeliveryAddressDto {
+public class MyDeliveryAddressDto {
     private Integer id;
+
     @NotBlank
     @Size(max = 120)
     private String address;
@@ -40,7 +42,7 @@ public class DeliveryAddressDto {
     private String label;
 
     private boolean defaultAddress;
-    private Integer userId;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

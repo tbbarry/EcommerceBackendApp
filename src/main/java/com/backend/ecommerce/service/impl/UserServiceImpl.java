@@ -2,7 +2,10 @@ package com.backend.ecommerce.service.impl;
 
 import com.backend.ecommerce.dto.ChangePasswordRequest;
 import com.backend.ecommerce.dto.RegisterDto;
+import com.backend.ecommerce.dto.UpdateUserProfileRequest;
+import com.backend.ecommerce.dto.UserProfileDto;
 import com.backend.ecommerce.entity.User;
+import com.backend.ecommerce.exception.BusinessException;
 import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.UserRepository;
 import com.backend.ecommerce.service.UserService;
@@ -78,6 +81,45 @@ public class UserServiceImpl implements UserService {
         dto.setLastname(entity.getLastname());
         dto.setEmail(entity.getEmail());
         dto.setPassword(entity.getPassword());
+        return dto;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserProfileDto getCurrentUserProfile(String email) {
+        User user = getEntityByEmail(email);
+        return toProfileDto(user);
+    }
+
+    @Override
+    public UserProfileDto updateCurrentUserProfile(String email, UpdateUserProfileRequest request) {
+        User user = getEntityByEmail(email);
+        user.setFirstname(request.getFirstname());
+        user.setLastname(request.getLastname());
+        user.setPhone(request.getPhone());
+
+
+        return toProfileDto(userRepository.save(user));
+    }
+
+    @Override
+    public void deleteCurrentUser(String email) {
+        User user = getEntityByEmail(email);
+        userRepository.delete(user);
+    }
+
+    private User getEntityByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+    }
+
+    private UserProfileDto toProfileDto(User user) {
+        UserProfileDto dto = new UserProfileDto();
+        dto.setId(user.getId());
+        dto.setFirstname(user.getFirstname());
+        dto.setLastname(user.getLastname());
+        dto.setPhone(user.getPhone());
+        dto.setEmail(user.getEmail());
         return dto;
     }
 
