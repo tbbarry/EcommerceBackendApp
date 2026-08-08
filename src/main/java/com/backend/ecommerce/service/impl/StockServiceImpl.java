@@ -2,6 +2,7 @@ package com.backend.ecommerce.service.impl;
 
 import com.backend.ecommerce.dto.StockDto;
 import com.backend.ecommerce.entity.Stock;
+import com.backend.ecommerce.entity.Variant;
 import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.StockRepository;
 import com.backend.ecommerce.repository.VariantRepository;
@@ -60,8 +61,11 @@ public class StockServiceImpl implements StockService {
     private void applyDtoToEntity(StockDto dto, Stock entity) {
         entity.setQuantity(dto.getQuantity());
         if (dto.getVariantId() != null) {
-            entity.setVariant(variantRepository.findById(dto.getVariantId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Variant not found with id: " + dto.getVariantId())));
+            Variant variant = variantRepository.findById(dto.getVariantId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Variant not found with id: " + dto.getVariantId()));
+            variant.setStock(dto.getQuantity() == null ? 0 : Math.max(0, dto.getQuantity()));
+            variantRepository.save(variant);
+            entity.setVariant(variant);
         } else {
             entity.setVariant(null);
         }
@@ -70,7 +74,7 @@ public class StockServiceImpl implements StockService {
     private StockDto toDto(Stock entity) {
         StockDto dto = new StockDto();
         dto.setId(entity.getId());
-        dto.setQuantity(entity.getQuantity());
+        dto.setQuantity(entity.getVariant() != null ? entity.getVariant().getStock() : entity.getQuantity());
         dto.setVariantId(entity.getVariant() != null ? entity.getVariant().getId() : null);
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());

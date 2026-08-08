@@ -1,5 +1,6 @@
 package com.backend.ecommerce.service;
 
+import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -28,6 +29,18 @@ public class SecurityService {
         return userRepository.findByEmail(email)
                 .map(user -> user.getId().equals(userId))
                 .orElse(false);
+    }
+
+    public Integer getCurrentUserIdOrThrow() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new IllegalStateException("User is not authenticated");
+        }
+
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .map(user -> user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
     }
 
     public boolean isDeliveryAddressOwner(Integer addressId) {

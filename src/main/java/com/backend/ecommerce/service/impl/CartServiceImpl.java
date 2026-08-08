@@ -1,21 +1,36 @@
 package com.backend.ecommerce.service.impl;
 
 import com.backend.ecommerce.dto.CartDto;
+import com.backend.ecommerce.dto.CartItemUpsertRequest;
+import com.backend.ecommerce.dto.CartLineResponse;
+import com.backend.ecommerce.dto.CartViewResponse;
 import com.backend.ecommerce.entity.Cart;
 import com.backend.ecommerce.entity.CartItem;
+import com.backend.ecommerce.entity.Product;
+import com.backend.ecommerce.entity.ProductImage;
 import com.backend.ecommerce.entity.User;
 import com.backend.ecommerce.entity.Variant;
+import com.backend.ecommerce.exception.BusinessException;
 import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.CartItemRepository;
 import com.backend.ecommerce.repository.CartRepository;
+import com.backend.ecommerce.repository.ProductImageRepository;
 import com.backend.ecommerce.repository.UserRepository;
 import com.backend.ecommerce.repository.VariantRepository;
 import com.backend.ecommerce.service.CartService;
+import com.backend.ecommerce.service.TaxService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +42,8 @@ public class CartServiceImpl implements CartService {
 
     private final CartItemRepository cartItemRepository;
     private final VariantRepository variantRepository;
+    private final ProductImageRepository productImageRepository;
+    private final TaxService taxService;
 
     @Override
     @Transactional(readOnly = true)
@@ -86,90 +103,249 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional(readOnly = true)
     public CartDto getCartByUserId(Integer userId) {
-        Cart cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart not found for user id: " + userId));
-
-        return toDto(cart);
+        return toDto(getOrCreateCart(userId));
     }
 
     @Override
     public CartDto addItemToCart(Integer userId, Integer variantId, Integer quantity) {
-        if (quantity == null || quantity <= 0) {
-            throw new IllegalArgumentException("Quantity must be greater than 0");
+        addOrIncrementItem(userId, variantId, quantity);
+        return toDto(getOrCreateCart(userId));
+    }
+
+    @Override
+    public CartDto updateItemQuantity(Integer userId, Integer cartItemId, Integer quantity) {
+        updateItemQuantityInternal(userId, cartItemId, quantity);
+        return toDto(getOrCreateCart(userId));
+    }
+
+    @Override
+    public void removeItemFromCart(Integer userId, Integer cartItemId) {
+        removeItemInternal(userId, cartItemId);
+    }
+
+    @Override
+    public void clearCart(Integer userId) {
+        clearCartInternal(userId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CartViewResponse getCartViewByUserId(Integer userId) {
+        Cart cart = getOrCreateCart(userId);
+        return toCartView(cart);
+    }
+
+    @Override
+    public CartViewResponse addItemToCartView(Integer userId, Integer variantId, Integer quantity) {
+        addOrIncrementItem(userId, variantId, quantity);
+        return toCartView(getOrCreateCart(userId));
+    }
+
+    @Override
+    public CartViewResponse updateItemQuantityView(Integer userId, Integer cartItemId, Integer quantity) {
+        updateItemQuantityInternal(userId, cartItemId, quantity);
+        return toCartView(getOrCreateCart(userId));
+    }
+
+    @Override
+    public CartViewResponse removeItemFromCartView(Integer userId, Integer cartItemId) {
+        removeItemInternal(userId, cartItemId);
+        return toCartView(getOrCreateCart(userId));
+    }
+
+    @Override
+    public CartViewResponse clearCartView(Integer userId) {
+        clearCartInternal(userId);
+        return toCartView(getOrCreateCart(userId));
+    }
+
+    @Override
+    public CartViewResponse syncCart(Integer userId, List<CartItemUpsertRequest> items, boolean replaceExisting) {
+        Cart cart = getOrCreateCart(userId);
+
+        if (replaceExisting) {
+            cartItemRepository.deleteByCartId(cart.getId());
         }
 
+        if (items != null && !items.isEmpty()) {
+            Map<Integer, Integer> merged = items.stream()
+                    .collect(Collectors.toMap(
+                            CartItemUpsertRequest::getVariantId,
+                            CartItemUpsertRequest::getQuantity,
+                            Integer::sum,
+                            HashMap::new
+                    ));
+
+            for (Map.Entry<Integer, Integer> entry : merged.entrySet()) {
+                Integer variantId = entry.getKey();
+                Integer quantity = entry.getValue();
+
+                if (variantId == null || quantity == null || quantity <= 0) {
+                    continue;
+                }
+
+                addOrIncrementItem(userId, variantId, quantity);
+            }
+        }
+
+        return toCartView(getOrCreateCart(userId));
+    }
+
+    private void addOrIncrementItem(Integer userId, Integer variantId, Integer quantity) {
+        if (quantity == null || quantity <= 0) {
+            throw new BusinessException("Quantity must be greater than 0");
+        }
+
+        Cart cart = getOrCreateCart(userId);
+        Variant variant = getVariantOrThrow(variantId);
+
+        if (variant.getStock() == null || variant.getStock() <= 0) {
+            throw new BusinessException("Variant is out of stock");
+        }
+
+        CartItem item = cartItemRepository.findByCartIdAndVariantId(cart.getId(), variantId)
+                .orElseGet(() -> {
+                    CartItem created = new CartItem();
+                    created.setCart(cart);
+                    created.setVariant(variant);
+                    created.setQuantity(0);
+                    return created;
+                });
+
+        int targetQuantity = item.getQuantity() + quantity;
+        if (targetQuantity > variant.getStock()) {
+            throw new BusinessException("Requested quantity exceeds available stock");
+        }
+
+        item.setQuantity(targetQuantity);
+        cartItemRepository.save(item);
+    }
+
+    private void updateItemQuantityInternal(Integer userId, Integer cartItemId, Integer quantity) {
+        if (quantity == null || quantity < 0) {
+            throw new BusinessException("Quantity must be greater than or equal to 0");
+        }
+
+        Cart cart = getOrCreateCart(userId);
+        CartItem item = getOwnedCartItem(cart.getId(), cartItemId);
+
+        if (quantity == 0) {
+            cartItemRepository.delete(item);
+            return;
+        }
+
+        Integer availableStock = item.getVariant().getStock();
+        if (availableStock == null || quantity > availableStock) {
+            throw new BusinessException("Requested quantity exceeds available stock");
+        }
+
+        item.setQuantity(quantity);
+        cartItemRepository.save(item);
+    }
+
+    private void removeItemInternal(Integer userId, Integer cartItemId) {
+        Cart cart = getOrCreateCart(userId);
+        CartItem item = getOwnedCartItem(cart.getId(), cartItemId);
+        cartItemRepository.delete(item);
+    }
+
+    private void clearCartInternal(Integer userId) {
+        Cart cart = getOrCreateCart(userId);
+        cartItemRepository.deleteByCartId(cart.getId());
+    }
+
+    private Cart getOrCreateCart(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        Cart cart = cartRepository.findByUserId(userId)
+        return cartRepository.findByUserId(userId)
                 .orElseGet(() -> {
                     Cart newCart = new Cart();
                     newCart.setUser(user);
                     return cartRepository.save(newCart);
                 });
+    }
 
-        Variant variant = variantRepository.findById(variantId)
+    private Variant getVariantOrThrow(Integer variantId) {
+        return variantRepository.findById(variantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Variant not found with id: " + variantId));
-
-        CartItem item = cartItemRepository.findByCartIdAndVariantId(cart.getId(), variantId)
-                .orElse(null);
-
-        if (item != null) {
-            item.setQuantity(item.getQuantity() + quantity);
-        } else {
-            item = new CartItem();
-            item.setCart(cart);
-            item.setVariant(variant);
-            item.setQuantity(quantity);
-        }
-
-        cartItemRepository.save(item);
-
-        return toDto(cartRepository.findById(cart.getId()).orElseThrow());
     }
 
-    @Override
-    public CartDto updateItemQuantity(Integer userId, Integer cartItemId, Integer quantity) {
-        if (quantity == null || quantity <= 0) {
-            throw new IllegalArgumentException("Quantity must be greater than 0");
-        }
-
-        Cart cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart not found for user id: " + userId));
-
+    private CartItem getOwnedCartItem(Integer cartId, Integer cartItemId) {
         CartItem item = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("CartItem not found with id: " + cartItemId));
 
-        if (!item.getCart().getId().equals(cart.getId())) {
-            throw new IllegalArgumentException("This item does not belong to this user's cart");
+        if (!item.getCart().getId().equals(cartId)) {
+            throw new BusinessException("This item does not belong to this user's cart");
         }
 
-        item.setQuantity(quantity);
-        cartItemRepository.save(item);
-
-        return toDto(cart);
+        return item;
     }
 
-    @Override
-    public void removeItemFromCart(Integer userId, Integer cartItemId) {
-        Cart cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart not found for user id: " + userId));
+    private CartViewResponse toCartView(Cart cart) {
+        List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
+        List<Integer> productIds = items.stream()
+                .map(CartItem::getVariant)
+                .map(Variant::getProduct)
+                .map(Product::getId)
+                .distinct()
+                .toList();
 
-        CartItem item = cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new ResourceNotFoundException("CartItem not found with id: " + cartItemId));
+        Map<Integer, ProductImage> mainImagesByProductId = productImageRepository.findByProductIdIn(productIds).stream()
+                .collect(Collectors.toMap(
+                        img -> img.getProduct().getId(),
+                        img -> img,
+                        (current, incoming) -> current.isMain() ? current : incoming,
+                        HashMap::new
+                ));
 
-        if (!item.getCart().getId().equals(cart.getId())) {
-            throw new IllegalArgumentException("This item does not belong to this user's cart");
+        List<CartLineResponse> lines = new ArrayList<>();
+        int totalItems = 0;
+        BigDecimal subtotal = BigDecimal.ZERO;
+
+        for (CartItem item : items) {
+            Variant variant = item.getVariant();
+            Product product = variant.getProduct();
+            ProductImage image = mainImagesByProductId.get(product.getId());
+
+            BigDecimal lineTotal = variant.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+            subtotal = subtotal.add(lineTotal);
+            totalItems += item.getQuantity();
+
+            lines.add(new CartLineResponse(
+                    item.getId(),
+                    variant.getId(),
+                    variant.getSku(),
+                    product.getId(),
+                    product.getName(),
+                    product.getSlug(),
+                    product.getBrand(),
+                    variant.getColor(),
+                    variant.getSize(),
+                    item.getQuantity(),
+                    variant.getStock(),
+                    variant.getStock() != null && variant.getStock() > 0,
+                    variant.getPrice(),
+                    lineTotal,
+                    image != null ? image.getUrl() : null,
+                    image != null ? image.getAlt() : null
+            ));
         }
 
-        cartItemRepository.delete(item);
-    }
-
-    @Override
-    public void clearCart(Integer userId) {
-        Cart cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart not found for user id: " + userId));
-
-        cartItemRepository.deleteByCartId(cart.getId());
+        CartViewResponse response = new CartViewResponse();
+        response.setCartId(cart.getId());
+        response.setUserId(cart.getUser().getId());
+        response.setItems(lines);
+        response.setTotalItems(totalItems);
+        response.setSubtotal(subtotal);
+        BigDecimal taxRate = taxService.getCurrentTaxRate();
+        BigDecimal taxAmount = subtotal.multiply(taxRate).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal total = subtotal.add(taxAmount).setScale(2, RoundingMode.HALF_UP);
+        response.setTaxRate(taxRate);
+        response.setTaxAmount(taxAmount);
+        response.setTotal(total);
+        response.setEmpty(lines.isEmpty());
+        response.setUpdatedAt(LocalDateTime.now());
+        return response;
     }
 }

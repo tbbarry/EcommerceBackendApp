@@ -1,7 +1,11 @@
 package com.backend.ecommerce.controller;
 
 import com.backend.ecommerce.dto.CartDto;
-import com.backend.ecommerce.dto.CartItemDto;
+import com.backend.ecommerce.dto.CartItemQuantityUpdateRequest;
+import com.backend.ecommerce.dto.CartItemUpsertRequest;
+import com.backend.ecommerce.dto.CartSyncRequest;
+import com.backend.ecommerce.dto.CartViewResponse;
+import com.backend.ecommerce.service.SecurityService;
 import com.backend.ecommerce.service.CartService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +29,7 @@ import java.util.List;
 public class CartController {
 
     private final CartService cartService;
+    private final SecurityService securityService;
 
     // ADMIN uniquement : voir tous les paniers
     @PreAuthorize("hasRole('ADMIN')")
@@ -60,47 +65,90 @@ public class CartController {
 
     @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#userId)")
     @GetMapping("/users/{userId}")
-    public ResponseEntity<CartDto> getCartByUser(@PathVariable Integer userId) {
-        return ResponseEntity.ok(cartService.getCartByUserId(userId));
+    public ResponseEntity<CartViewResponse> getCartByUser(@PathVariable Integer userId) {
+        return ResponseEntity.ok(cartService.getCartViewByUserId(userId));
     }
 
     @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#userId)")
     @PostMapping("/users/{userId}/items")
-    public ResponseEntity<CartDto> addItem(
+        public ResponseEntity<CartViewResponse> addItem(
             @PathVariable Integer userId,
-            @Valid @RequestBody CartItemDto request
+            @Valid @RequestBody CartItemUpsertRequest request
     ) {
         return ResponseEntity.ok(
-                cartService.addItemToCart(userId, request.getVariantId(), request.getQuantity())
+            cartService.addItemToCartView(userId, request.getVariantId(), request.getQuantity())
         );
     }
 
     @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#userId)")
     @PutMapping("/users/{userId}/items/{cartItemId}")
-    public ResponseEntity<CartDto> updateQuantity(
+        public ResponseEntity<CartViewResponse> updateQuantity(
             @PathVariable Integer userId,
             @PathVariable Integer cartItemId,
-            @Valid @RequestBody CartItemDto request
+            @Valid @RequestBody CartItemQuantityUpdateRequest request
     ) {
         return ResponseEntity.ok(
-                cartService.updateItemQuantity(userId, cartItemId, request.getQuantity())
+            cartService.updateItemQuantityView(userId, cartItemId, request.getQuantity())
         );
     }
 
     @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#userId)")
     @DeleteMapping("/users/{userId}/items/{cartItemId}")
-    public ResponseEntity<Void> removeItem(
+    public ResponseEntity<CartViewResponse> removeItem(
             @PathVariable Integer userId,
             @PathVariable Integer cartItemId
     ) {
-        cartService.removeItemFromCart(userId, cartItemId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(cartService.removeItemFromCartView(userId, cartItemId));
     }
 
     @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#userId)")
     @DeleteMapping("/users/{userId}/clear")
-    public ResponseEntity<Void> clearCart(@PathVariable Integer userId) {
-        cartService.clearCart(userId);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<CartViewResponse> clearCart(@PathVariable Integer userId) {
+        return ResponseEntity.ok(cartService.clearCartView(userId));
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/me")
+    public ResponseEntity<CartViewResponse> myCart() {
+        Integer userId = securityService.getCurrentUserIdOrThrow();
+        return ResponseEntity.ok(cartService.getCartViewByUserId(userId));
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/me/items")
+    public ResponseEntity<CartViewResponse> addMyItem(@Valid @RequestBody CartItemUpsertRequest request) {
+        Integer userId = securityService.getCurrentUserIdOrThrow();
+        return ResponseEntity.ok(cartService.addItemToCartView(userId, request.getVariantId(), request.getQuantity()));
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PutMapping("/me/items/{cartItemId}")
+    public ResponseEntity<CartViewResponse> updateMyItem(
+            @PathVariable Integer cartItemId,
+            @Valid @RequestBody CartItemQuantityUpdateRequest request
+    ) {
+        Integer userId = securityService.getCurrentUserIdOrThrow();
+        return ResponseEntity.ok(cartService.updateItemQuantityView(userId, cartItemId, request.getQuantity()));
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @DeleteMapping("/me/items/{cartItemId}")
+    public ResponseEntity<CartViewResponse> removeMyItem(@PathVariable Integer cartItemId) {
+        Integer userId = securityService.getCurrentUserIdOrThrow();
+        return ResponseEntity.ok(cartService.removeItemFromCartView(userId, cartItemId));
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @DeleteMapping("/me")
+    public ResponseEntity<CartViewResponse> clearMyCart() {
+        Integer userId = securityService.getCurrentUserIdOrThrow();
+        return ResponseEntity.ok(cartService.clearCartView(userId));
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/me/sync")
+    public ResponseEntity<CartViewResponse> syncMyCart(@Valid @RequestBody CartSyncRequest request) {
+        Integer userId = securityService.getCurrentUserIdOrThrow();
+        return ResponseEntity.ok(cartService.syncCart(userId, request.getItems(), request.isReplaceExisting()));
     }
 }

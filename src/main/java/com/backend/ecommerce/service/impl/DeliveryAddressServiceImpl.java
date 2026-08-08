@@ -2,6 +2,7 @@ package com.backend.ecommerce.service.impl;
 
 import com.backend.ecommerce.dto.DeliveryAddressDto;
 import com.backend.ecommerce.dto.MyDeliveryAddressDto;
+import com.backend.ecommerce.dto.UserAddressResponse;
 import com.backend.ecommerce.entity.DeliveryAddress;
 import com.backend.ecommerce.entity.User;
 import com.backend.ecommerce.exception.BusinessException;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -71,12 +73,15 @@ public class DeliveryAddressServiceImpl implements DeliveryAddressService {
     }
 
     private void applyDtoToEntity(DeliveryAddressDto dto, DeliveryAddress entity) {
+        entity.setFirstName(dto.getFirstName());
+        entity.setLastName(dto.getLastName());
         entity.setAddress(dto.getAddress());
         entity.setZipcode(dto.getZipcode());
         entity.setCity(dto.getCity());
         entity.setState(dto.getState());
         entity.setPhone(dto.getPhone());
         entity.setLabel(dto.getLabel());
+        entity.setCountry(dto.getCountry().toUpperCase(Locale.ROOT));
 
         if (dto.getUserId() != null) {
             User user = userRepository.findById(dto.getUserId())
@@ -92,12 +97,15 @@ public class DeliveryAddressServiceImpl implements DeliveryAddressService {
     private DeliveryAddressDto toDto(DeliveryAddress entity) {
         DeliveryAddressDto dto = new DeliveryAddressDto();
         dto.setId(entity.getId());
+        dto.setFirstName(entity.getFirstName());
+        dto.setLastName(entity.getLastName());
         dto.setAddress(entity.getAddress());
         dto.setZipcode(entity.getZipcode());
         dto.setCity(entity.getCity());
         dto.setState(entity.getState());
         dto.setPhone(entity.getPhone());
         dto.setLabel(entity.getLabel());
+        dto.setCountry(entity.getCountry());
         dto.setDefaultAddress(entity.isDefaultAddress());
         dto.setUserId(entity.getUser() != null ? entity.getUser().getId() : null);
         dto.setCreatedAt(entity.getCreatedAt());
@@ -125,12 +133,15 @@ public class DeliveryAddressServiceImpl implements DeliveryAddressService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
         DeliveryAddress entity = new DeliveryAddress();
+        entity.setFirstName(dto.getFirstName());
+        entity.setLastName(dto.getLastName());
         entity.setAddress(dto.getAddress());
         entity.setZipcode(dto.getZipcode());
         entity.setCity(dto.getCity());
         entity.setState(dto.getState());
         entity.setPhone(dto.getPhone());
         entity.setLabel(dto.getLabel());
+        entity.setCountry(dto.getCountry().toUpperCase(Locale.ROOT));
         entity.setUser(user);
         applyDefaultAddressRule(user, entity, dto.isDefaultAddress());
 
@@ -140,12 +151,15 @@ public class DeliveryAddressServiceImpl implements DeliveryAddressService {
     @Override
     public MyDeliveryAddressDto updateMyAddress(String email, Integer id, MyDeliveryAddressDto dto) {
         DeliveryAddress entity = getOwnedAddress(id, email);
+        entity.setFirstName(dto.getFirstName());
+        entity.setLastName(dto.getLastName());
         entity.setAddress(dto.getAddress());
         entity.setZipcode(dto.getZipcode());
         entity.setCity(dto.getCity());
         entity.setState(dto.getState());
         entity.setPhone(dto.getPhone());
         entity.setLabel(dto.getLabel());
+        entity.setCountry(dto.getCountry().toUpperCase(Locale.ROOT));
         applyDefaultAddressRule(entity.getUser(), entity, dto.isDefaultAddress());
         return toMyDto(deliveryAddressRepository.save(entity));
     }
@@ -185,16 +199,43 @@ public class DeliveryAddressServiceImpl implements DeliveryAddressService {
     private MyDeliveryAddressDto toMyDto(DeliveryAddress entity) {
         MyDeliveryAddressDto dto = new MyDeliveryAddressDto();
         dto.setId(entity.getId());
+        dto.setFirstName(entity.getFirstName());
+        dto.setLastName(entity.getLastName());
         dto.setAddress(entity.getAddress());
         dto.setZipcode(entity.getZipcode());
         dto.setCity(entity.getCity());
         dto.setState(entity.getState());
         dto.setPhone(entity.getPhone());
         dto.setLabel(entity.getLabel());
+        dto.setCountry(entity.getCountry());
         dto.setDefaultAddress(entity.isDefaultAddress());
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());
         return dto;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserAddressResponse> findMyUserAddresses(String email) {
+        return deliveryAddressRepository.findByUserEmailAndDeletedFalse(email).stream()
+                .map(this::toUserAddressResponse)
+                .toList();
+    }
+
+    private UserAddressResponse toUserAddressResponse(DeliveryAddress entity) {
+        return UserAddressResponse.builder()
+                .id(entity.getId())
+                .label(entity.getLabel())
+                .firstName(entity.getFirstName())
+                .lastName(entity.getLastName())
+                .phone(entity.getPhone())
+                .street(entity.getAddress())
+                .city(entity.getCity())
+                .state(entity.getState())
+                .zipCode(entity.getZipcode())
+                .country(entity.getCountry())
+                .defaultAddress(entity.isDefaultAddress())
+                .build();
     }
 
     private void applyDefaultAddressRule(User user, DeliveryAddress entity, boolean requestedDefault) {

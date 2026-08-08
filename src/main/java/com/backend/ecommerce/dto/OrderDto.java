@@ -1,5 +1,6 @@
 package com.backend.ecommerce.dto;
 
+import com.backend.ecommerce.entity.DeliveryType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,6 +22,21 @@ public class OrderDto {
     private BigDecimal taxAmount;
     private BigDecimal subtotal;
     private BigDecimal shippingOrder;
+    private BigDecimal shippingCost;
+    private String shippingMethodName;
+    private DeliveryType deliveryType;
+    private Integer deliveryMinDays;
+    private Integer deliveryMaxDays;
+    private String shippingFirstName;
+    private String shippingLastName;
+    private String shippingStreet;
+    private String shippingCity;
+    private String shippingState;
+    private String shippingZipCode;
+    private String shippingCountry;
+    private String shippingPhone;
+    private String couponCodeUsed;
+    private BigDecimal discountAmount;
     private BigDecimal total;
     private String status;
     private LocalDateTime createdAt;

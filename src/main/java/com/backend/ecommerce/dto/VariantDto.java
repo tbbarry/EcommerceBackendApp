@@ -17,6 +17,7 @@ public class VariantDto {
     private String color;
     private String size;
     private String sku;
+    private Integer stock;
     private BigDecimal price;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

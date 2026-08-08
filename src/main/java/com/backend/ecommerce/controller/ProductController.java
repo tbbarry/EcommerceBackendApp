@@ -1,6 +1,8 @@
 package com.backend.ecommerce.controller;
 
 import com.backend.ecommerce.dto.ProductDto;
+import com.backend.ecommerce.dto.ProductCreateRequest;
+import com.backend.ecommerce.dto.ProductResponse;
 import com.backend.ecommerce.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,8 +38,8 @@ public class ProductController {
     // ADMIN uniquement : créer un produit
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<ProductDto> create(@Valid @RequestBody ProductDto dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(productService.create(dto));
+    public ResponseEntity<ProductResponse> create(@Valid @RequestBody ProductCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(request));
     }
 
     // ADMIN uniquement : modifier un produit

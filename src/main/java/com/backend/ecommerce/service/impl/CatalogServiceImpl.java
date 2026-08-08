@@ -1,0 +1,668 @@
+package com.backend.ecommerce.service.impl;
+
+import com.backend.ecommerce.dto.CatalogAppliedFiltersResponse;
+import com.backend.ecommerce.dto.CatalogCategoryTreeItemResponse;
+import com.backend.ecommerce.dto.CatalogFacetItemResponse;
+import com.backend.ecommerce.dto.CatalogFacetsResponse;
+import com.backend.ecommerce.dto.CatalogPaginationResponse;
+import com.backend.ecommerce.dto.CatalogProductCategoryResponse;
+import com.backend.ecommerce.dto.CatalogProductColorOptionResponse;
+import com.backend.ecommerce.dto.CatalogProductDetailResponse;
+import com.backend.ecommerce.dto.CatalogProductImageResponse;
+import com.backend.ecommerce.dto.CatalogProductCardResponse;
+import com.backend.ecommerce.dto.CatalogProductSizeOptionResponse;
+import com.backend.ecommerce.dto.CatalogProductStockSummaryResponse;
+import com.backend.ecommerce.dto.CatalogProductVariantDetailResponse;
+import com.backend.ecommerce.dto.CatalogSearchRequest;
+import com.backend.ecommerce.dto.CatalogSearchResponse;
+import com.backend.ecommerce.dto.CatalogVariantAvailabilityResponse;
+import com.backend.ecommerce.entity.Category;
+import com.backend.ecommerce.entity.Product;
+import com.backend.ecommerce.entity.ProductColor;
+import com.backend.ecommerce.entity.ProductCategory;
+import com.backend.ecommerce.entity.ProductImage;
+import com.backend.ecommerce.entity.Variant;
+import com.backend.ecommerce.exception.ResourceNotFoundException;
+import com.backend.ecommerce.repository.CategoryRepository;
+import com.backend.ecommerce.repository.ProductCategoryRepository;
+import com.backend.ecommerce.repository.ProductColorRepository;
+import com.backend.ecommerce.repository.ProductImageRepository;
+import com.backend.ecommerce.repository.ProductRepository;
+import com.backend.ecommerce.repository.VariantRepository;
+import com.backend.ecommerce.service.CatalogService;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class CatalogServiceImpl implements CatalogService {
+
+    private static final List<String> ALLOWED_SORTS = List.of("relevance", "newest", "priceAsc", "priceDesc", "nameAsc", "nameDesc");
+
+    private final ProductRepository productRepository;
+    private final VariantRepository variantRepository;
+    private final ProductImageRepository productImageRepository;
+    private final ProductCategoryRepository productCategoryRepository;
+    private final ProductColorRepository productColorRepository;
+    private final CategoryRepository categoryRepository;
+
+    @Override
+    public CatalogSearchResponse searchProducts(CatalogSearchRequest request) {
+        CatalogSearchRequest normalized = normalize(request);
+        Set<String> resolvedCategoryFilter = resolveCategoryFilter(normalized.getCategories());
+
+        Specification<Product> specification = buildSpecification(normalized, resolvedCategoryFilter);
+        Pageable pageable = buildPageable(normalized.getPage(), normalized.getSize(), normalized.getSort());
+
+        Page<Product> page = productRepository.findAll(specification, pageable);
+        List<Integer> pageProductIds = page.getContent().stream().map(Product::getId).toList();
+
+        Map<Integer, List<Variant>> variantsByProductId = groupVariants(pageProductIds);
+        Map<Integer, List<ProductImage>> imagesByProductId = groupImages(pageProductIds);
+        Map<Integer, List<ProductCategory>> categoriesByProductId = groupCategories(pageProductIds);
+
+        List<CatalogProductCardResponse> cards = page.getContent().stream()
+                .map(product -> toCard(product, variantsByProductId, imagesByProductId, categoriesByProductId))
+                .toList();
+
+        List<Integer> filteredProductIds = productRepository.findAll(specification).stream()
+                .map(Product::getId)
+                .toList();
+
+        CatalogFacetsResponse facets = buildFacets(filteredProductIds);
+
+        CatalogSearchResponse response = new CatalogSearchResponse();
+        response.setItems(cards);
+        response.setFacets(facets);
+        response.setPagination(new CatalogPaginationResponse(
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages(),
+                page.hasNext()
+        ));
+        response.setAppliedFilters(new CatalogAppliedFiltersResponse(
+                normalized.getQuery(),
+                normalized.getMinPrice(),
+                normalized.getMaxPrice(),
+                normalized.getCategories(),
+                normalized.getColors(),
+                normalized.getSizes()
+        ));
+        response.setSort(normalized.getSort());
+        response.setAvailableSorts(ALLOWED_SORTS);
+
+        return response;
+    }
+
+        @Override
+        public CatalogProductDetailResponse getProductDetailsBySlug(String slug) {
+        Product product = productRepository.findBySlug(slug)
+            .orElseThrow(() -> new ResourceNotFoundException("Product not found with slug: " + slug));
+
+        List<Variant> variants = variantRepository.findByProductId(product.getId());
+        List<ProductImage> images = productImageRepository.findByProductId(product.getId());
+        List<ProductColor> colors = productColorRepository.findByProductId(product.getId());
+        List<ProductCategory> productCategories = productCategoryRepository.findByProductIdIn(List.of(product.getId()));
+
+        CatalogProductDetailResponse response = new CatalogProductDetailResponse();
+        response.setId(product.getId());
+        response.setSlug(product.getSlug());
+        response.setName(product.getName());
+        response.setBrand(product.getBrand());
+        response.setDescription(product.getDescription());
+        response.setPrice(product.getPrice());
+        response.setCreatedAt(product.getCreatedAt());
+        response.setUpdatedAt(product.getUpdatedAt());
+
+        int totalStock = variants.stream()
+            .map(Variant::getStock)
+            .filter(value -> value != null && value > 0)
+            .mapToInt(Integer::intValue)
+            .sum();
+        response.setStockSummary(new CatalogProductStockSummaryResponse(totalStock > 0, totalStock));
+
+        response.setCategories(mapProductCategories(productCategories));
+
+        List<CatalogProductImageResponse> mappedImages = images.stream()
+            .map(this::toProductImageResponse)
+            .toList();
+
+        response.setDefaultImages(mappedImages.stream()
+            .filter(image -> image.getColor() == null)
+            .toList());
+
+        response.setImagesByColor(groupImagesByColor(mappedImages));
+        response.setVariants(mapVariants(variants, response.getImagesByColor(), response.getDefaultImages()));
+        response.setSelectionMatrix(buildSelectionMatrix(variants));
+        response.setColors(mapColors(colors, variants, response.getImagesByColor()));
+        response.setSizes(mapSizes(variants));
+
+        return response;
+        }
+
+    private CatalogProductCardResponse toCard(
+            Product product,
+            Map<Integer, List<Variant>> variantsByProductId,
+            Map<Integer, List<ProductImage>> imagesByProductId,
+            Map<Integer, List<ProductCategory>> categoriesByProductId
+    ) {
+        List<Variant> variants = variantsByProductId.getOrDefault(product.getId(), List.of());
+        List<ProductImage> images = imagesByProductId.getOrDefault(product.getId(), List.of());
+        List<ProductCategory> categories = categoriesByProductId.getOrDefault(product.getId(), List.of());
+
+        ProductImage defaultImage = resolveDefaultImage(images);
+
+        Set<String> availableColors = variants.stream()
+                .map(Variant::getColor)
+                .filter(value -> value != null && !value.isBlank())
+                .collect(Collectors.toCollection(HashSet::new));
+
+        Set<String> availableSizes = variants.stream()
+                .map(Variant::getSize)
+                .filter(value -> value != null && !value.isBlank())
+                .collect(Collectors.toCollection(HashSet::new));
+
+        Set<String> categoryNames = categories.stream()
+                .map(ProductCategory::getCategory)
+                .filter(category -> category != null && category.getName() != null)
+                .map(category -> category.getName().trim())
+                .filter(value -> !value.isBlank())
+                .collect(Collectors.toCollection(HashSet::new));
+
+        boolean inStock = variants.stream().anyMatch(variant -> variant.getStock() != null && variant.getStock() > 0);
+
+        CatalogProductCardResponse card = new CatalogProductCardResponse();
+        card.setId(product.getId());
+        card.setName(product.getName());
+        card.setSlug(product.getSlug());
+        card.setBrand(product.getBrand());
+        card.setPrice(product.getPrice());
+        card.setDefaultImageUrl(defaultImage != null ? defaultImage.getUrl() : null);
+        card.setDefaultImageAlt(defaultImage != null ? defaultImage.getAlt() : null);
+        card.setAvailableColors(sortValues(availableColors));
+        card.setAvailableSizes(sortValues(availableSizes));
+        card.setCategories(sortValues(categoryNames));
+        card.setInStock(inStock);
+
+        return card;
+    }
+
+    private CatalogFacetsResponse buildFacets(List<Integer> filteredProductIds) {
+        CatalogFacetsResponse facets = new CatalogFacetsResponse();
+        if (filteredProductIds.isEmpty()) {
+            return facets;
+        }
+
+        Map<String, Set<Integer>> colorProductMap = new HashMap<>();
+        Map<String, Set<Integer>> sizeProductMap = new HashMap<>();
+        Map<String, Set<Integer>> categoryProductMap = new HashMap<>();
+
+        for (Variant variant : variantRepository.findByProductIdIn(filteredProductIds)) {
+            addFacetValue(colorProductMap, variant.getColor(), variant.getProduct().getId());
+            addFacetValue(sizeProductMap, variant.getSize(), variant.getProduct().getId());
+        }
+
+        for (ProductCategory productCategory : productCategoryRepository.findByProductIdIn(filteredProductIds)) {
+            if (productCategory.getCategory() != null) {
+                addFacetValue(categoryProductMap, productCategory.getCategory().getName(), productCategory.getProduct().getId());
+            }
+        }
+
+        facets.setColors(toFacetItems(colorProductMap));
+        facets.setSizes(toFacetItems(sizeProductMap));
+        facets.setCategories(toFacetItems(categoryProductMap));
+        facets.setCategoryTree(buildCategoryTree(filteredProductIds));
+
+        return facets;
+    }
+
+    private List<CatalogCategoryTreeItemResponse> buildCategoryTree(List<Integer> filteredProductIds) {
+        if (filteredProductIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Integer, Set<Integer>> rootProductIds = new HashMap<>();
+        Map<Integer, String> rootNames = new HashMap<>();
+        Map<Integer, Map<Integer, Set<Integer>>> subProductIdsByRoot = new HashMap<>();
+        Map<Integer, String> subNames = new HashMap<>();
+
+        for (ProductCategory productCategory : productCategoryRepository.findByProductIdIn(filteredProductIds)) {
+            if (productCategory.getCategory() == null || productCategory.getProduct() == null) {
+                continue;
+            }
+
+            Category category = productCategory.getCategory();
+            Integer productId = productCategory.getProduct().getId();
+            if (productId == null) {
+                continue;
+            }
+
+            Category rootCategory = category.getParentCategory() == null ? category : category.getParentCategory();
+            if (rootCategory == null || rootCategory.getId() == null) {
+                continue;
+            }
+
+            rootProductIds.computeIfAbsent(rootCategory.getId(), ignored -> new HashSet<>()).add(productId);
+            rootNames.put(rootCategory.getId(), rootCategory.getName());
+
+            if (category.getParentCategory() != null && category.getId() != null) {
+                subProductIdsByRoot
+                        .computeIfAbsent(rootCategory.getId(), ignored -> new HashMap<>())
+                        .computeIfAbsent(category.getId(), ignored -> new HashSet<>())
+                        .add(productId);
+                subNames.put(category.getId(), category.getName());
+            }
+        }
+
+        return rootProductIds.entrySet().stream()
+                .map(entry -> {
+                    Integer rootId = entry.getKey();
+                    List<CatalogCategoryTreeItemResponse> subCategories = subProductIdsByRoot
+                            .getOrDefault(rootId, Map.of())
+                            .entrySet()
+                            .stream()
+                            .map(subEntry -> new CatalogCategoryTreeItemResponse(
+                                    subNames.getOrDefault(subEntry.getKey(), ""),
+                                    subEntry.getValue().size(),
+                                    new ArrayList<>()
+                            ))
+                            .sorted(Comparator.comparing(CatalogCategoryTreeItemResponse::getValue, String.CASE_INSENSITIVE_ORDER))
+                            .toList();
+
+                    return new CatalogCategoryTreeItemResponse(
+                            rootNames.getOrDefault(rootId, ""),
+                            entry.getValue().size(),
+                            subCategories
+                    );
+                })
+                .sorted(Comparator.comparing(CatalogCategoryTreeItemResponse::getValue, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
+    private void addFacetValue(Map<String, Set<Integer>> map, String value, Integer productId) {
+        if (value == null || value.isBlank() || productId == null) {
+            return;
+        }
+        map.computeIfAbsent(value.trim(), key -> new HashSet<>()).add(productId);
+    }
+
+    private List<CatalogFacetItemResponse> toFacetItems(Map<String, Set<Integer>> source) {
+        return source.entrySet().stream()
+                .map(entry -> new CatalogFacetItemResponse(entry.getKey(), entry.getValue().size()))
+                .sorted(Comparator.comparingLong(CatalogFacetItemResponse::getCount).reversed()
+                        .thenComparing(CatalogFacetItemResponse::getValue))
+                .toList();
+    }
+
+    private Map<Integer, List<Variant>> groupVariants(List<Integer> productIds) {
+        if (productIds.isEmpty()) {
+            return Map.of();
+        }
+        return variantRepository.findByProductIdIn(productIds).stream()
+                .collect(Collectors.groupingBy(variant -> variant.getProduct().getId(), LinkedHashMap::new, Collectors.toList()));
+    }
+
+    private Map<Integer, List<ProductImage>> groupImages(List<Integer> productIds) {
+        if (productIds.isEmpty()) {
+            return Map.of();
+        }
+        return productImageRepository.findByProductIdIn(productIds).stream()
+                .collect(Collectors.groupingBy(image -> image.getProduct().getId(), LinkedHashMap::new, Collectors.toList()));
+    }
+
+    private Map<Integer, List<ProductCategory>> groupCategories(List<Integer> productIds) {
+        if (productIds.isEmpty()) {
+            return Map.of();
+        }
+        return productCategoryRepository.findByProductIdIn(productIds).stream()
+                .collect(Collectors.groupingBy(category -> category.getProduct().getId(), LinkedHashMap::new, Collectors.toList()));
+    }
+
+    private ProductImage resolveDefaultImage(List<ProductImage> images) {
+        if (images == null || images.isEmpty()) {
+            return null;
+        }
+        return images.stream().filter(ProductImage::isMain).findFirst().orElse(images.get(0));
+    }
+
+    private List<String> sortValues(Collection<String> values) {
+        return values.stream()
+                .distinct()
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
+    }
+
+    private Specification<Product> buildSpecification(CatalogSearchRequest request, Set<String> resolvedCategoryFilter) {
+        return (root, query, cb) -> {
+            query.distinct(true);
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+
+            if (request.getQuery() != null && !request.getQuery().isBlank()) {
+                String like = "%" + request.getQuery().toLowerCase(Locale.ROOT) + "%";
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("name")), like),
+                        cb.like(cb.lower(root.get("description")), like),
+                        cb.like(cb.lower(root.get("brand")), like)
+                ));
+            }
+
+            if (request.getMinPrice() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("price"), request.getMinPrice()));
+            }
+
+            if (request.getMaxPrice() != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("price"), request.getMaxPrice()));
+            }
+
+            if (!request.getColors().isEmpty() || !request.getSizes().isEmpty()) {
+                Join<Product, Variant> variantJoin = root.join("variants", JoinType.INNER);
+
+                if (!request.getColors().isEmpty()) {
+                    predicates.add(cb.lower(variantJoin.get("color")).in(request.getColors().stream()
+                            .map(value -> value.toLowerCase(Locale.ROOT))
+                            .toList()));
+                }
+
+                if (!request.getSizes().isEmpty()) {
+                    predicates.add(cb.lower(variantJoin.get("size")).in(request.getSizes().stream()
+                            .map(value -> value.toLowerCase(Locale.ROOT))
+                            .toList()));
+                }
+            }
+
+            if (!resolvedCategoryFilter.isEmpty()) {
+                Join<Product, ProductCategory> productCategoryJoin = root.join("productCategories", JoinType.INNER);
+                Join<ProductCategory, com.backend.ecommerce.entity.Category> categoryJoin = productCategoryJoin.join("category", JoinType.INNER);
+                predicates.add(cb.lower(categoryJoin.get("name")).in(resolvedCategoryFilter));
+            }
+
+            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+    }
+
+    private Pageable buildPageable(Integer page, Integer size, String sort) {
+        int safePage = page == null || page < 0 ? 0 : page;
+        int safeSize = size == null || size <= 0 ? 24 : Math.min(size, 60);
+
+        Sort ordering;
+        ordering = switch (sort) {
+            case "newest" -> Sort.by(Sort.Direction.DESC, "createdAt");
+            case "priceAsc" -> Sort.by(Sort.Direction.ASC, "price");
+            case "priceDesc" -> Sort.by(Sort.Direction.DESC, "price");
+            case "nameAsc" -> Sort.by(Sort.Direction.ASC, "name");
+            case "nameDesc" -> Sort.by(Sort.Direction.DESC, "name");
+            default -> Sort.by(Sort.Direction.DESC, "createdAt");
+        };
+
+        return PageRequest.of(safePage, safeSize, ordering);
+    }
+
+    private CatalogSearchRequest normalize(CatalogSearchRequest request) {
+        CatalogSearchRequest normalized = new CatalogSearchRequest();
+        normalized.setPage(request.getPage());
+        normalized.setSize(request.getSize());
+        normalized.setSort(ALLOWED_SORTS.contains(request.getSort()) ? request.getSort() : "relevance");
+        normalized.setQuery(trimToNull(request.getQuery()));
+        normalized.setMinPrice(request.getMinPrice());
+        normalized.setMaxPrice(request.getMaxPrice());
+        normalized.setCategories(normalizeValues(request.getCategories()));
+        normalized.setColors(normalizeValues(request.getColors()));
+        normalized.setSizes(normalizeValues(request.getSizes()));
+        return normalized;
+    }
+
+    private List<String> normalizeValues(List<String> raw) {
+        if (raw == null) {
+            return List.of();
+        }
+
+        return raw.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .flatMap(value -> List.of(value.split(",")).stream())
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .distinct()
+                .toList();
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String cleaned = value.trim();
+        return cleaned.isEmpty() ? null : cleaned;
+    }
+
+    private Set<String> resolveCategoryFilter(List<String> requestedCategories) {
+        if (requestedCategories == null || requestedCategories.isEmpty()) {
+            return Set.of();
+        }
+
+        Set<String> requested = requestedCategories.stream()
+                .map(value -> value.toLowerCase(Locale.ROOT))
+                .collect(Collectors.toSet());
+
+        Set<String> resolved = new HashSet<>();
+        for (Category root : categoryRepository.findRootCategoriesWithSubCategories()) {
+            if (root.getName() == null) {
+                continue;
+            }
+
+            String rootName = root.getName().trim();
+            if (rootName.isBlank()) {
+                continue;
+            }
+
+            String rootKey = rootName.toLowerCase(Locale.ROOT);
+            boolean rootRequested = requested.contains(rootKey);
+
+            if (rootRequested) {
+                resolved.add(rootKey);
+            }
+
+            for (Category subCategory : root.getSubCategories()) {
+                if (subCategory == null || subCategory.getName() == null) {
+                    continue;
+                }
+
+                String subName = subCategory.getName().trim();
+                if (subName.isBlank()) {
+                    continue;
+                }
+
+                String subKey = subName.toLowerCase(Locale.ROOT);
+                if (rootRequested || requested.contains(subKey)) {
+                    resolved.add(subKey);
+                }
+            }
+        }
+
+        if (resolved.isEmpty()) {
+            return requested;
+        }
+
+        return resolved;
+    }
+
+    private List<CatalogProductCategoryResponse> mapProductCategories(List<ProductCategory> productCategories) {
+        return productCategories.stream()
+                .map(ProductCategory::getCategory)
+                .filter(category -> category != null && category.getId() != null)
+                .collect(Collectors.toMap(
+                        Category::getId,
+                        category -> {
+                            Category parent = category.getParentCategory();
+                            return new CatalogProductCategoryResponse(
+                                    category.getId(),
+                                    category.getName(),
+                                    parent != null ? parent.getId() : null,
+                                    parent != null ? parent.getName() : null
+                            );
+                        },
+                        (left, right) -> left,
+                        LinkedHashMap::new
+                ))
+                .values()
+                .stream()
+                .toList();
+    }
+
+    private CatalogProductImageResponse toProductImageResponse(ProductImage image) {
+        return new CatalogProductImageResponse(
+                image.getId(),
+                image.getUrl(),
+                image.getAlt(),
+                image.isMain(),
+                image.getProductColor() != null ? image.getProductColor().getName() : null
+        );
+    }
+
+    private Map<String, List<CatalogProductImageResponse>> groupImagesByColor(List<CatalogProductImageResponse> images) {
+        return images.stream()
+                .filter(image -> image.getColor() != null && !image.getColor().isBlank())
+                .collect(Collectors.groupingBy(
+                        CatalogProductImageResponse::getColor,
+                        LinkedHashMap::new,
+                        Collectors.collectingAndThen(Collectors.toList(), list ->
+                                list.stream()
+                                        .sorted(Comparator.comparing(CatalogProductImageResponse::isMain).reversed())
+                                        .toList()
+                        )
+                ));
+    }
+
+    private List<CatalogProductVariantDetailResponse> mapVariants(
+            List<Variant> variants,
+            Map<String, List<CatalogProductImageResponse>> imagesByColor,
+            List<CatalogProductImageResponse> defaultImages
+    ) {
+        List<Integer> defaultImageIds = defaultImages.stream()
+                .map(CatalogProductImageResponse::getId)
+                .filter(id -> id != null)
+                .toList();
+
+        return variants.stream().map(variant -> {
+            List<Integer> imageIds = imagesByColor.getOrDefault(variant.getColor(), List.of()).stream()
+                    .map(CatalogProductImageResponse::getId)
+                    .filter(id -> id != null)
+                    .toList();
+
+            if (imageIds.isEmpty()) {
+                imageIds = defaultImageIds;
+            }
+
+            int stock = variant.getStock() == null ? 0 : variant.getStock();
+
+            return new CatalogProductVariantDetailResponse(
+                    variant.getId(),
+                    variant.getSku(),
+                    variant.getColor(),
+                    variant.getSize(),
+                    variant.getPrice(),
+                    stock,
+                    stock > 0,
+                    imageIds
+            );
+        }).toList();
+    }
+
+    private Map<String, Map<String, CatalogVariantAvailabilityResponse>> buildSelectionMatrix(List<Variant> variants) {
+        Map<String, Map<String, CatalogVariantAvailabilityResponse>> matrix = new LinkedHashMap<>();
+
+        for (Variant variant : variants) {
+            String colorKey = normalizeMatrixKey(variant.getColor());
+            String sizeKey = normalizeMatrixKey(variant.getSize());
+            int stock = variant.getStock() == null ? 0 : variant.getStock();
+
+            matrix.computeIfAbsent(colorKey, ignored -> new LinkedHashMap<>())
+                    .put(sizeKey, new CatalogVariantAvailabilityResponse(variant.getId(), stock, stock > 0));
+        }
+
+        return matrix;
+    }
+
+    private List<CatalogProductColorOptionResponse> mapColors(
+            List<ProductColor> colors,
+            List<Variant> variants,
+            Map<String, List<CatalogProductImageResponse>> imagesByColor
+    ) {
+        Map<String, Integer> stockByColor = new HashMap<>();
+        Map<String, Set<String>> sizeByColor = new HashMap<>();
+
+        for (Variant variant : variants) {
+            String color = trimToNull(variant.getColor());
+            if (color == null) {
+                continue;
+            }
+
+            int stock = variant.getStock() == null ? 0 : variant.getStock();
+            stockByColor.merge(color, Math.max(stock, 0), Integer::sum);
+
+            String size = trimToNull(variant.getSize());
+            if (size != null && stock > 0) {
+                sizeByColor.computeIfAbsent(color, ignored -> new LinkedHashSet<>()).add(size);
+            }
+        }
+
+        return colors.stream()
+                .map(ProductColor::getName)
+                .filter(value -> value != null && !value.isBlank())
+                .distinct()
+                .map(color -> new CatalogProductColorOptionResponse(
+                        color,
+                        stockByColor.getOrDefault(color, 0) > 0,
+                        stockByColor.getOrDefault(color, 0),
+                        imagesByColor.getOrDefault(color, List.of()).size(),
+                        sizeByColor.getOrDefault(color, Set.of()).stream().sorted(String.CASE_INSENSITIVE_ORDER).toList()
+                ))
+                .sorted(Comparator.comparing(CatalogProductColorOptionResponse::getName, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
+    private List<CatalogProductSizeOptionResponse> mapSizes(List<Variant> variants) {
+        Map<String, Integer> stockBySize = new HashMap<>();
+
+        for (Variant variant : variants) {
+            String size = trimToNull(variant.getSize());
+            if (size == null) {
+                continue;
+            }
+
+            int stock = variant.getStock() == null ? 0 : variant.getStock();
+            stockBySize.merge(size, Math.max(stock, 0), Integer::sum);
+        }
+
+        return stockBySize.entrySet().stream()
+                .map(entry -> new CatalogProductSizeOptionResponse(entry.getKey(), entry.getValue() > 0, entry.getValue()))
+                .sorted(Comparator.comparing(CatalogProductSizeOptionResponse::getValue, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
+    private String normalizeMatrixKey(String value) {
+        String cleaned = trimToNull(value);
+        return cleaned == null ? "default" : cleaned;
+    }
+}
