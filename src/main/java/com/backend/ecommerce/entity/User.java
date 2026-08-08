@@ -53,6 +53,10 @@ public class User extends BaseEntity {
     private List<Order> orders = new ArrayList<>();
 
     @Valid
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<CouponUsage> couponUsages = new ArrayList<>();
+
+    @Valid
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Cart cart;
 }

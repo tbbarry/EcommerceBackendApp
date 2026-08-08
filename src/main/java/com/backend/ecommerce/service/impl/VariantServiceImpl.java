@@ -61,6 +61,7 @@ public class VariantServiceImpl implements VariantService {
         entity.setColor(dto.getColor());
         entity.setSize(dto.getSize());
         entity.setSku(dto.getSku());
+        entity.setStock(dto.getStock() == null ? 0 : Math.max(0, dto.getStock()));
         entity.setPrice(dto.getPrice());
         if (dto.getProductId() != null) {
             entity.setProduct(productRepository.findById(dto.getProductId())
@@ -76,6 +77,7 @@ public class VariantServiceImpl implements VariantService {
         dto.setColor(entity.getColor());
         dto.setSize(entity.getSize());
         dto.setSku(entity.getSku());
+        dto.setStock(entity.getStock());
         dto.setPrice(entity.getPrice());
         dto.setProductId(entity.getProduct() != null ? entity.getProduct().getId() : null);
         dto.setCreatedAt(entity.getCreatedAt());

@@ -41,6 +41,67 @@ public class Order extends BaseEntity {
 
     @NotNull
     @Column(nullable = false)
+    private BigDecimal shippingCost;
+
+    @NotBlank
+    @Column(nullable = false, length = 120)
+    private String shippingMethodName;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private DeliveryType deliveryType;
+
+    @NotNull
+    @Column(nullable = false)
+    private Integer deliveryMinDays;
+
+    @NotNull
+    @Column(nullable = false)
+    private Integer deliveryMaxDays;
+
+    @NotBlank
+    @Column(nullable = false, length = 80)
+    private String shippingFirstName;
+
+    @NotBlank
+    @Column(nullable = false, length = 80)
+    private String shippingLastName;
+
+    @NotBlank
+    @Column(nullable = false)
+    private String shippingStreet;
+
+    @NotBlank
+    @Column(nullable = false, length = 120)
+    private String shippingCity;
+
+    @NotBlank
+    @Column(nullable = false, length = 120)
+    private String shippingState;
+
+    @NotBlank
+    @Column(nullable = false, length = 20)
+    private String shippingZipCode;
+
+    @NotBlank
+    @Column(nullable = false, length = 2)
+    private String shippingCountry;
+
+    @NotBlank
+    @Column(nullable = false, length = 40)
+    private String shippingPhone;
+
+    @Column(length = 60)
+    private String couponCodeUsed;
+
+    @NotNull
+    @DecimalMin(value = "0.0", inclusive = true)
+    @Column(nullable = false)
+    private BigDecimal discountAmount;
+
+    @NotNull
+    @Column(nullable = false)
     private BigDecimal total;
 
     @NotBlank
@@ -68,6 +129,14 @@ public class Order extends BaseEntity {
     @Valid
     @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
     private Invoice invoice;
+
+    @Valid
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private DeliveryPreference deliveryPreference;
+
+    @Valid
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
+    private CouponUsage couponUsage;
 
     @NotNull
     @DecimalMin(value = "0.0", inclusive = true)

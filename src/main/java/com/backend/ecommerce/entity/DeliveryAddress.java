@@ -13,6 +13,14 @@ import lombok.*;
 public class DeliveryAddress extends BaseEntity{
 
     @NotBlank
+    @Column(nullable = false, length = 80)
+    private String firstName;
+
+    @NotBlank
+    @Column(nullable = false, length = 80)
+    private String lastName;
+
+    @NotBlank
     @Column(nullable = false)
     private String address;
 
@@ -31,6 +39,10 @@ public class DeliveryAddress extends BaseEntity{
     @NotBlank
     @Column(nullable = false)
     private String phone;
+
+    @NotBlank
+    @Column(nullable = false, length = 2)
+    private String country;
 
     @NotBlank
     @Column(nullable = false, length = 30)

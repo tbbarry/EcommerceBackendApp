@@ -89,10 +89,12 @@ public class SecurityConfig {
 
                         // Lecture publique boutique
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/catalog/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/variants/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/images/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/promos/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/shipping-methods/**").permitAll()
 
                         // Admin global si tu as des routes /admin/**
                          .requestMatchers("/admin/**").hasRole("ADMIN")

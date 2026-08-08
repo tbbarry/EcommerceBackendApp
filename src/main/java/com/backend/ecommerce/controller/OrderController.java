@@ -1,7 +1,10 @@
 package com.backend.ecommerce.controller;
 
+import com.backend.ecommerce.dto.CheckoutRequest;
+import com.backend.ecommerce.dto.OrderCheckoutResponse;
 import com.backend.ecommerce.dto.OrderDto;
 import com.backend.ecommerce.service.OrderService;
+import com.backend.ecommerce.service.SecurityService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,6 +28,7 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+    private final SecurityService securityService;
 
     // ADMIN uniquement : voir toutes les commandes
     @PreAuthorize("hasRole('ADMIN')")
@@ -51,6 +55,13 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<OrderDto> create(@Valid @RequestBody OrderDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.create(dto));
+    }
+
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PostMapping("/checkout")
+    public ResponseEntity<OrderCheckoutResponse> checkout(@Valid @RequestBody CheckoutRequest request) {
+        Integer userId = securityService.getCurrentUserIdOrThrow();
+        return ResponseEntity.status(HttpStatus.CREATED).body(orderService.checkout(userId, request));
     }
 
     // ADMIN uniquement : modifier une commande

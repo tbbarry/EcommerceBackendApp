@@ -18,6 +18,14 @@ public class MyDeliveryAddressDto {
     private Integer id;
 
     @NotBlank
+    @Size(max = 80)
+    private String firstName;
+
+    @NotBlank
+    @Size(max = 80)
+    private String lastName;
+
+    @NotBlank
     @Size(max = 120)
     private String address;
 
@@ -40,6 +48,10 @@ public class MyDeliveryAddressDto {
     @NotBlank
     @Size(max = 30)
     private String label;
+
+    @NotBlank
+    @Pattern(regexp = "^[A-Z]{2}$", message = "Country doit etre un code ISO-2 (ex: US)")
+    private String country;
 
     private boolean defaultAddress;
 

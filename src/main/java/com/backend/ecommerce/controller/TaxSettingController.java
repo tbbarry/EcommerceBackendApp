@@ -22,9 +22,15 @@ public class TaxSettingController {
         return ResponseEntity.ok(taxSettingService.updateCurrentTaxRate(dto));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/current")
     public ResponseEntity<BigDecimal> getCurrentTaxRate() {
         return ResponseEntity.ok(taxSettingService.getCurrentTaxRate());
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/current/details")
+    public ResponseEntity<TaxSettingDto> getCurrentTaxSetting() {
+        return ResponseEntity.ok(taxSettingService.getCurrentTaxSetting());
     }
 }
