@@ -1,8 +1,7 @@
 package com.backend.ecommerce.service.impl;
 
+import com.backend.ecommerce.dto.CheckoutSessionData;
 import com.backend.ecommerce.entity.Order;
-import com.backend.ecommerce.exception.ResourceNotFoundException;
-import com.backend.ecommerce.repository.OrderRepository;
 import com.backend.ecommerce.service.StripePaymentService;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
@@ -21,28 +20,28 @@ public class StripePaymentServiceImpl implements StripePaymentService {
     @Value("${stripe.secret-key}")
     private String stripeSecretKey;
 
-    @Value("${app.frontend-url}")
+    @Value("${currency.code}")
+    private String currencyCode;
+
+    @Value("${app.frontend_app}")
     private String frontendUrl;
 
-    private final OrderRepository orderRepository;
 
     @Override
-    public String createCheckoutSession(Integer orderId) throws StripeException {
+    public CheckoutSessionData createCheckoutSession(Order order) throws StripeException {
         Stripe.apiKey = stripeSecretKey;
-
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
         SessionCreateParams params = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
-                .setSuccessUrl(frontendUrl + "/payment-success?session_id={CHECKOUT_SESSION_ID}")
+                .setCustomerEmail(order.getUser().getEmail())
+                .setSuccessUrl(frontendUrl + "/payment/success?session_id={CHECKOUT_SESSION_ID}")
                 .setCancelUrl(frontendUrl + "/payment-cancel")
                 .addLineItem(
                         SessionCreateParams.LineItem.builder()
                                 .setQuantity(1L)
                                 .setPriceData(
                                         SessionCreateParams.LineItem.PriceData.builder()
-                                                .setCurrency("eur")
+                                                .setCurrency(currencyCode)
                                                 .setUnitAmount(order.getTotal()
                                                         .multiply(BigDecimal.valueOf(100))
                                                         .longValue())
@@ -59,7 +58,9 @@ public class StripePaymentServiceImpl implements StripePaymentService {
                 .build();
 
         Session session = Session.create(params);
+        String paymentIntentId  = session.getPaymentIntent();
+        System.err.println(paymentIntentId);
 
-        return session.getUrl();
+        return new CheckoutSessionData(session.getUrl(), paymentIntentId, session.getId());
     }
 }

@@ -62,7 +62,7 @@ public class OrderItemServiceImpl implements OrderItemService {
     private void applyDtoToEntity(OrderItemDto dto, OrderItem entity) {
         entity.setQuantity(dto.getQuantity());
         entity.setTotalPrice(dto.getTotalPrice());
-        entity.setUnitPrice(dto.getUnitprice());
+        entity.setUnitPrice(dto.getUnitPrice());
         if (dto.getOrderId() != null) {
             entity.setOrder(orderRepository.findById(dto.getOrderId())
                     .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + dto.getOrderId())));
@@ -82,7 +82,7 @@ public class OrderItemServiceImpl implements OrderItemService {
         dto.setId(entity.getId());
         dto.setQuantity(entity.getQuantity());
         dto.setTotalPrice(entity.getTotalPrice());
-        dto.setUnitprice(entity.getUnitPrice());
+        dto.setUnitPrice(entity.getUnitPrice());
         dto.setOrderId(entity.getOrder() != null ? entity.getOrder().getId() : null);
         dto.setVariantId(entity.getVariant() != null ? entity.getVariant().getId() : null);
         dto.setCreatedAt(entity.getCreatedAt());

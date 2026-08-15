@@ -14,7 +14,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "promos")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -43,6 +44,8 @@ public class Promo extends BaseEntity {
 
     @NotEmpty
     @Valid
-    @OneToMany(mappedBy = "promo", cascade = CascadeType.ALL)
+    @Builder.Default
+    @OneToMany(mappedBy = "promo", cascade = CascadeType.ALL, orphanRemoval
+    = true)
     private List<ProductPromo> productPromos = new ArrayList<>();
 }

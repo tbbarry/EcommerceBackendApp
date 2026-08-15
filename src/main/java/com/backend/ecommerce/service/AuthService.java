@@ -50,7 +50,7 @@ public class AuthService {
     public void register(RegisterDto request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new BusinessException("Cet email est déjà utilisé");
+            throw new BusinessException("Cet email est déjà utilisé", "EMAIL_ALREADY_USED");
         }
     
 
@@ -86,10 +86,10 @@ public class AuthService {
     public void verifyAccount(String token) {
 
         VerificationToken verificationToken = tokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Token invalide"));
+                .orElseThrow(() -> new BusinessException("Token invalide", "INVALID_TOKEN"));
 
         if (verificationToken.getExpirationDate().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Token expiré");
+            throw new BusinessException("Token expiré", "TOKEN_EXPIRED");
         }
 
         User user = verificationToken.getUser();
@@ -101,7 +101,7 @@ public class AuthService {
     public void forgotPassword(String email) {
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BusinessException("User not found", "USER_NOT_FOUND"));
 
         String token = UUID.randomUUID().toString();
 
@@ -121,7 +121,7 @@ public class AuthService {
     public void resetPassword(String token, String newPassword) {
 
         PasswordResetToken resetToken = resetTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Token invalide"));
+                .orElseThrow(() -> new BusinessException("Token invalide", "INVALID_TOKEN"));
 
         // 🔥 Vérifier expiration
         if (resetToken.getExpirationDate().isBefore(LocalDateTime.now())) {

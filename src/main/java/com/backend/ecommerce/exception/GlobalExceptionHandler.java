@@ -26,6 +26,7 @@ public class GlobalExceptionHandler {
         error.setError(HttpStatus.NOT_FOUND.getReasonPhrase());
         error.setMessage(ex.getMessage());
         error.setErrors(null);
+        error.setCode(ex.getCode());
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
@@ -78,6 +79,7 @@ public class GlobalExceptionHandler {
         error.setError(HttpStatus.BAD_REQUEST.getReasonPhrase());
         error.setMessage(ex.getMessage());
         error.setErrors(null);
+        error.setCode(ex.getCode());
 
         return ResponseEntity.badRequest().body(error);
     }
@@ -163,6 +165,7 @@ public class GlobalExceptionHandler {
         error.setError(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
         error.setMessage(ex.getMessage());
         error.setErrors(null);
+    
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }

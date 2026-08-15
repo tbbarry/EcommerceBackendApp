@@ -12,9 +12,10 @@ import org.springframework.web.bind.annotation.*;
 public class StripePaymentController {
 
     private final StripePaymentService stripePaymentService;
-
+    /* 
     @PostMapping("/checkout/{orderId}")
     public ResponseEntity<String> createCheckout(@PathVariable Integer orderId) throws StripeException {
         return ResponseEntity.ok(stripePaymentService.createCheckoutSession(orderId));
     }
+    */
 }

@@ -1,11 +1,12 @@
 package com.backend.ecommerce.controller;
 
 import com.backend.ecommerce.dto.CheckoutRequest;
-import com.backend.ecommerce.dto.OrderCheckoutResponse;
+import com.backend.ecommerce.dto.CheckoutResponse;
 import com.backend.ecommerce.dto.OrderDto;
 import com.backend.ecommerce.service.OrderService;
 import com.backend.ecommerce.service.SecurityService;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.RequestHeader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -59,9 +60,10 @@ public class OrderController {
 
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @PostMapping("/checkout")
-    public ResponseEntity<OrderCheckoutResponse> checkout(@Valid @RequestBody CheckoutRequest request) {
+    public ResponseEntity<CheckoutResponse> checkout(@Valid @RequestBody CheckoutRequest request,
+                                                      @RequestHeader("Idempotency-Key") String idempotencyKey) {
         Integer userId = securityService.getCurrentUserIdOrThrow();
-        return ResponseEntity.status(HttpStatus.CREATED).body(orderService.checkout(userId, request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(orderService.checkout(userId, request, idempotencyKey));
     }
 
     // ADMIN uniquement : modifier une commande
@@ -77,6 +79,16 @@ public class OrderController {
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
         orderService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @GetMapping("/me")
+    public ResponseEntity<List<OrderDto>> findMyOrders() {
+        Integer userId = securityService.getCurrentUserIdOrThrow();
+
+        return ResponseEntity.ok(
+                orderService.findAllByUserId(userId)
+        );
     }
 }
 

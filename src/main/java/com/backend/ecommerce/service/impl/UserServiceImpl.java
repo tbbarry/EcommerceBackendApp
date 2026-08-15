@@ -5,7 +5,6 @@ import com.backend.ecommerce.dto.RegisterDto;
 import com.backend.ecommerce.dto.UpdateUserProfileRequest;
 import com.backend.ecommerce.dto.UserProfileDto;
 import com.backend.ecommerce.entity.User;
-import com.backend.ecommerce.exception.BusinessException;
 import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.UserRepository;
 import com.backend.ecommerce.service.UserService;
@@ -61,7 +60,7 @@ public class UserServiceImpl implements UserService {
 
     private User getEntityById(Integer id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id, "USER_NOT_FOUND"));
     }
 
     private void applyDtoToEntity(RegisterDto dto, User entity) {
@@ -110,7 +109,7 @@ public class UserServiceImpl implements UserService {
 
     private User getEntityByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email, "USER_NOT_FOUND"));
     }
 
     private UserProfileDto toProfileDto(User user) {
@@ -126,7 +125,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void changePassword(String email, @Valid ChangePasswordRequest request) {
         User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email, "USER_NOT_FOUND"));
 
         // vérifier ancien mot de passe
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {

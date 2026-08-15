@@ -5,9 +5,11 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
+
 @Entity
 @Table(name = "product_images")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -17,12 +19,20 @@ public class ProductImage extends BaseEntity {
     @Column(nullable = false)
     private String url;
 
+    @Column(nullable = true)
+    private String objectKey;
+
     @NotBlank
     @Column(nullable = false)
     private String alt;
 
+    @Builder.Default
     @Column(nullable = false)
-    private boolean isMain;
+    private boolean isMain = false;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer displayOrder = 0;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

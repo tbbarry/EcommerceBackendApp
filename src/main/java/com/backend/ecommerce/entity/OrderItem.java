@@ -6,11 +6,12 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+
 
 @Entity
 @Table(name = "order_items")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -40,4 +41,17 @@ public class OrderItem extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "variantId", nullable = false)
     private Variant variant;
+    
+    @NotNull
+    @Column(nullable = false)
+    private String productNameSnapshot;
+    @NotNull
+    @Column(nullable = false)
+    private String variantSkuSnapshot;
+    @NotNull
+    @Column(nullable = false)
+    private String colorSnapshot;
+    private String imageUrlSnapshot;
+    private String productDescriptionSnapshot;
+    private String sizeSnapshot;  
 }

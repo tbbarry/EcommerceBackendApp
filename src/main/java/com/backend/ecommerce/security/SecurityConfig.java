@@ -98,6 +98,9 @@ public class SecurityConfig {
 
                         // Admin global si tu as des routes /admin/**
                          .requestMatchers("/admin/**").hasRole("ADMIN")
+
+
+                         .requestMatchers(HttpMethod.POST, "/api/test/kafka/**").permitAll()
                          .anyRequest().authenticated()
                 )
 
