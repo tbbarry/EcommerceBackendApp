@@ -7,6 +7,8 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.backend.ecommerce.enums.PaymentStatus;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,7 +19,7 @@ public class PaymentDto {
     private Integer orderId;
     private BigDecimal amount;
     private LocalDateTime paidAt;
-    private String status;
+    private PaymentStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

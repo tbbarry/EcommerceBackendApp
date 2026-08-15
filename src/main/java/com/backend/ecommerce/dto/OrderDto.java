@@ -1,6 +1,8 @@
 package com.backend.ecommerce.dto;
 
 import com.backend.ecommerce.entity.DeliveryType;
+import com.backend.ecommerce.enums.OrderStatus;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -38,7 +40,7 @@ public class OrderDto {
     private String couponCodeUsed;
     private BigDecimal discountAmount;
     private BigDecimal total;
-    private String status;
+    private OrderStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private BigDecimal taxRate;

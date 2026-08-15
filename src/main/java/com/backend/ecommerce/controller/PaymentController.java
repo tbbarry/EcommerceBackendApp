@@ -1,6 +1,7 @@
 package com.backend.ecommerce.controller;
 
 import com.backend.ecommerce.dto.PaymentDto;
+import com.backend.ecommerce.dto.PaymentVerificationResponse;
 import com.backend.ecommerce.service.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -59,5 +60,12 @@ public class PaymentController {
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
         paymentService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+    @GetMapping("/checkout-session/{sessionId}")
+    public ResponseEntity<PaymentVerificationResponse> verifyCheckoutSession(@PathVariable String sessionId) {
+
+        return ResponseEntity.ok(
+                paymentService.verifyCheckoutSession(sessionId)
+        );
     }
 }

@@ -6,7 +6,8 @@ import lombok.*;
 
 @Entity
 @Table(name = "delivery_addresses")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

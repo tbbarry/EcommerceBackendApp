@@ -9,6 +9,8 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.backend.ecommerce.enums.OrderStatus;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,7 +21,7 @@ public class OrderCheckoutResponse {
     private Integer orderId;
     private String orderNumber;
     private LocalDateTime dateOrder;
-    private String status;
+    private OrderStatus status;
     private BigDecimal subtotal;
     private BigDecimal shippingCost;
     private BigDecimal taxRate;

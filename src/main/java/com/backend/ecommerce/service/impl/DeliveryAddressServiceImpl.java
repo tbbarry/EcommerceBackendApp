@@ -65,7 +65,7 @@ public class DeliveryAddressServiceImpl implements DeliveryAddressService {
 
     private void softDelete(DeliveryAddress entity) {
         if (entity.isDeleted()) {
-            throw new BusinessException("Cette adresse est deja supprimee");
+            throw new BusinessException("Cette adresse est deja supprimee", "ADDRESS_ALREADY_DELETED");
         }
         entity.setDeleted(true);
         entity.setDefaultAddress(false);

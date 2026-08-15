@@ -12,13 +12,20 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class VariantDto {
+
     private Integer id;
+
     private Integer productId;
-    private String color;
+
+    private Integer productColorId;
+
     private String size;
+
     private String sku;
-    private Integer stock;
+
     private BigDecimal price;
+
     private LocalDateTime createdAt;
+
     private LocalDateTime updatedAt;
 }

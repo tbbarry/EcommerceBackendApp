@@ -21,6 +21,7 @@ import com.backend.ecommerce.entity.Product;
 import com.backend.ecommerce.entity.ProductColor;
 import com.backend.ecommerce.entity.ProductCategory;
 import com.backend.ecommerce.entity.ProductImage;
+import com.backend.ecommerce.entity.Stock;
 import com.backend.ecommerce.entity.Variant;
 import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.CategoryRepository;
@@ -122,7 +123,8 @@ public class CatalogServiceImpl implements CatalogService {
         Product product = productRepository.findBySlug(slug)
             .orElseThrow(() -> new ResourceNotFoundException("Product not found with slug: " + slug));
 
-        List<Variant> variants = variantRepository.findByProductId(product.getId());
+        List<Variant> variants = variantRepository.findByProductIdWithStock(product.getId());
+
         List<ProductImage> images = productImageRepository.findByProductId(product.getId());
         List<ProductColor> colors = productColorRepository.findByProductId(product.getId());
         List<ProductCategory> productCategories = productCategoryRepository.findByProductIdIn(List.of(product.getId()));
@@ -137,10 +139,11 @@ public class CatalogServiceImpl implements CatalogService {
         response.setCreatedAt(product.getCreatedAt());
         response.setUpdatedAt(product.getUpdatedAt());
 
+
         int totalStock = variants.stream()
             .map(Variant::getStock)
-            .filter(value -> value != null && value > 0)
-            .mapToInt(Integer::intValue)
+            .filter(stock -> stock != null)
+            .mapToInt(Stock::getAvailableQuantity)
             .sum();
         response.setStockSummary(new CatalogProductStockSummaryResponse(totalStock > 0, totalStock));
 
@@ -176,8 +179,9 @@ public class CatalogServiceImpl implements CatalogService {
         ProductImage defaultImage = resolveDefaultImage(images);
 
         Set<String> availableColors = variants.stream()
-                .map(Variant::getColor)
+                .map(variant -> variant.getProductColor() != null ? variant.getProductColor().getName() : null)
                 .filter(value -> value != null && !value.isBlank())
+                .map(String::trim)
                 .collect(Collectors.toCollection(HashSet::new));
 
         Set<String> availableSizes = variants.stream()
@@ -192,7 +196,10 @@ public class CatalogServiceImpl implements CatalogService {
                 .filter(value -> !value.isBlank())
                 .collect(Collectors.toCollection(HashSet::new));
 
-        boolean inStock = variants.stream().anyMatch(variant -> variant.getStock() != null && variant.getStock() > 0);
+        
+        boolean inStock = variants.stream().anyMatch(variant -> variant.getStock() != null &&
+                variant.getStock().getAvailableQuantity() > 0
+        );
 
         CatalogProductCardResponse card = new CatalogProductCardResponse();
         card.setId(product.getId());
@@ -221,7 +228,7 @@ public class CatalogServiceImpl implements CatalogService {
         Map<String, Set<Integer>> categoryProductMap = new HashMap<>();
 
         for (Variant variant : variantRepository.findByProductIdIn(filteredProductIds)) {
-            addFacetValue(colorProductMap, variant.getColor(), variant.getProduct().getId());
+            addFacetValue(colorProductMap, variant.getProductColor() != null ? variant.getProductColor().getName() : null, variant.getProduct().getId());
             addFacetValue(sizeProductMap, variant.getSize(), variant.getProduct().getId());
         }
 
@@ -321,7 +328,7 @@ public class CatalogServiceImpl implements CatalogService {
         if (productIds.isEmpty()) {
             return Map.of();
         }
-        return variantRepository.findByProductIdIn(productIds).stream()
+        return variantRepository.findByProductIdInWithStock(productIds).stream()
                 .collect(Collectors.groupingBy(variant -> variant.getProduct().getId(), LinkedHashMap::new, Collectors.toList()));
     }
 
@@ -355,54 +362,152 @@ public class CatalogServiceImpl implements CatalogService {
                 .toList();
     }
 
-    private Specification<Product> buildSpecification(CatalogSearchRequest request, Set<String> resolvedCategoryFilter) {
+    private Specification<Product> buildSpecification(
+        CatalogSearchRequest request,
+        Set<String> resolvedCategoryFilter
+    ) {
         return (root, query, cb) -> {
+
             query.distinct(true);
-            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
 
+            List<jakarta.persistence.criteria.Predicate> predicates =
+                    new ArrayList<>();
+
+            /*
+            * Recherche textuelle
+            */
             if (request.getQuery() != null && !request.getQuery().isBlank()) {
-                String like = "%" + request.getQuery().toLowerCase(Locale.ROOT) + "%";
-                predicates.add(cb.or(
-                        cb.like(cb.lower(root.get("name")), like),
-                        cb.like(cb.lower(root.get("description")), like),
-                        cb.like(cb.lower(root.get("brand")), like)
-                ));
+
+                String like =
+                        "%" + request.getQuery().toLowerCase(Locale.ROOT) + "%";
+
+                predicates.add(
+                        cb.or(
+                                cb.like(
+                                        cb.lower(root.get("name")),
+                                        like
+                                ),
+                                cb.like(
+                                        cb.lower(root.get("description")),
+                                        like
+                                ),
+                                cb.like(
+                                        cb.lower(root.get("brand")),
+                                        like
+                                )
+                        )
+                );
             }
 
+            /*
+            * Prix minimum
+            */
             if (request.getMinPrice() != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("price"), request.getMinPrice()));
+                predicates.add(
+                        cb.greaterThanOrEqualTo(
+                                root.get("price"),
+                                request.getMinPrice()
+                        )
+                );
             }
 
+            /*
+            * Prix maximum
+            */
             if (request.getMaxPrice() != null) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("price"), request.getMaxPrice()));
+                predicates.add(
+                        cb.lessThanOrEqualTo(
+                                root.get("price"),
+                                request.getMaxPrice()
+                        )
+                );
             }
 
-            if (!request.getColors().isEmpty() || !request.getSizes().isEmpty()) {
-                Join<Product, Variant> variantJoin = root.join("variants", JoinType.INNER);
+            /*
+            * Filtres couleur / taille
+            */
+            if (!request.getColors().isEmpty()
+                    || !request.getSizes().isEmpty()) {
 
+                Join<Product, Variant> variantJoin =
+                        root.join("variants", JoinType.INNER);
+
+                /*
+                * Filtre couleur
+                *
+                * Variant
+                *    -> productColor
+                *          -> name
+                */
                 if (!request.getColors().isEmpty()) {
-                    predicates.add(cb.lower(variantJoin.get("color")).in(request.getColors().stream()
-                            .map(value -> value.toLowerCase(Locale.ROOT))
-                            .toList()));
+
+                    Join<Variant, ProductColor> colorJoin =
+                            variantJoin.join(
+                                    "productColor",
+                                    JoinType.INNER
+                            );
+
+                    predicates.add(
+                            cb.lower(colorJoin.get("name")).in(
+                                    request.getColors().stream()
+                                            .map(value ->
+                                                    value.toLowerCase(Locale.ROOT)
+                                            )
+                                            .toList()
+                            )
+                    );
                 }
 
+                /*
+                * Filtre taille
+                */
                 if (!request.getSizes().isEmpty()) {
-                    predicates.add(cb.lower(variantJoin.get("size")).in(request.getSizes().stream()
-                            .map(value -> value.toLowerCase(Locale.ROOT))
-                            .toList()));
+
+                    predicates.add(
+                            cb.lower(
+                                    variantJoin.get("size")
+                            ).in(
+                                    request.getSizes().stream()
+                                            .map(value ->
+                                                    value.toLowerCase(Locale.ROOT)
+                                            )
+                                            .toList()
+                            )
+                    );
                 }
             }
 
+            /*
+            * Filtre catégories
+            */
             if (!resolvedCategoryFilter.isEmpty()) {
-                Join<Product, ProductCategory> productCategoryJoin = root.join("productCategories", JoinType.INNER);
-                Join<ProductCategory, com.backend.ecommerce.entity.Category> categoryJoin = productCategoryJoin.join("category", JoinType.INNER);
-                predicates.add(cb.lower(categoryJoin.get("name")).in(resolvedCategoryFilter));
+
+                Join<Product, ProductCategory> productCategoryJoin =
+                        root.join(
+                                "productCategories",
+                                JoinType.INNER
+                        );
+
+                Join<ProductCategory, Category> categoryJoin =
+                        productCategoryJoin.join(
+                                "category",
+                                JoinType.INNER
+                        );
+
+                predicates.add(
+                        cb.lower(categoryJoin.get("name")).in(
+                                resolvedCategoryFilter
+                        )
+                );
             }
 
-            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+            return cb.and(
+                    predicates.toArray(
+                            new jakarta.persistence.criteria.Predicate[0]
+                    )
+            );
         };
     }
-
     private Pageable buildPageable(Integer page, Integer size, String sort) {
         int safePage = page == null || page < 0 ? 0 : page;
         int safeSize = size == null || size <= 0 ? 24 : Math.min(size, 60);
@@ -565,7 +670,7 @@ public class CatalogServiceImpl implements CatalogService {
                 .toList();
 
         return variants.stream().map(variant -> {
-            List<Integer> imageIds = imagesByColor.getOrDefault(variant.getColor(), List.of()).stream()
+            List<Integer> imageIds = imagesByColor.getOrDefault(variant.getProductColor() != null ? variant.getProductColor().getName() : null, List.of()).stream()
                     .map(CatalogProductImageResponse::getId)
                     .filter(id -> id != null)
                     .toList();
@@ -574,12 +679,12 @@ public class CatalogServiceImpl implements CatalogService {
                 imageIds = defaultImageIds;
             }
 
-            int stock = variant.getStock() == null ? 0 : variant.getStock();
+            int stock = variant.getStock() == null ? 0 : variant.getStock().getAvailableQuantity();
 
             return new CatalogProductVariantDetailResponse(
                     variant.getId(),
                     variant.getSku(),
-                    variant.getColor(),
+                    variant.getProductColor() != null ? variant.getProductColor().getName() : null,
                     variant.getSize(),
                     variant.getPrice(),
                     stock,
@@ -593,9 +698,9 @@ public class CatalogServiceImpl implements CatalogService {
         Map<String, Map<String, CatalogVariantAvailabilityResponse>> matrix = new LinkedHashMap<>();
 
         for (Variant variant : variants) {
-            String colorKey = normalizeMatrixKey(variant.getColor());
+            String colorKey = normalizeMatrixKey(variant.getProductColor() != null ? variant.getProductColor().getName() : null);
             String sizeKey = normalizeMatrixKey(variant.getSize());
-            int stock = variant.getStock() == null ? 0 : variant.getStock();
+            int stock = variant.getStock() == null ? 0 : variant.getStock().getAvailableQuantity();
 
             matrix.computeIfAbsent(colorKey, ignored -> new LinkedHashMap<>())
                     .put(sizeKey, new CatalogVariantAvailabilityResponse(variant.getId(), stock, stock > 0));
@@ -613,12 +718,12 @@ public class CatalogServiceImpl implements CatalogService {
         Map<String, Set<String>> sizeByColor = new HashMap<>();
 
         for (Variant variant : variants) {
-            String color = trimToNull(variant.getColor());
+            String color = trimToNull(variant.getProductColor() != null ? variant.getProductColor().getName() : null);
             if (color == null) {
                 continue;
             }
 
-            int stock = variant.getStock() == null ? 0 : variant.getStock();
+            int stock = variant.getStock() == null ? 0 : variant.getStock().getAvailableQuantity();
             stockByColor.merge(color, Math.max(stock, 0), Integer::sum);
 
             String size = trimToNull(variant.getSize());
@@ -651,7 +756,7 @@ public class CatalogServiceImpl implements CatalogService {
                 continue;
             }
 
-            int stock = variant.getStock() == null ? 0 : variant.getStock();
+            int stock = variant.getStock() == null ? 0 : variant.getStock().getAvailableQuantity();
             stockBySize.merge(size, Math.max(stock, 0), Integer::sum);
         }
 

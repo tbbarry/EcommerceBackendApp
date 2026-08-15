@@ -115,7 +115,7 @@ public class ProductServiceImpl implements ProductService {
         saveProductImages(savedProduct, request.getImageUrls(), colorMap);
 
         if (variants.isEmpty()) {
-            throw new BusinessException("Chaque produit doit avoir au moins une variante");
+            throw new BusinessException("Chaque produit doit avoir au moins une variante", "PRODUCT_MUST_HAVE_AT_LEAST_ONE_VARIANT");
         }
 
         return buildProductResponse(savedProduct, colorMap, variants);
@@ -128,11 +128,11 @@ public class ProductServiceImpl implements ProductService {
 
     private void validateCreateRequest(ProductCreateRequest request) {
         if (request.getPrice() == null || request.getPrice().compareTo(BigDecimal.ZERO) < 0) {
-            throw new BusinessException("Le prix doit etre superieur ou egal a 0");
+            throw new BusinessException("Le prix doit etre superieur ou egal a 0", "PRICE_MUST_BE_GREATER_THAN_OR_EQUAL_TO_ZERO");
         }
 
         if (request.getStock() != null && request.getStock() < 0) {
-            throw new BusinessException("Le stock doit etre superieur ou egal a 0");
+            throw new BusinessException("Le stock doit etre superieur ou egal a 0", "STOCK_MUST_BE_GREATER_THAN_OR_EQUAL_TO_ZERO");
         }
     }
 
@@ -211,50 +211,193 @@ public class ProductServiceImpl implements ProductService {
         return createdVariants;
     }
 
-    private Variant createVariant(Product product, String color, String size, Integer stock, Set<String> comboGuard) {
+    private Variant createVariant(
+        Product product,
+        String color,
+        String size,
+        Integer stock,
+        Set<String> comboGuard
+    ) {
         String normalizedColor = sanitize(color);
         String normalizedSize = sanitize(size);
         Integer safeStock = stock == null ? 0 : stock;
 
+        // Vérification du stock
         if (safeStock < 0) {
-            throw new BusinessException("Le stock d'une variante doit etre superieur ou egal a 0");
+            throw new BusinessException(
+                    "Le stock d'une variante doit etre superieur ou egal a 0",
+                    "VARIANT_STOCK_MUST_BE_GREATER_THAN_OR_EQUAL_TO_ZERO"
+            );
         }
 
-        String comboKey = (normalizedColor == null ? "<null>" : normalizedColor.toLowerCase(Locale.ROOT))
+        /*
+        * Protection contre les doublons dans la requête actuelle.
+        *
+        * Exemples :
+        * null + null -> "<null>|<null>"
+        * Rouge + null -> "rouge|<null>"
+        * null + M -> "<null>|m"
+        * Rouge + M -> "rouge|m"
+        */
+        String comboKey =
+                (normalizedColor == null
+                        ? "<null>"
+                        : normalizedColor.toLowerCase(Locale.ROOT))
                 + "|"
-                + (normalizedSize == null ? "<null>" : normalizedSize.toLowerCase(Locale.ROOT));
+                + (normalizedSize == null
+                        ? "<null>"
+                        : normalizedSize.toLowerCase(Locale.ROOT));
 
         if (!comboGuard.add(comboKey)) {
-            throw new BusinessException("Deux variantes identiques ne sont pas autorisees");
+            throw new BusinessException(
+                    "Deux variantes identiques ne sont pas autorisees",
+                    "DUPLICATE_VARIANT_NOT_ALLOWED"
+            );
         }
 
-        if (normalizedColor != null && normalizedSize != null
-                && variantRepository.existsByProductIdAndColorIgnoreCaseAndSizeIgnoreCase(product.getId(), normalizedColor, normalizedSize)) {
-            throw new BusinessException("Une variante identique existe deja");
-        }
-
-        Variant variant = new Variant();
-        variant.setProduct(product);
-        variant.setColor(normalizedColor);
-        variant.setSize(normalizedSize);
-        variant.setPrice(product.getPrice());
-        variant.setStock(safeStock);
+        /*
+        * Vérification des doublons déjà présents en base.
+        */
+        boolean alreadyExists;
 
         if (normalizedColor == null && normalizedSize == null) {
-            variant.setSku(skuGeneratorService.generateSimpleSku(product.getName()));
+
+            /*
+            * Produit unique :
+            * aucune couleur + aucune taille
+            */
+            alreadyExists =
+                    variantRepository.existsByProductIdAndProductColorIsNullAndSizeIsNull(
+                            product.getId()
+                    );
+
+        } else if (normalizedColor != null && normalizedSize != null) {
+
+            /*
+            * Variante avec couleur + taille
+            */
+            alreadyExists =
+                    variantRepository
+                            .existsByProductIdAndProductColorNameIgnoreCaseAndSizeIgnoreCase(
+                                    product.getId(),
+                                    normalizedColor,
+                                    normalizedSize
+                            );
+
+        } else if (normalizedColor != null) {
+
+            /*
+            * Variante avec couleur uniquement
+            */
+            alreadyExists =
+                    variantRepository
+                            .existsByProductIdAndProductColorNameIgnoreCaseAndSizeIsNull(
+                                    product.getId(),
+                                    normalizedColor
+                            );
+
         } else {
-            variant.setSku(skuGeneratorService.generateVariantSku(product.getName(), normalizedColor, normalizedSize));
+
+            /*
+            * Variante avec taille uniquement
+            */
+            alreadyExists =
+                    variantRepository
+                            .existsByProductIdAndProductColorIsNullAndSizeIgnoreCase(
+                                    product.getId(),
+                                    normalizedSize
+                            );
         }
 
+        if (alreadyExists) {
+            throw new BusinessException(
+                    "Une variante identique existe deja",
+                    "IDENTICAL_VARIANT_ALREADY_EXISTS"
+            );
+        }
+
+        /*
+        * Création de la variante
+        */
+        Variant variant = new Variant();
+
+        variant.setProduct(product);
+        variant.setSize(normalizedSize);
+        variant.setPrice(product.getPrice());
+
+        /*
+        * Association de la couleur.
+        *
+        * Si aucune couleur n'est fournie,
+        * productColor reste null.
+        */
+        if (normalizedColor != null) {
+
+            ProductColor productColor =
+                    productColorRepository
+                            .findByProductIdAndNameIgnoreCase(
+                                    product.getId(),
+                                    normalizedColor
+                            )
+                            .orElseGet(() -> {
+
+                                ProductColor newColor = new ProductColor();
+
+                                newColor.setProduct(product);
+                                newColor.setName(normalizedColor);
+
+                                return productColorRepository.save(newColor);
+                            });
+
+            variant.setProductColor(productColor);
+        }
+
+        /*
+        * Génération du SKU.
+        *
+        * Produit sans couleur ni taille :
+        * SKU simple.
+        *
+        * Produit avec au moins une variante :
+        * SKU basé sur couleur/taille.
+        */
+        if (normalizedColor == null && normalizedSize == null) {
+
+            variant.setSku(
+                    skuGeneratorService.generateSimpleSku(
+                            product.getName()
+                    )
+            );
+
+        } else {
+
+            variant.setSku(
+                    skuGeneratorService.generateVariantSku(
+                            product.getName(),
+                            normalizedColor,
+                            normalizedSize
+                    )
+            );
+        }
+
+        /*
+        * Sauvegarde de la variante
+        */
         Variant savedVariant = variantRepository.save(variant);
 
+        /*
+        * Création du stock associé à la variante
+        */
         Stock stockRef = new Stock();
+
         stockRef.setVariant(savedVariant);
         stockRef.setQuantity(safeStock);
+
         stockRepository.save(stockRef);
 
         return savedVariant;
     }
+
 
     private void saveProductImages(Product product, List<String> imageUrls, Map<String, ProductColor> colorMap) {
         if (imageUrls == null || imageUrls.isEmpty()) {
@@ -293,9 +436,9 @@ public class ProductServiceImpl implements ProductService {
                 new VariantResponse(
                         variant.getId(),
                         variant.getSku(),
-                        variant.getStock(),
+                        variant.getStock().getAvailableQuantity(),
                         variant.getSize(),
-                        variant.getColor()
+                        variant.getProductColor() != null ? variant.getProductColor().getName() : null
                 )
         ).toList());
 
@@ -342,9 +485,9 @@ public class ProductServiceImpl implements ProductService {
             .map(variant -> new VariantResponse(
                 variant.getId(),
                 variant.getSku(),
-                variant.getStock(),
+                variant.getStock().getAvailableQuantity(),
                 variant.getSize(),
-                variant.getColor()
+                variant.getProductColor() != null ? variant.getProductColor().getName() : null
             ))
             .toList());
 

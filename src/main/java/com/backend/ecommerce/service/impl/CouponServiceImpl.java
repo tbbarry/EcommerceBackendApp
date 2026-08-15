@@ -46,7 +46,7 @@ public class CouponServiceImpl implements CouponService {
         validateCouponDefinition(dto);
 
         if (couponRepository.existsByCodeIgnoreCase(dto.getCode())) {
-            throw new BusinessException("Un coupon avec ce code existe deja");
+            throw new BusinessException("Un coupon avec ce code existe deja", "COUPON_CODE_EXISTS");
         }
 
         Coupon coupon = new Coupon();
@@ -64,7 +64,7 @@ public class CouponServiceImpl implements CouponService {
         couponRepository.findByCodeIgnoreCase(dto.getCode())
                 .filter(found -> !found.getId().equals(id))
                 .ifPresent(found -> {
-                    throw new BusinessException("Un coupon avec ce code existe deja");
+                    throw new BusinessException("Un coupon avec ce code existe deja", "COUPON_CODE_EXISTS");
                 });
 
         Integer preservedUsedCount = existing.getUsedCount() != null ? existing.getUsedCount() : 0;
@@ -84,33 +84,33 @@ public class CouponServiceImpl implements CouponService {
     @Transactional(readOnly = true)
     public Coupon validateCoupon(String code, User user, BigDecimal orderAmount) {
         if (code == null || code.trim().isEmpty()) {
-            throw new BusinessException("Le code coupon est obligatoire");
+            throw new BusinessException("Le code coupon est obligatoire", "COUPON_CODE_REQUIRED");
         }
 
         Coupon coupon = couponRepository.findByCodeIgnoreCase(code.trim())
-                .orElseThrow(() -> new ResourceNotFoundException("Coupon not found with code: " + code));
+                .orElseThrow(() -> new ResourceNotFoundException("Coupon not found with code: " + code, "COUPON_NOT_FOUND"));
 
         if (!Boolean.TRUE.equals(coupon.getActive())) {
-            throw new BusinessException("Ce coupon est inactif");
+            throw new BusinessException("Ce coupon est inactif", "COUPON_INACTIVE");
         }
 
         LocalDateTime now = LocalDateTime.now();
         if (now.isBefore(coupon.getStartDate()) || now.isAfter(coupon.getEndDate())) {
-            throw new BusinessException("Ce coupon n'est pas valide pour la date actuelle");
+            throw new BusinessException("Ce coupon n'est pas valide pour la date actuelle", "COUPON_INVALID_DATE");
         }
 
         BigDecimal safeOrderAmount = orderAmount != null ? orderAmount : BigDecimal.ZERO;
         if (coupon.getMinimumOrderAmount() != null && safeOrderAmount.compareTo(coupon.getMinimumOrderAmount()) < 0) {
-            throw new BusinessException("Montant minimum non atteint pour ce coupon");
+            throw new BusinessException("Montant minimum non atteint pour ce coupon", "COUPON_MINIMUM_NOT_REACHED");
         }
 
         if (coupon.getUsageLimit() != null && coupon.getUsedCount() >= coupon.getUsageLimit()) {
-            throw new BusinessException("La limite d'utilisation de ce coupon est atteinte");
+            throw new BusinessException("La limite d'utilisation de ce coupon est atteinte", "COUPON_USAGE_LIMIT_REACHED");
         }
 
         if (Boolean.TRUE.equals(coupon.getOneTimePerUser()) && user != null
                 && couponUsageRepository.existsByCouponIdAndUserId(coupon.getId(), user.getId())) {
-            throw new BusinessException("Ce coupon est deja utilise par cet utilisateur");
+            throw new BusinessException("Ce coupon est deja utilise par cet utilisateur", "COUPON_ALREADY_USED_BY_USER");
         }
 
         return coupon;
@@ -153,7 +153,7 @@ public class CouponServiceImpl implements CouponService {
 
     private Coupon getEntityById(Integer id) {
         return couponRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Coupon not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Coupon not found with id: " + id, "COUPON_NOT_FOUND"));
     }
 
     private void applyDtoToEntity(CouponDto dto, Coupon entity) {
@@ -203,19 +203,19 @@ public class CouponServiceImpl implements CouponService {
 
     private void validateCouponDefinition(CouponDto dto) {
         if (dto.getStartDate() != null && dto.getEndDate() != null && dto.getEndDate().isBefore(dto.getStartDate())) {
-            throw new BusinessException("La date de fin doit etre superieure a la date de debut");
+            throw new BusinessException("La date de fin doit etre superieure a la date de debut", "COUPON_INVALID_DATE_RANGE");
         }
 
         if (dto.getDiscountType() == DiscountType.PERCENTAGE
                 && dto.getDiscountValue() != null
                 && dto.getDiscountValue().compareTo(BigDecimal.valueOf(100)) > 0) {
-            throw new BusinessException("Un coupon percentage ne peut pas depasser 100%");
+            throw new BusinessException("Un coupon percentage ne peut pas depasser 100%", "COUPON_PERCENTAGE_INVALID");
         }
 
         if (dto.getDiscountType() == DiscountType.FREE_SHIPPING
                 && dto.getDiscountValue() != null
                 && dto.getDiscountValue().compareTo(BigDecimal.ZERO) != 0) {
-            throw new BusinessException("FREE_SHIPPING doit avoir discountValue = 0");
+            throw new BusinessException("FREE_SHIPPING doit avoir discountValue = 0", "COUPON_FREE_SHIPPING_INVALID");
         }
     }
 }

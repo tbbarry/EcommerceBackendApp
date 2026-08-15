@@ -1,5 +1,5 @@
 package com.backend.ecommerce.entity;
-
+import com.backend.ecommerce.enums.PaymentStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -10,7 +10,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "payments")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -28,9 +29,17 @@ public class Payment extends BaseEntity{
     //A voir si peut être null ou pas
     private LocalDateTime paidAt;
 
-    @NotBlank
+    @NotNull
+    @Enumerated(EnumType.STRING)    
     @Column(nullable = false)
-    private String status;
+    private PaymentStatus status;
+
+
+    @Column(nullable = true, unique = true)
+    private String stripePaymentIntentId;
+
+    @Column(unique = true)
+    private String stripeCheckoutSessionId;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
