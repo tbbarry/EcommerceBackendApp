@@ -4,11 +4,9 @@ import java.util.List;
 import com.backend.ecommerce.dto.VariantDto;
 import com.backend.ecommerce.entity.Variant;
 import com.backend.ecommerce.entity.Product;
-import com.backend.ecommerce.entity.ProductColor;
 import com.backend.ecommerce.repository.ProductRepository;
 import com.backend.ecommerce.repository.VariantRepository;
 import com.backend.ecommerce.service.VariantService;
-import com.backend.ecommerce.repository.ProductColorRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +17,7 @@ public class VariantServiceImpl implements VariantService {
 
     private final VariantRepository variantRepository;
     private final ProductRepository productRepository;
-    private final ProductColorRepository productColorRepository;
+
 
     @Override
     @Transactional(readOnly = true)
@@ -72,7 +70,7 @@ public class VariantServiceImpl implements VariantService {
 
     private void applyDtoToEntity(VariantDto dto, Variant entity) {
 
-        entity.setSize(dto.getSize());
+        // entity.setSize(dto.getSize());
         entity.setSku(dto.getSku());
         entity.setPrice(dto.getPrice());
 
@@ -96,6 +94,8 @@ public class VariantServiceImpl implements VariantService {
         // ProductColor optionnelle
         if (dto.getProductColorId() != null) {
 
+            /*  
+
             ProductColor productColor =
                     productColorRepository.findById(dto.getProductColorId())
                             .orElseThrow(() ->
@@ -115,12 +115,12 @@ public class VariantServiceImpl implements VariantService {
                 );
             }
 
-            entity.setProductColor(productColor);
+            //entity.setProductColor(productColor); */
 
         } else {
             // Produit sans couleur
-            entity.setProductColor(null);
-        }
+           // entity.setProductColor(null);
+        }  
     }
 
     private VariantDto toDto(Variant entity) {
@@ -128,7 +128,7 @@ public class VariantServiceImpl implements VariantService {
         VariantDto dto = new VariantDto();
 
         dto.setId(entity.getId());
-        dto.setSize(entity.getSize());
+        dto.setSize("M");
         dto.setSku(entity.getSku());
         dto.setPrice(entity.getPrice());
 
@@ -138,11 +138,11 @@ public class VariantServiceImpl implements VariantService {
                         : null
         );
 
-        dto.setProductColorId(
-                entity.getProductColor() != null
-                        ? entity.getProductColor().getId()
-                        : null
-        );
+       // dto.setProductColorId(
+        //        entity.getProductColor() != null
+        //                ? entity.getProductColor().getId()
+        //                : null
+        //);
 
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());

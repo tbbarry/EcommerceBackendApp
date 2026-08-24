@@ -1,21 +1,13 @@
 package com.backend.ecommerce.controller;
 
-import com.backend.ecommerce.dto.ProductDto;
-import com.backend.ecommerce.dto.ProductCreateRequest;
-import com.backend.ecommerce.dto.ProductResponse;
-import com.backend.ecommerce.service.ProductService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
 public class ProductController {
-
+   /* 
     private final ProductService productService;
 
     // PUBLIC : voir tous les produits
@@ -56,4 +48,5 @@ public class ProductController {
         productService.delete(id);
         return ResponseEntity.noContent().build();
     }
+    */ 
 }

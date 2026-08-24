@@ -528,8 +528,8 @@ public class CartServiceImpl implements CartService {
                             product.getName(),
                             product.getSlug(),
                             product.getBrand(),
-                            variant.getProductColor() != null ? variant.getProductColor().getName() : null,
-                            variant.getSize(),
+                            "Rouge",
+                            "S",
                             item.getQuantity(),
 
                             // Le frontend continue

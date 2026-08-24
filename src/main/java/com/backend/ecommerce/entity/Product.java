@@ -50,10 +50,6 @@ public class Product extends BaseEntity {
     )
     private List<Variant> variants = new ArrayList<>();
 
-    @Valid
-    @Builder.Default
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductColor> colors = new ArrayList<>();
 
     @Valid
     @Builder.Default

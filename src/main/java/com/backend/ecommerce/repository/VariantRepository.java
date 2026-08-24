@@ -14,7 +14,7 @@ public interface VariantRepository extends JpaRepository<Variant, Integer> {
 
     boolean existsBySku(String sku);
 
-
+  /* 
     boolean existsByProductIdAndProductColorNameIgnoreCaseAndSizeIgnoreCase(
         Integer productId,
         String color,
@@ -34,7 +34,7 @@ public interface VariantRepository extends JpaRepository<Variant, Integer> {
     boolean existsByProductIdAndProductColorIsNullAndSizeIsNull(
             Integer productId
     );
-
+   */
     List<Variant> findByProductId(Integer productId);
 
     List<Variant> findByProductIdIn(List<Integer> productIds);

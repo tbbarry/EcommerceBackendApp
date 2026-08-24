@@ -18,7 +18,6 @@ import com.backend.ecommerce.dto.CatalogSearchResponse;
 import com.backend.ecommerce.dto.CatalogVariantAvailabilityResponse;
 import com.backend.ecommerce.entity.Category;
 import com.backend.ecommerce.entity.Product;
-import com.backend.ecommerce.entity.ProductColor;
 import com.backend.ecommerce.entity.ProductCategory;
 import com.backend.ecommerce.entity.ProductImage;
 import com.backend.ecommerce.entity.Stock;
@@ -58,7 +57,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class CatalogServiceImpl implements CatalogService {
+public class CatalogServiceImpl1 implements CatalogService {
 
     private static final List<String> ALLOWED_SORTS = List.of("relevance", "newest", "priceAsc", "priceDesc", "nameAsc", "nameDesc");
 
@@ -177,7 +176,7 @@ public class CatalogServiceImpl implements CatalogService {
         List<ProductCategory> categories = categoriesByProductId.getOrDefault(product.getId(), List.of());
 
         ProductImage defaultImage = resolveDefaultImage(images);
-
+        /*categories 
         Set<String> availableColors = variants.stream()
                 .map(variant -> variant.getProductColor() != null ? variant.getProductColor().getName() : null)
                 .filter(value -> value != null && !value.isBlank())
@@ -188,6 +187,7 @@ public class CatalogServiceImpl implements CatalogService {
                 .map(Variant::getSize)
                 .filter(value -> value != null && !value.isBlank())
                 .collect(Collectors.toCollection(HashSet::new));
+                    */
 
         Set<String> categoryNames = categories.stream()
                 .map(ProductCategory::getCategory)
@@ -209,8 +209,8 @@ public class CatalogServiceImpl implements CatalogService {
         card.setPrice(product.getPrice());
         card.setDefaultImageUrl(defaultImage != null ? defaultImage.getUrl() : null);
         card.setDefaultImageAlt(defaultImage != null ? defaultImage.getAlt() : null);
-        card.setAvailableColors(sortValues(availableColors));
-        card.setAvailableSizes(sortValues(availableSizes));
+        // card.setAvailableColors(sortValues(availableColors));
+        // card.setAvailableSizes(sortValues(availableSizes));
         card.setCategories(sortValues(categoryNames));
         card.setInStock(inStock);
 
@@ -228,8 +228,8 @@ public class CatalogServiceImpl implements CatalogService {
         Map<String, Set<Integer>> categoryProductMap = new HashMap<>();
 
         for (Variant variant : variantRepository.findByProductIdIn(filteredProductIds)) {
-            addFacetValue(colorProductMap, variant.getProductColor() != null ? variant.getProductColor().getName() : null, variant.getProduct().getId());
-            addFacetValue(sizeProductMap, variant.getSize(), variant.getProduct().getId());
+            //addFacetValue(colorProductMap, variant.getProductColor() != null ? variant.getProductColor().getName() : null, variant.getProduct().getId());
+            // addFacetValue(sizeProductMap, variant.getSize(), variant.getProduct().getId());
         }
 
         for (ProductCategory productCategory : productCategoryRepository.findByProductIdIn(filteredProductIds)) {
@@ -641,7 +641,7 @@ public class CatalogServiceImpl implements CatalogService {
                 image.getUrl(),
                 image.getAlt(),
                 image.isMain(),
-                image.getProductColor() != null ? image.getProductColor().getName() : null
+                "rouge"
         );
     }
 
@@ -670,7 +670,7 @@ public class CatalogServiceImpl implements CatalogService {
                 .toList();
 
         return variants.stream().map(variant -> {
-            List<Integer> imageIds = imagesByColor.getOrDefault(variant.getProductColor() != null ? variant.getProductColor().getName() : null, List.of()).stream()
+            List<Integer> imageIds = imagesByColor.getOrDefault("rouge", List.of()).stream()
                     .map(CatalogProductImageResponse::getId)
                     .filter(id -> id != null)
                     .toList();
@@ -684,8 +684,8 @@ public class CatalogServiceImpl implements CatalogService {
             return new CatalogProductVariantDetailResponse(
                     variant.getId(),
                     variant.getSku(),
-                    variant.getProductColor() != null ? variant.getProductColor().getName() : null,
-                    variant.getSize(),
+                    "Maron",
+                    "M",
                     variant.getPrice(),
                     stock,
                     stock > 0,
@@ -698,8 +698,8 @@ public class CatalogServiceImpl implements CatalogService {
         Map<String, Map<String, CatalogVariantAvailabilityResponse>> matrix = new LinkedHashMap<>();
 
         for (Variant variant : variants) {
-            String colorKey = normalizeMatrixKey(variant.getProductColor() != null ? variant.getProductColor().getName() : null);
-            String sizeKey = normalizeMatrixKey(variant.getSize());
+            String colorKey = normalizeMatrixKey("Rouge");
+            String sizeKey = normalizeMatrixKey("S");
             int stock = variant.getStock() == null ? 0 : variant.getStock().getAvailableQuantity();
 
             matrix.computeIfAbsent(colorKey, ignored -> new LinkedHashMap<>())
@@ -718,18 +718,18 @@ public class CatalogServiceImpl implements CatalogService {
         Map<String, Set<String>> sizeByColor = new HashMap<>();
 
         for (Variant variant : variants) {
-            String color = trimToNull(variant.getProductColor() != null ? variant.getProductColor().getName() : null);
-            if (color == null) {
-                continue;
-            }
+            // String color = trimToNull(variant.getProductColor() != null ? variant.getProductColor().getName() : null);
+            // if (color == null) {
+            //     continue;
+            // }
 
             int stock = variant.getStock() == null ? 0 : variant.getStock().getAvailableQuantity();
-            stockByColor.merge(color, Math.max(stock, 0), Integer::sum);
+            // stockByColor.merge(color, Math.max(stock, 0), Integer::sum);
 
-            String size = trimToNull(variant.getSize());
-            if (size != null && stock > 0) {
-                sizeByColor.computeIfAbsent(color, ignored -> new LinkedHashSet<>()).add(size);
-            }
+            // String size = trimToNull(variant.getSize());
+            // if (size != null && stock > 0) {
+            //     sizeByColor.computeIfAbsent(color, ignored -> new LinkedHashSet<>()).add(size);
+            // }
         }
 
         return colors.stream()
@@ -751,13 +751,13 @@ public class CatalogServiceImpl implements CatalogService {
         Map<String, Integer> stockBySize = new HashMap<>();
 
         for (Variant variant : variants) {
-            String size = trimToNull(variant.getSize());
-            if (size == null) {
-                continue;
-            }
+            // String size = trimToNull(variant.getSize());
+            // if (size == null) {
+            //     continue;
+            // }
 
             int stock = variant.getStock() == null ? 0 : variant.getStock().getAvailableQuantity();
-            stockBySize.merge(size, Math.max(stock, 0), Integer::sum);
+            // stockBySize.merge(size, Math.max(stock, 0), Integer::sum);
         }
 
         return stockBySize.entrySet().stream()

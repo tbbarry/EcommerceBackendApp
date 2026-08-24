@@ -14,4 +14,6 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
 			where c.parentCategory is null
 			""")
 	List<Category> findRootCategoriesWithSubCategories();
+	List<Category> findByParentCategoryIsNullOrderByName();
+	List<Category> findByParentCategoryIdOrderByName(Integer parentId);
 }

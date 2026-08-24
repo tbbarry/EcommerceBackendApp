@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
-
 @Entity
 @Table(name = "product_images")
 @Getter
@@ -19,7 +18,7 @@ public class ProductImage extends BaseEntity {
     @Column(nullable = false)
     private String url;
 
-    @Column(nullable = true)
+    @Column
     private String objectKey;
 
     @NotBlank
@@ -34,12 +33,31 @@ public class ProductImage extends BaseEntity {
     @Column(nullable = false)
     private Integer displayOrder = 0;
 
+    /**
+     * Produit auquel appartient l'image.
+     */
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "productId", nullable = false)
+    @ManyToOne(
+        fetch = FetchType.LAZY,
+        optional = false
+    )
+    @JoinColumn(
+        name = "productId",
+        nullable = false
+    )
     private Product product;
 
+    /**
+     * Valeur d'attribut visuel qui pilote l'image.
+     *
+     * Exemple :
+     *
+     * Attribute : Couleur
+     * Value     : Rouge
+     *
+     * Si null, l'image est une image générale du produit.
+     */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "productColorId")
-    private ProductColor productColor;
+    @JoinColumn(name = "visualAttributeValueId")
+    private AttributeValue visualAttributeValue;
 }

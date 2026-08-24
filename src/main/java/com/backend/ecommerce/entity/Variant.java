@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,10 +21,6 @@ import java.util.List;
 @Builder
 public class Variant extends BaseEntity {
 
-
-    @Column(nullable = true)
-    private String size;
-
     @Column(nullable = false, unique = true)
     private String sku;
 
@@ -33,36 +30,67 @@ public class Variant extends BaseEntity {
     private BigDecimal price;
 
     /**
-     * Toujours présent.
-    */
+     * Produit parent.
+     */
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "productId", nullable = false)
+    @ManyToOne(
+        fetch = FetchType.LAZY,
+        optional = false
+    )
+    @JoinColumn(
+        name = "productId",
+        nullable = false
+    )
     private Product product;
 
     /**
-     * Optionnel.
-     * Null pour les produits sans couleur.
+     * Attributs de la variante.
+     *
+     * Exemple :
+     *
+     * Taille  = M
+     * Couleur = Rouge
+     * Matière = Coton
      */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "productColorId")
-    private ProductColor productColor;
+    @Valid
+    @Builder.Default
+    @OneToMany(
+        mappedBy = "variant",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
+    private List<VariantAttributeValue> attributeValues = new ArrayList<>();
 
+    /**
+     * Stock de la variante.
+     */
     @Valid
     @Builder.Default
     @OneToOne(
         mappedBy = "variant",
         cascade = CascadeType.ALL
     )
-    private Stock stock = null;
+    private Stock stock = new Stock();
 
+    /**
+     * Articles présents dans les paniers.
+     */
     @Valid
     @Builder.Default
-    @OneToMany(mappedBy = "variant", cascade = CascadeType.ALL)
+    @OneToMany(
+        mappedBy = "variant",
+        cascade = CascadeType.ALL
+    )
     private List<CartItem> cartItems = new ArrayList<>();
 
+    /**
+     * Articles des commandes.
+     */
     @Valid
     @Builder.Default
-    @OneToMany(mappedBy = "variant", cascade = CascadeType.ALL)
+    @OneToMany(
+        mappedBy = "variant",
+        cascade = CascadeType.ALL
+    )
     private List<OrderItem> orderItems = new ArrayList<>();
 }
