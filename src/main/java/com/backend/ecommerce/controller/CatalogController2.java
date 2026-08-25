@@ -24,7 +24,7 @@ public class CatalogController2 {
 
     private final CatalogService2 catalogService;
 
-@GetMapping("/products")
+@GetMapping
 public CatalogResponse search(
         @RequestParam(defaultValue = "0") Integer page,
         @RequestParam(defaultValue = "24") Integer size,

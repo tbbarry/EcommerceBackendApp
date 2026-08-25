@@ -33,12 +33,28 @@ public interface CatalogProductRepository
             @Param("maxPrice") BigDecimal maxPrice
     );  
 
-    @Query("""
-    SELECT DISTINCT pc.product.id
-    FROM ProductCategory pc
-    WHERE pc.category.id = :categoryId
-    """)
-    List<Long> findProductIdsByCategory(@Param("categoryId") Long categoryId);
+ @Query(value = """
+    WITH RECURSIVE category_tree AS (
+        SELECT id
+        FROM categories
+        WHERE id = :categoryId
+
+        UNION ALL
+
+        SELECT c.id
+        FROM categories c
+        INNER JOIN category_tree ct
+            ON c.category_id = ct.id
+    )
+    SELECT DISTINCT pc.product_id
+    FROM product_categories pc
+    WHERE pc.category_id IN (
+        SELECT id FROM category_tree
+    )
+    """, nativeQuery = true)
+    List<Long> findProductIdsByCategory(
+            @Param("categoryId") Long categoryId
+    );
 
     @Query("""
     SELECT p.productId
