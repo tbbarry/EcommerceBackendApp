@@ -7,5 +7,6 @@ public record ProductCardDto(
     String name,
     String slug,
     BigDecimal price,
-    String imageUrl
+    String imageUrl,
+    String categoryName 
 ) {}

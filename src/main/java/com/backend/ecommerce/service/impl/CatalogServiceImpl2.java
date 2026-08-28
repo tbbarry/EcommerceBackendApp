@@ -18,9 +18,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -30,108 +32,103 @@ public class CatalogServiceImpl2 implements CatalogService2 {
     private final CatalogFacetRepository facetRepository;
     private final CategoryRepository categoryRepository;
 
+
     @Override
     public CatalogResponse search(CatalogSearchRequest request) {
-
-        // ============================================================
-        // 1. Recherche des produits
-        // ============================================================
-
         List<Long> productIds = findProductIds(request);
-        List<ProductCardDto> products = productRepository.findCards(productIds,request.getMinPrice(),request.getMaxPrice());
+
+        List<ProductCardDto> products =productRepository.findCardsByIds(
+                        productIds,
+                        request.getMinPrice(),
+                        request.getMaxPrice());
+
         List<FacetValueProjection> facetValues = facetRepository.findFacetsByProductIds(productIds);
         List<FacetDto> facets = buildFacets(facetValues, request);
+
         List<CategoryDto2> categories = buildCategories();
 
-        return new CatalogResponse(products, categories, facets, productIds.size(), request.getPage(), request.getSize());
-    }
+        return new CatalogResponse(
+                products,
+                categories,
+                facets,
+                products.size(),
+                request.getPage(),
+                request.getSize()
+        );
+   }
 
-private List<FacetDto> buildFacets(
-        List<FacetValueProjection> rows,
-        CatalogSearchRequest request
-) {
+   private List<FacetDto> buildFacets(List<FacetValueProjection> rows, CatalogSearchRequest request) {
 
-    Map<Long, List<FacetValueDto>> values = new LinkedHashMap<>();
-    Map<Long, String> codes = new LinkedHashMap<>();
+        Map<Long, List<FacetValueDto>> values = new LinkedHashMap<>();
+        Map<Long, String> codes = new LinkedHashMap<>();
 
-    for (FacetValueProjection row : rows) {
+        for (FacetValueProjection row : rows) {
 
-        codes.putIfAbsent(row.facetId(), row.facetCode());
+                codes.putIfAbsent(row.facetId(), row.facetCode());
 
-        boolean selected = request.getFacets().stream()
-                .anyMatch(f ->
-                        f.getFacetId().equals(row.facetId())
-                        && f.getValueIds().contains(row.valueId())
-                );
+                boolean selected = request.getFacets().stream()
+                        .anyMatch(f ->
+                                f.getFacetId().equals(row.facetId())
+                                && f.getValueIds().contains(row.valueId())
+                        );
 
-        values.computeIfAbsent(row.facetId(), k -> new ArrayList<>())
-                .add(new FacetValueDto(
-                        row.valueId(),
-                        row.valueLabel(),
-                        selected
-                ));
-    }
-
-    return values.entrySet().stream()
-            .map(e -> new FacetDto(
-                    e.getKey(),
-                    codes.get(e.getKey()),
-                    e.getValue()
-            ))
-            .toList();
-}
-    
-private List<Long> findProductIds(CatalogSearchRequest request) {
-
-        List<Long> productIds;
-
-        if (request.getCategoryId() != null) {
-
-                productIds = new ArrayList<>(
-                        productRepository.findProductIdsByCategory(
-                                request.getCategoryId()
-                        )
-                );
-
-        } else {
-
-                productIds = new ArrayList<>(
-                        productRepository.findAllProductIds()
-                );
+                values.computeIfAbsent(row.facetId(), k -> new ArrayList<>())
+                        .add(new FacetValueDto(
+                                row.valueId(),
+                                row.valueLabel(),
+                                selected
+                        ));
         }
 
-        System.out.println("CATEGORY PRODUCT IDS = " + productIds);
+        return values.entrySet().stream()
+                .map(e -> new FacetDto(
+                        e.getKey(),
+                        codes.get(e.getKey()),
+                        e.getValue()
+                ))
+                .toList();
+   }
 
-        // Ensuite seulement : facettes
-        for (FacetFilter facet : request.getFacets()) {
-                System.out.println(
-                "FACET ID = " + facet.getFacetId()
-                + " VALUES = " + facet.getValueIds()
-                );
 
-                List<Long> facetProductIds = facetRepository.findProductIdsByFacet(facet.getFacetId(),facet.getValueIds());
+   private Set<Long> applyFacetFilters(Set<Long> productIds, List<FacetFilter> facets) {
 
-                        
-                System.out.println(
-                        "FACET PRODUCT IDS = " + facetProductIds
-                );
-                productIds.retainAll(facetProductIds);
+    for (FacetFilter facet : facets) {
 
-                System.out.println(
-                "AFTER INTERSECTION = " + productIds
-                );
+        productIds.retainAll(
+                facetRepository.findProductIdsByFacet(
+                        facet.getFacetId(),
+                        facet.getValueIds()
+                )
+        );
 
-                if (productIds.isEmpty()) {
-                break;
-                }
+        if (productIds.isEmpty()) {
+            break;
         }
+    }
 
     return productIds;
 }
-        private List<CategoryDto2> buildCategories() {
 
-        List<Category> rootCategories =
-                categoryRepository.findByParentCategoryIsNullOrderByName();
+private List<Long> findProductIds(CatalogSearchRequest request) {
+
+    Set<Long> productIds = new HashSet<>(
+            productRepository.findProductIdsByCategoryAndPriceRange(
+                    request.getCategoryId(),
+                    request.getMinPrice(),
+                    request.getMaxPrice()
+            )
+    );
+
+    applyFacetFilters(productIds, request.getFacets());
+
+    return new ArrayList<>(productIds);
+}
+        
+
+ 
+    private List<CategoryDto2> buildCategories() {
+
+        List<Category> rootCategories = categoryRepository.findByParentCategoryIsNullOrderByName();
 
         return rootCategories.stream()
                 .map(this::toCategoryDto)
@@ -139,19 +136,19 @@ private List<Long> findProductIds(CatalogSearchRequest request) {
         }
 
 
-private CategoryDto2 toCategoryDto(Category category) {
+   private CategoryDto2 toCategoryDto(Category category) {
 
-    List<CategoryDto2> children =
-            categoryRepository
-                    .findByParentCategoryIdOrderByName(category.getId())
-                    .stream()
-                    .map(this::toCategoryDto)
-                    .toList();
+        List<CategoryDto2> children =
+                categoryRepository
+                        .findByParentCategoryIdOrderByName(category.getId())
+                        .stream()
+                        .map(this::toCategoryDto)
+                        .toList();
 
-    return new CategoryDto2(
-            Long.valueOf(category.getId()),
-            category.getName(),
-            children
-    );
-}
+        return new CategoryDto2(
+                Long.valueOf(category.getId()),
+                category.getName(),
+                children
+        );
+        }
 }

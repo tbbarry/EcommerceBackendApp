@@ -13,27 +13,26 @@ import java.util.List;
 public interface CatalogProductRepository
         extends JpaRepository<CatalogProduct, Long> {
 
-@Query("""
+
+
+    @Query("""
     select new com.backend.ecommerce.dto.ProductCardDto(
         p.productId,
         p.name,
         p.slug,
         p.price,
-        p.imageUrl
+        p.imageUrl,
+        p.categoryName
     )
     from CatalogProduct p
-    where p.productId in :ids
-      and (:minPrice is null or p.price >= :minPrice)
-      and (:maxPrice is null or p.price <= :maxPrice)
-    order by p.name
+    where p.productId in :productIds
     """)
-    List<ProductCardDto> findCards(
-            @Param("ids") List<Long> ids,
-            @Param("minPrice") BigDecimal minPrice,
-            @Param("maxPrice") BigDecimal maxPrice
-    );  
+    List<ProductCardDto> findCardsByIds(
+            @Param("productIds") List<Long> productIds
 
- @Query(value = """
+    );
+
+    @Query(value = """
     WITH RECURSIVE category_tree AS (
         SELECT id
         FROM categories
@@ -47,13 +46,20 @@ public interface CatalogProductRepository
             ON c.category_id = ct.id
     )
     SELECT DISTINCT pc.product_id
-    FROM product_categories pc
-    WHERE pc.category_id IN (
-        SELECT id FROM category_tree
+    FROM CatalogProduct pc
+    WHERE (
+        :categoryId IS NULL
+        OR pc.categoryId IN (
+            SELECT id FROM category_tree
+        )
     )
+    AND (:minPrice IS NULL OR pc.price >= :minPrice)
+    AND (:maxPrice IS NULL OR pc.price <= :maxPrice)
     """, nativeQuery = true)
-    List<Long> findProductIdsByCategory(
-            @Param("categoryId") Long categoryId
+    List<Long> findProductIdsByCategoryAndPriceRange(
+            @Param("categoryId") Long categoryId,
+            @Param("minPrice") BigDecimal minPrice,
+            @Param("maxPrice") BigDecimal maxPrice
     );
 
     @Query("""

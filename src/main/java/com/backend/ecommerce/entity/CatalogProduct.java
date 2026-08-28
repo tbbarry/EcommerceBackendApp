@@ -23,6 +23,7 @@ public class CatalogProduct extends BaseEntity {
     private String slug;
 
     private String imageUrl;
-
     private String brand;
+    private String categoryName;
+    private Long categoryId;
 }

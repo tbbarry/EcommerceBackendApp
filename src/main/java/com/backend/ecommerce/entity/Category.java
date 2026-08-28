@@ -33,8 +33,4 @@ public class Category extends BaseEntity {
     @OneToMany(mappedBy = "parentCategory", cascade = CascadeType.ALL)
     private List<Category> subCategories = new ArrayList<>();
 
-    @Valid
-    @Builder.Default
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
-    private List<ProductCategory> productCategories = new ArrayList<>();
 }
