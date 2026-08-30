@@ -23,48 +23,214 @@ ON CONFLICT (email) DO NOTHING;
 -- ============================================================
 -- CATEGORIES
 --
--- Vêtements
--- ├── T-shirts
--- └── Sweats
+-- Niveau 1
+-- ├── Femme
+-- ├── Homme
+-- ├── Enfant
+-- └── Accessoires
 --
--- Chaussures
--- └── Sneakers
+-- Niveau 2
+-- Femme
+-- ├── Vêtements
+-- ├── Chaussures
+-- └── Accessoires
+--
+-- Homme
+-- ├── Vêtements
+-- ├── Chaussures
+-- └── Accessoires
+--
+-- Enfant
+-- ├── Vêtements
+-- ├── Chaussures
+-- └── Accessoires
 --
 -- Accessoires
--- └── Sacs
+-- ├── Sacs
+-- ├── Ceintures
+-- ├── Bijoux
+-- └── Chapeaux
+--
+-- Niveau 3
+-- Vêtements
+-- ├── T-shirts
+-- ├── Sweats
+-- ├── Chemises
+-- ├── Robes
+-- └── Pantalons
+--
+-- Chaussures
+-- ├── Sneakers
+-- ├── Baskets
+-- └── Bottes
 -- ============================================================
 
 INSERT INTO categories
 (id, category_id, created_at, updated_at, description, name)
 VALUES
 
+-- ============================================================
+-- NIVEAU 1
+-- ============================================================
+
 (1, NULL, NOW(), NOW(),
- 'Tous les vêtements',
- 'Vêtements'),
+ 'Vêtements pour femme',
+ 'Femme'),
 
 (2, NULL, NOW(), NOW(),
- 'Toutes les chaussures',
- 'Chaussures'),
+ 'Vêtements et articles pour homme',
+ 'Homme'),
 
 (3, NULL, NOW(), NOW(),
- 'Tous les accessoires',
+ 'Vêtements et articles pour enfant',
+ 'Enfant'),
+
+(4, NULL, NOW(), NOW(),
+ 'Accessoires de mode',
  'Accessoires'),
 
-(4, 1, NOW(), NOW(),
- 'T-shirts homme et femme',
+
+-- ============================================================
+-- FEMME - NIVEAU 2
+-- ============================================================
+
+(10, 1, NOW(), NOW(),
+ 'Vêtements pour femme',
+ 'Vêtements'),
+
+(11, 1, NOW(), NOW(),
+ 'Chaussures pour femme',
+ 'Chaussures'),
+
+(12, 1, NOW(), NOW(),
+ 'Accessoires pour femme',
+ 'Accessoires'),
+
+
+-- ============================================================
+-- FEMME - NIVEAU 3
+-- ============================================================
+
+(20, 10, NOW(), NOW(),
+ 'T-shirts pour femme',
  'T-shirts'),
 
-(5, 2, NOW(), NOW(),
- 'Chaussures sneakers',
- 'Sneakers'),
-
-(6, 1, NOW(), NOW(),
- 'Sweats et hoodies',
+(21, 10, NOW(), NOW(),
+ 'Sweats et hoodies pour femme',
  'Sweats'),
 
-(7, 3, NOW(), NOW(),
+(22, 10, NOW(), NOW(),
+ 'Robes pour femme',
+ 'Robes'),
+
+(23, 10, NOW(), NOW(),
+ 'Pantalons pour femme',
+ 'Pantalons'),
+
+(24, 11, NOW(), NOW(),
+ 'Sneakers pour femme',
+ 'Sneakers'),
+
+
+-- ============================================================
+-- HOMME - NIVEAU 2
+-- ============================================================
+
+(30, 2, NOW(), NOW(),
+ 'Vêtements pour homme',
+ 'Vêtements'),
+
+(31, 2, NOW(), NOW(),
+ 'Chaussures pour homme',
+ 'Chaussures'),
+
+(32, 2, NOW(), NOW(),
+ 'Accessoires pour homme',
+ 'Accessoires'),
+
+
+-- ============================================================
+-- HOMME - NIVEAU 3
+-- ============================================================
+
+(40, 30, NOW(), NOW(),
+ 'T-shirts pour homme',
+ 'T-shirts'),
+
+(41, 30, NOW(), NOW(),
+ 'Sweats et hoodies pour homme',
+ 'Sweats'),
+
+(42, 30, NOW(), NOW(),
+ 'Chemises pour homme',
+ 'Chemises'),
+
+(43, 30, NOW(), NOW(),
+ 'Pantalons pour homme',
+ 'Pantalons'),
+
+(44, 31, NOW(), NOW(),
+ 'Sneakers pour homme',
+ 'Sneakers'),
+
+
+-- ============================================================
+-- ENFANT - NIVEAU 2
+-- ============================================================
+
+(50, 3, NOW(), NOW(),
+ 'Vêtements pour enfant',
+ 'Vêtements'),
+
+(51, 3, NOW(), NOW(),
+ 'Chaussures pour enfant',
+ 'Chaussures'),
+
+(52, 3, NOW(), NOW(),
+ 'Accessoires pour enfant',
+ 'Accessoires'),
+
+
+-- ============================================================
+-- ENFANT - NIVEAU 3
+-- ============================================================
+
+(60, 50, NOW(), NOW(),
+ 'T-shirts pour enfant',
+ 'T-shirts'),
+
+(61, 50, NOW(), NOW(),
+ 'Sweats pour enfant',
+ 'Sweats'),
+
+(62, 50, NOW(), NOW(),
+ 'Pantalons pour enfant',
+ 'Pantalons'),
+
+(63, 51, NOW(), NOW(),
+ 'Sneakers pour enfant',
+ 'Sneakers'),
+
+
+-- ============================================================
+-- ACCESSOIRES - NIVEAU 2
+-- ============================================================
+
+(70, 4, NOW(), NOW(),
  'Sacs et pochettes',
- 'Sacs')
+ 'Sacs'),
+
+(71, 4, NOW(), NOW(),
+ 'Ceintures',
+ 'Ceintures'),
+
+(72, 4, NOW(), NOW(),
+ 'Bijoux',
+ 'Bijoux'),
+
+(73, 4, NOW(), NOW(),
+ 'Chapeaux et bonnets',
+ 'Chapeaux')
 
 ON CONFLICT (id) DO NOTHING;
 
@@ -131,34 +297,47 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================
 -- PRODUCT CATEGORIES
 --
--- Produit 1 → T-shirts
--- Produit 2 → Sneakers
--- Produit 3 → Sweats
--- Produit 4 → Sacs
--- Produit 5 → Vêtements
--- Produit 6 → Accessoires
--- Produit 7 → Accessoires
--- Produit 8 → Accessoires
---
 -- IMPORTANT :
--- Les catégories enfants permettent de retrouver leur
--- catégorie mère grâce à parentCategory.
+-- On rattache toujours le produit à la catégorie la plus
+-- précise possible.
+--
+-- Produit 1 → Femme → Vêtements → T-shirts
+-- Produit 2 → Homme → Chaussures → Sneakers
+-- Produit 3 → Homme → Vêtements → Sweats
+-- Produit 4 → Accessoires → Sacs
+-- Produit 5 → Homme → Vêtements → Pantalons
+-- Produit 6 → Accessoires
+-- Produit 7 → Accessoires → Ceintures
+-- Produit 8 → Accessoires → Chapeaux
 -- ============================================================
 
 INSERT INTO product_categories
 (id, category_id, product_id, created_at, updated_at)
 VALUES
 
-(1, 4, 1, NOW(), NOW()), -- T-shirt → T-shirts
-(2, 5, 2, NOW(), NOW()), -- Adidas → Sneakers
-(3, 6, 3, NOW(), NOW()), -- Hoodie → Sweats
-(4, 7, 4, NOW(), NOW()), -- Sac → Sacs
+-- T-shirt Nike
+(1, 20, 1, NOW(), NOW()),
 
-(5, 1, 5, NOW(), NOW()), -- Jean → Vêtements
+-- Adidas Runner
+(2, 44, 2, NOW(), NOW()),
 
-(6, 3, 6, NOW(), NOW()), -- Carte cadeau → Accessoires
-(7, 3, 7, NOW(), NOW()), -- Ceinture → Accessoires
-(8, 3, 8, NOW(), NOW())  -- Bonnet → Accessoires
+-- Hoodie Puma
+(3, 41, 3, NOW(), NOW()),
+
+-- Sac Zara
+(4, 70, 4, NOW(), NOW()),
+
+-- Jean Levis
+(5, 43, 5, NOW(), NOW()),
+
+-- Carte cadeau
+(6, 4, 6, NOW(), NOW()),
+
+-- Ceinture Mango
+(7, 71, 7, NOW(), NOW()),
+
+-- Bonnet Uniqlo
+(8, 73, 8, NOW(), NOW())
 
 ON CONFLICT (id) DO NOTHING;
 
@@ -260,14 +439,14 @@ VALUES
 -- Blanc / M
 -- ============================================================
 
-(1, 1, 1, NOW(), NOW()), -- Noir
-(2, 1, 6, NOW(), NOW()), -- S
+(1, 1, 1, NOW(), NOW()),
+(2, 1, 6, NOW(), NOW()),
 
-(3, 2, 1, NOW(), NOW()), -- Noir
-(4, 2, 7, NOW(), NOW()), -- M
+(3, 2, 1, NOW(), NOW()),
+(4, 2, 7, NOW(), NOW()),
 
-(5, 3, 2, NOW(), NOW()), -- Blanc
-(6, 3, 7, NOW(), NOW()), -- M
+(5, 3, 2, NOW(), NOW()),
+(6, 3, 7, NOW(), NOW()),
 
 
 -- ============================================================
@@ -276,11 +455,11 @@ VALUES
 -- Noir / 43
 -- ============================================================
 
-(7, 4, 2, NOW(), NOW()), -- Blanc
-(8, 4, 11, NOW(), NOW()), -- 42
+(7, 4, 2, NOW(), NOW()),
+(8, 4, 11, NOW(), NOW()),
 
-(9, 5, 1, NOW(), NOW()), -- Noir
-(10, 5, 12, NOW(), NOW()), -- 43
+(9, 5, 1, NOW(), NOW()),
+(10, 5, 12, NOW(), NOW()),
 
 
 -- ============================================================
@@ -289,11 +468,11 @@ VALUES
 -- Noir / L
 -- ============================================================
 
-(11, 6, 3, NOW(), NOW()), -- Gris
-(12, 6, 7, NOW(), NOW()), -- M
+(11, 6, 3, NOW(), NOW()),
+(12, 6, 7, NOW(), NOW()),
 
-(13, 7, 1, NOW(), NOW()), -- Noir
-(14, 7, 8, NOW(), NOW()), -- L
+(13, 7, 1, NOW(), NOW()),
+(14, 7, 8, NOW(), NOW()),
 
 
 -- ============================================================
@@ -311,17 +490,11 @@ VALUES
 -- Bleu / 40
 -- ============================================================
 
-(17, 9, 4, NOW(), NOW()), -- Bleu
-(18, 9, 9, NOW(), NOW()), -- 38
+(17, 9, 4, NOW(), NOW()),
+(18, 9, 9, NOW(), NOW()),
 
-(19, 10, 4, NOW(), NOW()), -- Bleu
-(20, 10, 10, NOW(), NOW()), -- 40
-
-
--- ============================================================
--- Produit 6 : Carte cadeau
--- Aucun attribut
--- ============================================================
+(19, 10, 4, NOW(), NOW()),
+(20, 10, 10, NOW(), NOW()),
 
 
 -- ============================================================
@@ -414,18 +587,24 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================
 -- CATALOG PRODUCT FACET
 --
--- IMPORTANT :
--- PAS DE CATEGORY ICI.
---
 -- facet_id 1 = color
 -- facet_id 2 = size
 -- facet_id 3 = brand
 --
--- On stocke ici les valeurs disponibles par produit.
 -- ============================================================
 
 INSERT INTO catalog_product_facet
-(id, product_id, facet_id, facet_code, facet_value_id, value_code, value_label, created_at, updated_at)
+(
+    id,
+    product_id,
+    facet_id,
+    facet_code,
+    facet_value_id,
+    value_code,
+    value_label,
+    created_at,
+    updated_at
+)
 VALUES
 
 -- ============================================================
@@ -478,12 +657,6 @@ VALUES
 (20, 5, 2, 'size', 9, '9', '38', NOW(), NOW()),
 (21, 5, 2, 'size', 10, '10', '40', NOW(), NOW()),
 (22, 5, 3, 'brand', 0, 'levis', 'Levis', NOW(), NOW()),
-
-
--- ============================================================
--- Produit 6 : Carte cadeau
--- Aucun attribut
--- ============================================================
 
 
 -- ============================================================

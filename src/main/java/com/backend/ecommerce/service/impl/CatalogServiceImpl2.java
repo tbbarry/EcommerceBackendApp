@@ -15,6 +15,10 @@ import com.backend.ecommerce.repository.CategoryRepository;
 import com.backend.ecommerce.service.CatalogService2;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -28,19 +32,76 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class CatalogServiceImpl2 implements CatalogService2 {
 
-    private final CatalogProductRepository productRepository;
+    private final CatalogProductRepository catalogProductRepository;
     private final CatalogFacetRepository facetRepository;
     private final CategoryRepository categoryRepository;
 
 
-    @Override
-    public CatalogResponse search(CatalogSearchRequest request) {
+    
+    
+public CatalogResponse search(CatalogSearchRequest request) {
+
+    List<Long> categoryIds = null;
+
+    if (request.getCategoryId() != null) {
+
+        categoryIds = categoryRepository
+                .findCategoryTreeIds(request.getCategoryId())
+                .stream()
+                .map(Long::valueOf)
+                .toList();
+    }
+
+    Page<ProductCardDto> page =
+            catalogProductRepository.search(
+                    request,
+                    categoryIds
+            );
+
+          // -----------------------------------------
+    // 3. Tous les productIds correspondant
+    //    aux filtres
+    // -----------------------------------------
+
+        List<Long> productIds =
+                catalogProductRepository.findProductIdsForFilters(
+                        request,
+                        categoryIds
+                );
+
+         List<FacetValueProjection> facetRows =
+            facetRepository.findFacetsByProductIds(
+                    productIds
+            );
+
+        List<FacetDto> facets =
+                buildFacets(
+                        facetRows,
+                        request
+                );
+
+    return new CatalogResponse(
+            page.getContent(),
+            List.of(),
+            facets,
+            page.getTotalElements(),
+            page.getNumber(),
+            page.getSize()
+    );
+}
+    
+    /* 
+    
+    public CatalogResponse search2(CatalogSearchRequest request) {
+        // Find all child of category Id
+        List<Long> categoryIds = new ArrayList<>();
+        if(request.getCategoryId() != null) {
+            categoryIds = categoryRepository.findCategoryTreeIds(request.getCategoryId());
+        }
+
         List<Long> productIds = findProductIds(request);
 
-        List<ProductCardDto> products =productRepository.findCardsByIds(
-                        productIds,
-                        request.getMinPrice(),
-                        request.getMaxPrice());
+        List<ProductCardDto> products =productRepository.findCardsByIds(productIds);
 
         List<FacetValueProjection> facetValues = facetRepository.findFacetsByProductIds(productIds);
         List<FacetDto> facets = buildFacets(facetValues, request);
@@ -56,7 +117,7 @@ public class CatalogServiceImpl2 implements CatalogService2 {
                 request.getSize()
         );
    }
-
+    */
    private List<FacetDto> buildFacets(List<FacetValueProjection> rows, CatalogSearchRequest request) {
 
         Map<Long, List<FacetValueDto>> values = new LinkedHashMap<>();
@@ -89,7 +150,7 @@ public class CatalogServiceImpl2 implements CatalogService2 {
                 .toList();
    }
 
-
+/* 
    private Set<Long> applyFacetFilters(Set<Long> productIds, List<FacetFilter> facets) {
 
     for (FacetFilter facet : facets) {
@@ -151,4 +212,6 @@ private List<Long> findProductIds(CatalogSearchRequest request) {
                 children
         );
         }
+
+*/
 }

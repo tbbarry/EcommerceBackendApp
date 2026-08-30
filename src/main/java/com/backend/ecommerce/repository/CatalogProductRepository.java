@@ -2,6 +2,8 @@ package com.backend.ecommerce.repository;
 
 import com.backend.ecommerce.dto.ProductCardDto;
 import com.backend.ecommerce.entity.CatalogProduct;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,7 +13,7 @@ import java.math.BigDecimal;
 import java.util.List;
 @Repository
 public interface CatalogProductRepository
-        extends JpaRepository<CatalogProduct, Long> {
+        extends JpaRepository<CatalogProduct, Long>, CatalogProductSearchRepository {
 
 
 
@@ -31,33 +33,41 @@ public interface CatalogProductRepository
             @Param("productIds") List<Long> productIds
 
     );
+    @Query("""
+    select new com.backend.ecommerce.dto.ProductCardDto(
+        p.productId,
+        p.name,
+        p.slug,
+        p.price,
+        p.imageUrl,
+        p.categoryName,
+        p.categoryId
+    )
+    from CatalogProduct p
+    where (:categoryIds is null or p.categoryId in :categoryIds)
+    and (:minPrice is null or p.price >= :minPrice)
+    and (:maxPrice is null or p.price <= :maxPrice)
+    """)
+    Page<ProductCardDto> findCardsProduct(
+            @Param("categoryIds") List<Long> categoryIds,
+            @Param("minPrice") BigDecimal minPrice,
+            @Param("maxPrice") BigDecimal maxPrice,
+            Pageable pageable
+    );
+
 
     @Query(value = """
-    WITH RECURSIVE category_tree AS (
-        SELECT id
-        FROM categories
-        WHERE id = :categoryId
-
-        UNION ALL
-
-        SELECT c.id
-        FROM categories c
-        INNER JOIN category_tree ct
-            ON c.category_id = ct.id
-    )
     SELECT DISTINCT pc.product_id
-    FROM CatalogProduct pc
+    FROM catalog_product pc
     WHERE (
-        :categoryId IS NULL
-        OR pc.categoryId IN (
-            SELECT id FROM category_tree
-        )
+        :categoryIds IS NULL
+        OR pc.category_id IN (:categoryIds)
     )
     AND (:minPrice IS NULL OR pc.price >= :minPrice)
     AND (:maxPrice IS NULL OR pc.price <= :maxPrice)
     """, nativeQuery = true)
-    List<Long> findProductIdsByCategoryAndPriceRange(
-            @Param("categoryId") Long categoryId,
+    List<Long> findProductIdsByCategoriesAndPriceRange(
+            @Param("categoryIds") List<Long> categoryIds,
             @Param("minPrice") BigDecimal minPrice,
             @Param("maxPrice") BigDecimal maxPrice
     );
