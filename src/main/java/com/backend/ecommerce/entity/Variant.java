@@ -38,7 +38,7 @@ public class Variant extends BaseEntity {
         optional = false
     )
     @JoinColumn(
-        name = "productId",
+        name = "product_id",
         nullable = false
     )
     private Product product;

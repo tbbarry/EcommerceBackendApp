@@ -11,7 +11,7 @@ import lombok.*;
     uniqueConstraints = {
         @UniqueConstraint(
             name = "uk_attribute_value",
-            columnNames = {"attributeId", "value"}
+            columnNames = {"attribute_id", "value"}
         )
     }
 )
@@ -32,7 +32,7 @@ public class AttributeValue extends BaseEntity {
         optional = false
     )
     @JoinColumn(
-        name = "attributeId",
+        name = "attribute_id",
         nullable = false
     )
     private Attribute attribute;

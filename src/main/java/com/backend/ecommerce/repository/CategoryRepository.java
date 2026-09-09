@@ -1,5 +1,6 @@
 package com.backend.ecommerce.repository;
 
+import com.backend.ecommerce.dto.CategoryRow;
 import com.backend.ecommerce.entity.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -34,4 +35,38 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
     FROM category_tree
     """, nativeQuery = true)
 	List<Long> findCategoryTreeIds(@Param("categoryId") Long categoryId);
+
+
+    @Query(value = """
+    WITH RECURSIVE category_tree AS (
+
+        -- Catégories des produits filtrés
+        SELECT
+            c.id,
+            c.name,
+            c.category_id AS parentId
+        FROM categories c
+        WHERE c.id IN (:categoryIds)
+
+        UNION
+
+        -- Remonter les parents
+        SELECT
+            p.id,
+            p.name,
+            p.category_id AS parentId
+        FROM categories p
+        INNER JOIN category_tree ct
+            ON ct.parentId = p.id
+    )
+
+    SELECT DISTINCT
+        id,
+        name,
+        parentId
+    FROM category_tree
+    """, nativeQuery = true)
+    List<CategoryRow> findCategoriesAndParents(
+            @Param("categoryIds") List<Long> categoryIds
+    );
 }

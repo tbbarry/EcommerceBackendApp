@@ -62,7 +62,8 @@ public class CatalogProductSearchRepositoryImpl
                         product.get("slug"),
                         product.get("price"),
                         product.get("imageUrl"),
-                        product.get("categoryName")
+                        product.get("categoryName"),
+                        product.get("categoryId")       
                 )
         );
 
@@ -407,7 +408,8 @@ public class CatalogProductSearchRepositoryImpl
     @Override
 public List<Long> findProductIdsForFilters(
         CatalogSearchRequest request,
-        List<Long> categoryIds
+        List<Long> categoryIds,
+        boolean applyCategoryFilter
 ) {
 
     CriteriaBuilder cb =
@@ -440,13 +442,13 @@ public List<Long> findProductIdsForFilters(
     // -----------------------------------------------------
     // Catégorie
     // -----------------------------------------------------
-
-    addCategoryPredicate(
-            predicates,
-            product,
-            categoryIds
-    );
-
+    if(applyCategoryFilter) {
+        addCategoryPredicate(
+                predicates,
+                product,
+                categoryIds
+        );
+    }
 
     // -----------------------------------------------------
     // Prix minimum

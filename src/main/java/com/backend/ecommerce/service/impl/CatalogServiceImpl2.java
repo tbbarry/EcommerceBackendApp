@@ -3,12 +3,11 @@ package com.backend.ecommerce.service.impl;
 import com.backend.ecommerce.dto.CatalogResponse;
 import com.backend.ecommerce.dto.CatalogSearchRequest;
 import com.backend.ecommerce.dto.CategoryDto2;
+import com.backend.ecommerce.dto.CategoryRow;
 import com.backend.ecommerce.dto.FacetDto;
-import com.backend.ecommerce.dto.FacetFilter;
 import com.backend.ecommerce.dto.FacetValueDto;
 import com.backend.ecommerce.dto.FacetValueProjection;
 import com.backend.ecommerce.dto.ProductCardDto;
-import com.backend.ecommerce.entity.Category;
 import com.backend.ecommerce.repository.CatalogFacetRepository;
 import com.backend.ecommerce.repository.CatalogProductRepository;
 import com.backend.ecommerce.repository.CategoryRepository;
@@ -17,16 +16,14 @@ import com.backend.ecommerce.service.CatalogService2;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+
 
 @Service
 @RequiredArgsConstructor
@@ -66,7 +63,8 @@ public CatalogResponse search(CatalogSearchRequest request) {
         List<Long> productIds =
                 catalogProductRepository.findProductIdsForFilters(
                         request,
-                        categoryIds
+                        categoryIds,
+                        true
                 );
 
          List<FacetValueProjection> facetRows =
@@ -80,44 +78,32 @@ public CatalogResponse search(CatalogSearchRequest request) {
                         request
                 );
 
+        List<Long> productIdsForCategories = 
+                catalogProductRepository.findProductIdsForFilters(
+                        request,categoryIds,
+                        true);
+
+        List <Long> categoryIdsForProducts = 
+                catalogProductRepository.findCategoryIdsByProductIds(
+                        productIdsForCategories
+                );
+        List<CategoryRow> categoryRows = 
+                categoryRepository.findCategoriesAndParents(categoryIdsForProducts);
+        
+        List<CategoryDto2> categories = buildCategories(categoryRows);
+
+
     return new CatalogResponse(
             page.getContent(),
-            List.of(),
+            categories,
             facets,
             page.getTotalElements(),
             page.getNumber(),
             page.getSize()
     );
 }
-    
-    /* 
-    
-    public CatalogResponse search2(CatalogSearchRequest request) {
-        // Find all child of category Id
-        List<Long> categoryIds = new ArrayList<>();
-        if(request.getCategoryId() != null) {
-            categoryIds = categoryRepository.findCategoryTreeIds(request.getCategoryId());
-        }
 
-        List<Long> productIds = findProductIds(request);
 
-        List<ProductCardDto> products =productRepository.findCardsByIds(productIds);
-
-        List<FacetValueProjection> facetValues = facetRepository.findFacetsByProductIds(productIds);
-        List<FacetDto> facets = buildFacets(facetValues, request);
-
-        List<CategoryDto2> categories = buildCategories();
-
-        return new CatalogResponse(
-                products,
-                categories,
-                facets,
-                products.size(),
-                request.getPage(),
-                request.getSize()
-        );
-   }
-    */
    private List<FacetDto> buildFacets(List<FacetValueProjection> rows, CatalogSearchRequest request) {
 
         Map<Long, List<FacetValueDto>> values = new LinkedHashMap<>();
@@ -150,6 +136,66 @@ public CatalogResponse search(CatalogSearchRequest request) {
                 .toList();
    }
 
+
+   private List<CategoryDto2> buildCategories(List<CategoryRow> rows) {
+
+    Map<Long, Node> nodes = new HashMap<>();
+    List<Node> roots = new ArrayList<>();
+
+    // Création des nœuds
+    for (CategoryRow row : rows) {
+        nodes.put(
+            row.getId(),
+            new Node(row.getId(), row.getName(), row.getParentId())
+        );
+    }
+
+    // Construction de l'arbre
+    for (Node node : nodes.values()) {
+
+        if (node.parentId == null) {
+            roots.add(node);
+            continue;
+        }
+
+        Node parent = nodes.get(node.parentId);
+
+        if (parent != null) {
+            parent.children.add(node);
+        } else {
+            roots.add(node);
+        }
+    }
+
+    // Conversion vers les DTO immutables
+    return roots.stream()
+            .map(this::toDto)
+            .toList();
+}
+
+private CategoryDto2 toDto(Node node) {
+        return new CategoryDto2(
+                node.id,
+                node.name,
+                node.children.stream()
+                        .map(this::toDto)
+                        .toList()
+        );
+        }
+
+private static class Node {
+
+    Long id;
+    String name;
+    Long parentId;
+    List<Node> children = new ArrayList<>();
+
+    Node(Long id, String name, Long parentId) {
+        this.id = id;
+        this.name = name;
+        this.parentId = parentId;
+    }
+}       
 /* 
    private Set<Long> applyFacetFilters(Set<Long> productIds, List<FacetFilter> facets) {
 

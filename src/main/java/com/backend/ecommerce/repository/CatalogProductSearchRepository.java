@@ -12,6 +12,7 @@ public interface CatalogProductSearchRepository {
 
     List<Long> findProductIdsForFilters(
         CatalogSearchRequest request,
-        List<Long> categoryIds
+        List<Long> categoryIds,
+        boolean applyCategoryFilter
    );
 }

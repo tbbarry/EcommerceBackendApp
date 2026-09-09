@@ -78,4 +78,12 @@ public interface CatalogProductRepository
     """)
     List<Long> findAllProductIds();
 
+
+    @Query("""
+    SELECT DISTINCT cp.categoryId
+    FROM CatalogProduct cp
+    WHERE cp.productId IN :productIds
+    """)
+    List<Long> findCategoryIdsByProductIds(@Param("productIds") List<Long> productIds);
+
 }

@@ -11,8 +11,8 @@ import lombok.*;
         @UniqueConstraint(
             name = "uk_variant_attribute_value",
             columnNames = {
-                "variantId",
-                "attributeValueId"
+                "variant_id",
+                "attribute_value_id"
             }
         )
     }
@@ -30,7 +30,7 @@ public class VariantAttributeValue extends BaseEntity {
         optional = false
     )
     @JoinColumn(
-        name = "variantId",
+        name = "variant_id",
         nullable = false
     )
     private Variant variant;
@@ -41,7 +41,7 @@ public class VariantAttributeValue extends BaseEntity {
         optional = false
     )
     @JoinColumn(
-        name = "attributeValueId",
+        name = "attribute_value_id",
         nullable = false
     )
     private AttributeValue attributeValue;
