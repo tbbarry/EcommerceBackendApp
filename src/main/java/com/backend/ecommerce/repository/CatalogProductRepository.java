@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 @Repository
 public interface CatalogProductRepository
         extends JpaRepository<CatalogProduct, Long>, CatalogProductSearchRepository {
@@ -24,7 +25,18 @@ public interface CatalogProductRepository
         p.slug,
         p.price,
         p.imageUrl,
-        p.categoryName
+        p.categoryName,
+        p.categoryId,
+        p.basePriceMin,
+        p.basePriceMax,
+        p.finalPriceMin,
+        p.finalPriceMax,
+        p.displayPrice,
+        p.hasDiscount,
+        p.promoScope,
+        p.discountPercentGlobal,
+        p.discountPercentMin,
+        p.discountPercentMax
     )
     from CatalogProduct p
     where p.productId in :productIds
@@ -41,12 +53,22 @@ public interface CatalogProductRepository
         p.price,
         p.imageUrl,
         p.categoryName,
-        p.categoryId
+        p.categoryId,
+        p.basePriceMin,
+        p.basePriceMax,
+        p.finalPriceMin,
+        p.finalPriceMax,
+        p.displayPrice,
+        p.hasDiscount,
+        p.promoScope,
+        p.discountPercentGlobal,
+        p.discountPercentMin,
+        p.discountPercentMax
     )
     from CatalogProduct p
     where (:categoryIds is null or p.categoryId in :categoryIds)
-    and (:minPrice is null or p.price >= :minPrice)
-    and (:maxPrice is null or p.price <= :maxPrice)
+    and (:minPrice is null or coalesce(p.finalPriceMin, p.price) >= :minPrice)
+    and (:maxPrice is null or coalesce(p.finalPriceMin, p.price) <= :maxPrice)
     """)
     Page<ProductCardDto> findCardsProduct(
             @Param("categoryIds") List<Long> categoryIds,
@@ -63,8 +85,8 @@ public interface CatalogProductRepository
         :categoryIds IS NULL
         OR pc.category_id IN (:categoryIds)
     )
-    AND (:minPrice IS NULL OR pc.price >= :minPrice)
-    AND (:maxPrice IS NULL OR pc.price <= :maxPrice)
+    AND (:minPrice IS NULL OR COALESCE(pc.final_price_min, pc.price) >= :minPrice)
+    AND (:maxPrice IS NULL OR COALESCE(pc.final_price_min, pc.price) <= :maxPrice)
     """, nativeQuery = true)
     List<Long> findProductIdsByCategoriesAndPriceRange(
             @Param("categoryIds") List<Long> categoryIds,
@@ -85,5 +107,9 @@ public interface CatalogProductRepository
     WHERE cp.productId IN :productIds
     """)
     List<Long> findCategoryIdsByProductIds(@Param("productIds") List<Long> productIds);
+
+    Optional<CatalogProduct> findByProductId(Long productId);
+
+    List<CatalogProduct> findByProductIdIn(List<Long> productIds);
 
 }

@@ -10,5 +10,15 @@ public record ProductCardDto(
     BigDecimal price,
     String imageUrl,
     String categoryName,
-    Long categoryId
+    Long categoryId,
+    BigDecimal basePriceMin,
+    BigDecimal basePriceMax,
+    BigDecimal finalPriceMin,
+    BigDecimal finalPriceMax,
+    BigDecimal displayPrice,
+    Boolean hasDiscount,
+    String promoScope,
+    BigDecimal discountPercentGlobal,
+    BigDecimal discountPercentMin,
+    BigDecimal discountPercentMax
 ) {}

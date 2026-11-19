@@ -13,7 +13,6 @@ import com.backend.ecommerce.repository.StockRepository;
 import com.backend.ecommerce.repository.StockReservationRepository;
 import com.backend.ecommerce.repository.VariantRepository;
 import com.backend.ecommerce.service.StockService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +20,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 @Transactional
 public class StockServiceImpl implements StockService {
 
@@ -29,6 +27,18 @@ public class StockServiceImpl implements StockService {
     private final VariantRepository variantRepository;
     private final StockReservationRepository stockReservationRepository;
     private final OrderRepository orderRepository;
+
+        public StockServiceImpl(
+                        StockRepository stockRepository,
+                        VariantRepository variantRepository,
+                        StockReservationRepository stockReservationRepository,
+                        OrderRepository orderRepository
+        ) {
+                this.stockRepository = stockRepository;
+                this.variantRepository = variantRepository;
+                this.stockReservationRepository = stockReservationRepository;
+                this.orderRepository = orderRepository;
+        }
 
     @Override
     @Transactional(readOnly = true)

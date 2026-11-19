@@ -39,7 +39,7 @@ public final class CatalogProductSpecification {
             specification = specification.and(
                     (root, query, cb) ->
                             cb.greaterThanOrEqualTo(
-                                    root.get("price"),
+                                    cb.coalesce(root.get("finalPriceMin"), root.get("price")),
                                     request.getMinPrice()
                             )
             );
@@ -53,7 +53,7 @@ public final class CatalogProductSpecification {
             specification = specification.and(
                     (root, query, cb) ->
                             cb.lessThanOrEqualTo(
-                                    root.get("price"),
+                                    cb.coalesce(root.get("finalPriceMin"), root.get("price")),
                                     request.getMaxPrice()
                             )
             );

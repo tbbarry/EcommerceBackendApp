@@ -6,6 +6,7 @@ import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.ProductPromoRepository;
 import com.backend.ecommerce.repository.ProductRepository;
 import com.backend.ecommerce.repository.PromoRepository;
+import com.backend.ecommerce.service.CatalogProductPricingIndexService;
 import com.backend.ecommerce.service.ProductPromoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ public class ProductPromoServiceImpl implements ProductPromoService {
     private final ProductPromoRepository productPromoRepository;
     private final ProductRepository productRepository;
     private final PromoRepository promoRepository;
+    private final CatalogProductPricingIndexService catalogProductPricingIndexService;
 
     @Override
     @Transactional(readOnly = true)
@@ -38,20 +40,31 @@ public class ProductPromoServiceImpl implements ProductPromoService {
     public ProductPromoDto create(ProductPromoDto dto) {
         ProductPromo entity = new ProductPromo();
         applyDtoToEntity(dto, entity);
-        return toDto(productPromoRepository.save(entity));
+        ProductPromo saved = productPromoRepository.save(entity);
+        refreshCatalogProductPricing(saved);
+        return toDto(saved);
     }
 
     @Override
     public ProductPromoDto update(Integer id, ProductPromoDto dto) {
         ProductPromo entity = getEntityById(id);
         applyDtoToEntity(dto, entity);
-        return toDto(productPromoRepository.save(entity));
+        ProductPromo saved = productPromoRepository.save(entity);
+        refreshCatalogProductPricing(saved);
+        return toDto(saved);
     }
 
     @Override
     public void delete(Integer id) {
         ProductPromo entity = getEntityById(id);
+        Integer productId = entity.getProduct() != null ? entity.getProduct().getId() : null;
         productPromoRepository.delete(entity);
+        catalogProductPricingIndexService.refreshProduct(productId);
+    }
+
+    private void refreshCatalogProductPricing(ProductPromo entity) {
+        Integer productId = entity.getProduct() != null ? entity.getProduct().getId() : null;
+        catalogProductPricingIndexService.refreshProduct(productId);
     }
 
     private ProductPromo getEntityById(Integer id) {

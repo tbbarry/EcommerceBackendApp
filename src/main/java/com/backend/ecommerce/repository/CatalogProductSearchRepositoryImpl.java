@@ -10,6 +10,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,9 +65,22 @@ public class CatalogProductSearchRepositoryImpl
                         product.get("price"),
                         product.get("imageUrl"),
                         product.get("categoryName"),
-                        product.get("categoryId")       
+                        product.get("categoryId"),
+                        product.get("basePriceMin"),
+                        product.get("basePriceMax"),
+                        product.get("finalPriceMin"),
+                        product.get("finalPriceMax"),
+                        product.get("displayPrice"),
+                        product.get("hasDiscount"),
+                        product.get("promoScope"),
+                        product.get("discountPercentGlobal"),
+                        product.get("discountPercentMin"),
+                        product.get("discountPercentMax")
                 )
         );
+
+        Expression<BigDecimal> priceForFilter =
+                cb.coalesce(product.get("finalPriceMin"), product.get("price"));
 
 
         // =====================================================
@@ -95,7 +110,7 @@ public class CatalogProductSearchRepositoryImpl
 
             productPredicates.add(
                     cb.greaterThanOrEqualTo(
-                            product.get("price"),
+                            priceForFilter,
                             request.getMinPrice()
                     )
             );
@@ -110,7 +125,7 @@ public class CatalogProductSearchRepositoryImpl
 
             productPredicates.add(
                     cb.lessThanOrEqualTo(
-                            product.get("price"),
+                            priceForFilter,
                             request.getMaxPrice()
                     )
             );
@@ -181,6 +196,9 @@ public class CatalogProductSearchRepositoryImpl
                 cb.count(countProduct)
         );
 
+        Expression<BigDecimal> countPriceForFilter =
+                cb.coalesce(countProduct.get("finalPriceMin"), countProduct.get("price"));
+
 
         // =====================================================
         // 7. PREDICATES COUNT
@@ -209,7 +227,7 @@ public class CatalogProductSearchRepositoryImpl
 
             countPredicates.add(
                     cb.greaterThanOrEqualTo(
-                            countProduct.get("price"),
+                            countPriceForFilter,
                             request.getMinPrice()
                     )
             );
@@ -224,7 +242,7 @@ public class CatalogProductSearchRepositoryImpl
 
             countPredicates.add(
                     cb.lessThanOrEqualTo(
-                            countProduct.get("price"),
+                            countPriceForFilter,
                             request.getMaxPrice()
                     )
             );
@@ -430,6 +448,9 @@ public List<Long> findProductIdsForFilters(
             product.get("productId")
     );
 
+    Expression<BigDecimal> filterPrice =
+            cb.coalesce(product.get("finalPriceMin"), product.get("price"));
+
 
     // =====================================================
     // PREDICATES
@@ -458,7 +479,7 @@ public List<Long> findProductIdsForFilters(
 
         predicates.add(
                 cb.greaterThanOrEqualTo(
-                        product.get("price"),
+                        filterPrice,
                         request.getMinPrice()
                 )
         );
@@ -473,7 +494,7 @@ public List<Long> findProductIdsForFilters(
 
         predicates.add(
                 cb.lessThanOrEqualTo(
-                        product.get("price"),
+                        filterPrice,
                         request.getMaxPrice()
                 )
         );

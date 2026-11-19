@@ -18,7 +18,28 @@ public class CatalogProduct extends BaseEntity {
 
     private String name;
 
+    // Backward-compatible field for legacy consumers.
     private BigDecimal price;
+
+    private BigDecimal basePriceMin;
+
+    private BigDecimal basePriceMax;
+
+    private BigDecimal finalPriceMin;
+
+    private BigDecimal finalPriceMax;
+
+    private BigDecimal displayPrice;
+
+    private BigDecimal discountPercentGlobal;
+
+    private BigDecimal discountPercentMin;
+
+    private BigDecimal discountPercentMax;
+
+    private Boolean hasDiscount;
+
+    private String promoScope;
 
     private String slug;
 

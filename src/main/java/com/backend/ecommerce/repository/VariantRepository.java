@@ -58,4 +58,15 @@ public interface VariantRepository extends JpaRepository<Variant, Integer> {
     List<Variant> findByProductIdInWithStock(
             @Param("productIds") List<Integer> productIds
     );
+
+    @Query("""
+        SELECT DISTINCT v
+        FROM Variant v
+        LEFT JOIN FETCH v.stock
+        LEFT JOIN FETCH v.attributeValues vav
+        LEFT JOIN FETCH vav.attributeValue av
+        LEFT JOIN FETCH av.attribute a
+        WHERE v.product.id = :productId
+    """)
+    List<Variant> findDetailedByProductId(@Param("productId") Integer productId);
 }
