@@ -1,6 +1,7 @@
 package com.backend.ecommerce.controller;
 
 import com.backend.ecommerce.dto.CategoryDto;
+import com.backend.ecommerce.dto.CategoryDto2;
 import com.backend.ecommerce.service.CategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,8 +28,8 @@ public class CategoryController {
 
     // PUBLIC : voir toutes les catégories
     @GetMapping
-    public ResponseEntity<List<CategoryDto>> findAll() {
-        return ResponseEntity.ok(categoryService.findAll());
+    public ResponseEntity<List<CategoryDto2>> findAll() {
+        return ResponseEntity.ok(categoryService.getCategoryTree());
     }
 
     // PUBLIC : voir une catégorie

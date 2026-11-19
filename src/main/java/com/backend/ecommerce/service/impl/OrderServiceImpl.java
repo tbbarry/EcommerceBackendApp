@@ -17,7 +17,6 @@ import com.backend.ecommerce.entity.Order;
 import com.backend.ecommerce.entity.OrderItem;
 import com.backend.ecommerce.entity.Payment;
 import com.backend.ecommerce.entity.Product;
-import com.backend.ecommerce.entity.ProductColor;
 import com.backend.ecommerce.entity.ProductImage;
 import com.backend.ecommerce.entity.ShippingMethod;
 import com.backend.ecommerce.entity.User;
@@ -482,9 +481,9 @@ public class OrderServiceImpl implements OrderService {
                             .totalPrice(lineTotal)
                             .productNameSnapshot(variant.getProduct().getName())
                             .variantSkuSnapshot(variant.getSku())
-                            .colorSnapshot(variant.getProductColor() != null ? variant.getProductColor().getName() : null)
+                            .colorSnapshot("Rouge")
                             .productDescriptionSnapshot(variant.getProduct().getDescription())
-                            .sizeSnapshot(variant.getSize())
+                            .sizeSnapshot("M")
                             .imageUrlSnapshot(imageUrlSnapshot)
                             .build();
 
@@ -1166,6 +1165,7 @@ public class OrderServiceImpl implements OrderService {
     private String resolveVariantImageUrl(Variant variant) {
 
         // Cas 1 : la variante possède une couleur
+        /*      
         if (variant.getProductColor() != null) {
 
                 ProductColor productColor = variant.getProductColor();
@@ -1183,7 +1183,7 @@ public class OrderServiceImpl implements OrderService {
                         .findFirst()
                         .orElse(null);
                 }
-        }
+        }  */
 
         // Cas 2 : la variante n'a pas de couleur
         // On cherche l'image du produit avec displayOrder = 1

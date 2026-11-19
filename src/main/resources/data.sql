@@ -1,1719 +1,693 @@
 -- ============================================================
 -- USERS
--- Mot de passe BCrypt = password123
 -- ============================================================
-INSERT INTO users (
-    created_at,
-    updated_at,
-    email,
-    firstname,
-    lastname,
-    password,
-    role,
-    enabled
-) VALUES
-    (
-        NOW(),
-        NOW(),
-        'e@gmail.com',
-        'Alice',
-        'Martin',
-        '$2a$10$hqgMf5mksavpAEjscqq83uPUu2kGIknuHaYGfZ35KeNFEHAnPHcRC',
-        'ADMIN',
-        true
-    ),
-    (
-        NOW(),
-        NOW(),
-        't@test.com',
-        'Karim',
-        'Benali',
-        '$2a$10$MrwAn5oQQAXmqbPINmd0TO5UfRi76RfYPeVdNY3ysZMwwu3aaDh8K',
-        'USER',
-        true
-    ),
-    (
-        NOW(),
-        NOW(),
-        'sophie@test.com',
-        'Sophie',
-        'Durand',
-        '$2a$10$MrwAn5oQQAXmqbPINmd0TO5UfRi76RfYPeVdNY3ysZMwwu3aaDh8K',
-        'USER',
-        true
-    );
 
+INSERT INTO users
+(id, created_at, updated_at, email, firstname, lastname, password, role, enabled)
+VALUES
+(1, NOW(), NOW(), 'e@gmail.com', 'Alice', 'Martin',
+ '$2a$10$MrwAn5oQQAXmqbPINmd0TO5UfRi76RfYPeVdNY3ysZMwwu3aaDh8K',
+ 'ADMIN', true),
 
--- ============================================================
--- DELIVERY ADDRESSES
--- ============================================================
-INSERT INTO delivery_addresses (
-    user_id,
-    created_at,
-    updated_at,
-    first_name,
-    last_name,
-    address,
-    city,
-    state,
-    zipcode,
-    phone,
-    label,
-    country,
-    is_default,
-    deleted
-) VALUES
-    (
-        1,
-        NOW(),
-        NOW(),
-        'Alice',
-        'Martin',
-        '12 Market Street',
-        'San Francisco',
-        'CA',
-        '94105',
-        '415-555-0101',
-        'home',
-        'US',
-        true,
-        false
-    ),
-    (
-        2,
-        NOW(),
-        NOW(),
-        'Karim',
-        'Benali',
-        '8 Madison Avenue',
-        'New York',
-        'NY',
-        '10010',
-        '212-555-0102',
-        'work',
-        'US',
-        true,
-        false
-    ),
-    (
-        3,
-        NOW(),
-        NOW(),
-        'Sophie',
-        'Durand',
-        '25 Lakeshore Drive',
-        'Chicago',
-        'IL',
-        '60601',
-        '312-555-0103',
-        'home',
-        'US',
-        true,
-        false
-    )
-ON CONFLICT (id) DO NOTHING;
+(2, NOW(), NOW(), 't@test.com', 'Karim', 'Benali',
+ '$2a$10$MrwAn5oQQAXmqbPINmd0TO5UfRi76RfYPeVdNY3ysZMwwu3aaDh8K',
+ 'USER', true),
 
-
--- ============================================================
--- CARTS
--- ============================================================
-INSERT INTO carts (
-    id,
-    user_id,
-    created_at,
-    updated_at
-) VALUES
-    (1, 1, NOW(), NOW()),
-    (2, 2, NOW(), NOW()),
-    (3, 3, NOW(), NOW())
-ON CONFLICT (id) DO NOTHING;
-
+(3, NOW(), NOW(), 'sophie@test.com', 'Sophie', 'Durand',
+ '$2a$10$MrwAn5oQQAXmqbPINmd0TO5UfRi76RfYPeVdNY3ysZMwwu3aaDh8K',
+ 'USER', true);
 
 -- ============================================================
 -- CATEGORIES
 -- ============================================================
-INSERT INTO categories (
-    id,
-    category_id,
-    created_at,
-    updated_at,
-    description,
-    name
-) VALUES
-    (
-        1,
-        NULL,
-        NOW(),
-        NOW(),
-        'Tous les vêtements',
-        'Vêtements'
-    ),
-    (
-        2,
-        NULL,
-        NOW(),
-        NOW(),
-        'Toutes les chaussures',
-        'Chaussures'
-    ),
-    (
-        3,
-        NULL,
-        NOW(),
-        NOW(),
-        'Accessoires de mode',
-        'Accessoires'
-    ),
-    (
-        4,
-        1,
-        NOW(),
-        NOW(),
-        'T-shirts homme et femme',
-        'T-shirts'
-    ),
-    (
-        5,
-        2,
-        NOW(),
-        NOW(),
-        'Chaussures sneakers',
-        'Sneakers'
-    ),
-    (
-        6,
-        1,
-        NOW(),
-        NOW(),
-        'Sweats et hoodies',
-        'Sweats'
-    ),
-    (
-        7,
-        3,
-        NOW(),
-        NOW(),
-        'Sacs et pochettes',
-        'Sacs'
-    )
-ON CONFLICT (id) DO NOTHING;
 
+INSERT INTO categories
+(id, category_id, created_at, updated_at, description, name)
+VALUES
+
+-- Niveau 1
+(1,NULL,NOW(),NOW(),'Vêtements pour femme','Femme'),
+(2,NULL,NOW(),NOW(),'Vêtements pour homme','Homme'),
+(3,NULL,NOW(),NOW(),'Vêtements pour enfant','Enfant'),
+(4,NULL,NOW(),NOW(),'Accessoires de mode','Accessoires'),
+
+-- Femme
+(10,1,NOW(),NOW(),'Vêtements femme','Vêtements'),
+(11,1,NOW(),NOW(),'Chaussures femme','Chaussures'),
+(12,1,NOW(),NOW(),'Accessoires femme','Accessoires'),
+
+(20,10,NOW(),NOW(),'T-shirts femme','T-shirts'),
+(21,10,NOW(),NOW(),'Sweats femme','Sweats'),
+(22,10,NOW(),NOW(),'Robes femme','Robes'),
+(23,10,NOW(),NOW(),'Pantalons femme','Pantalons'),
+(24,11,NOW(),NOW(),'Sneakers femme','Sneakers'),
+
+-- Homme
+(30,2,NOW(),NOW(),'Vêtements homme','Vêtements'),
+(31,2,NOW(),NOW(),'Chaussures homme','Chaussures'),
+(32,2,NOW(),NOW(),'Accessoires homme','Accessoires'),
+
+(40,30,NOW(),NOW(),'T-shirts homme','T-shirts'),
+(41,30,NOW(),NOW(),'Sweats homme','Sweats'),
+(42,30,NOW(),NOW(),'Chemises homme','Chemises'),
+(43,30,NOW(),NOW(),'Pantalons homme','Pantalons'),
+(44,31,NOW(),NOW(),'Sneakers homme','Sneakers'),
+
+-- Enfant
+(50,3,NOW(),NOW(),'Vêtements enfant','Vêtements'),
+(51,3,NOW(),NOW(),'Chaussures enfant','Chaussures'),
+(52,3,NOW(),NOW(),'Accessoires enfant','Accessoires'),
+
+(60,50,NOW(),NOW(),'T-shirts enfant','T-shirts'),
+(61,50,NOW(),NOW(),'Sweats enfant','Sweats'),
+(62,50,NOW(),NOW(),'Pantalons enfant','Pantalons'),
+(63,51,NOW(),NOW(),'Sneakers enfant','Sneakers'),
+
+-- Accessoires
+(70,4,NOW(),NOW(),'Sacs','Sacs'),
+(71,4,NOW(),NOW(),'Ceintures','Ceintures'),
+(72,4,NOW(),NOW(),'Bijoux','Bijoux'),
+(73,4,NOW(),NOW(),'Chapeaux','Chapeaux');
 
 -- ============================================================
 -- PRODUCTS
 -- ============================================================
-INSERT INTO products (
-    id,
-    price,
-    created_at,
-    updated_at,
-    brand,
-    description,
-    name,
-    slug
-) VALUES
-    (
-        1,
-        29.99,
-        NOW(),
-        NOW(),
-        'Nike',
-        'T-shirt Nike en coton confortable',
-        'T-shirt Nike Basic',
-        't-shirt-nike-basic'
-    ),
-    (
-        2,
-        79.99,
-        NOW(),
-        NOW(),
-        'Adidas',
-        'Sneakers Adidas légères pour tous les jours',
-        'Adidas Runner',
-        'adidas-runner'
-    ),
-    (
-        3,
-        59.99,
-        NOW(),
-        NOW(),
-        'Puma',
-        'Sweat à capuche Puma doux et chaud',
-        'Hoodie Puma Classic',
-        'hoodie-puma-classic'
-    ),
-    (
-        4,
-        39.99,
-        NOW(),
-        NOW(),
-        'Zara',
-        'Sac noir élégant',
-        'Sac Zara Noir',
-        'sac-zara-noir'
-    ),
-    (
-        5,
-        69.99,
-        NOW(),
-        NOW(),
-        'Levis',
-        'Jean bleu coupe slim',
-        'Jean Levis Slim',
-        'jean-levis-slim'
-    ),
-    (
-        6,
-        25.00,
-        NOW(),
-        NOW(),
-        'NiceShop',
-        'Carte cadeau digitale, produit sans taille ni couleur',
-        'Carte Cadeau 25 EUR',
-        'carte-cadeau-25-eur'
-    ),
-    (
-        7,
-        44.99,
-        NOW(),
-        NOW(),
-        'Mango',
-        'Ceinture cuir classique, couleur unique sans taille',
-        'Ceinture Cuir Classique',
-        'ceinture-cuir-classique'
-    ),
-    (
-        8,
-        19.99,
-        NOW(),
-        NOW(),
-        'Uniqlo',
-        'Bonnet unisexe, taille unique sans couleur',
-        'Bonnet Minimal',
-        'bonnet-minimal'
-    )
-ON CONFLICT (id) DO NOTHING;
 
+INSERT INTO products
+(id, category_id, price, created_at, updated_at, brand, description, name, slug)
+VALUES
+(1,20,29.99,NOW(),NOW(),'Nike',
+'T-shirt Nike en coton confortable',
+'T-shirt Nike Basic',
+'t-shirt-nike-basic'),
+
+(2,44,79.99,NOW(),NOW(),'Adidas',
+'Sneakers Adidas légères',
+'Adidas Runner',
+'adidas-runner'),
+
+(3,41,59.99,NOW(),NOW(),'Puma',
+'Sweat à capuche Puma',
+'Hoodie Puma Classic',
+'hoodie-puma-classic'),
+
+(4,70,39.99,NOW(),NOW(),'Zara',
+'Sac noir élégant',
+'Sac Zara Noir',
+'sac-zara-noir'),
+
+(5,43,69.99,NOW(),NOW(),'Levis',
+'Jean slim bleu',
+'Jean Levis Slim',
+'jean-levis-slim'),
+
+(6,4,25.00,NOW(),NOW(),'NiceShop',
+'Carte cadeau digitale',
+'Carte Cadeau 25 EUR',
+'carte-cadeau-25-eur'),
+
+(7,71,44.99,NOW(),NOW(),'Mango',
+'Ceinture cuir classique',
+'Ceinture Cuir Classique',
+'ceinture-cuir-classique'),
+
+(8,73,19.99,NOW(),NOW(),'Uniqlo',
+'Bonnet unisexe',
+'Bonnet Minimal',
+'bonnet-minimal');
 
 -- ============================================================
--- PRODUCT CATEGORIES
+-- ATTRIBUTES
 -- ============================================================
-INSERT INTO product_categories (
-    id,
-    category_id,
-    product_id,
-    created_at,
-    updated_at
-) VALUES
-    (1, 4, 1, NOW(), NOW()),
-    (2, 5, 2, NOW(), NOW()),
-    (3, 6, 3, NOW(), NOW()),
-    (4, 7, 4, NOW(), NOW()),
-    (5, 1, 5, NOW(), NOW()),
-    (6, 3, 6, NOW(), NOW()),
-    (7, 3, 7, NOW(), NOW()),
-    (8, 3, 8, NOW(), NOW())
-ON CONFLICT (id) DO NOTHING;
 
+INSERT INTO attributes
+(id, created_at, updated_at, name)
+VALUES
+(1,NOW(),NOW(),'Couleur'),
+(2,NOW(),NOW(),'Taille');
 
 -- ============================================================
--- PRODUCT COLORS
+-- ATTRIBUTE VALUES
 -- ============================================================
-INSERT INTO product_colors (
-    id,
-    product_id,
-    created_at,
-    updated_at,
-    name,
-    hex_code
-) VALUES
-    (1, 1, NOW(), NOW(), 'Noir', '#000000'),
-    (2, 1, NOW(), NOW(), 'Blanc', '#FFFFFF'),
 
-    (3, 2, NOW(), NOW(), 'Blanc', '#FFFFFF'),
-    (4, 2, NOW(), NOW(), 'Noir', '#000000'),
+INSERT INTO attribute_values
+(id, attribute_id, created_at, updated_at, value)
+VALUES
+(1,1,NOW(),NOW(),'Noir'),
+(2,1,NOW(),NOW(),'Blanc'),
+(3,1,NOW(),NOW(),'Gris'),
+(4,1,NOW(),NOW(),'Bleu'),
+(5,1,NOW(),NOW(),'Marron'),
 
-    (5, 3, NOW(), NOW(), 'Gris', '#808080'),
-    (6, 3, NOW(), NOW(), 'Noir', '#000000'),
-
-    (7, 4, NOW(), NOW(), 'Noir', '#000000'),
-
-    (8, 5, NOW(), NOW(), 'Bleu', '#0000FF'),
-
-    (9, 7, NOW(), NOW(), 'Marron', '#8B4513')
-ON CONFLICT (id) DO NOTHING;
-
+(6,2,NOW(),NOW(),'S'),
+(7,2,NOW(),NOW(),'M'),
+(8,2,NOW(),NOW(),'L'),
+(9,2,NOW(),NOW(),'38'),
+(10,2,NOW(),NOW(),'40'),
+(11,2,NOW(),NOW(),'42'),
+(12,2,NOW(),NOW(),'43'),
+(13,2,NOW(),NOW(),'Unique');
 
 -- ============================================================
 -- VARIANTS
---
--- product_color_id :
---   1 = Nike Noir
---   2 = Nike Blanc
---   3 = Adidas Blanc
---   4 = Adidas Noir
---   5 = Puma Gris
---   6 = Puma Noir
---   7 = Zara Noir
---   8 = Levis Bleu
---   9 = Mango Marron
---
--- NULL = produit sans couleur
--- ============================================================
-INSERT INTO variants (
-    id,
-    price,
-    product_id,
-    product_color_id,
-    created_at,
-    updated_at,
-    size,
-    sku
-) VALUES
-
-    -- Nike
-    (
-        1,
-        29.99,
-        1,
-        1,
-        NOW(),
-        NOW(),
-        'S',
-        'NIKE-TS-BLK-S'
-    ),
-    (
-        2,
-        29.99,
-        1,
-        1,
-        NOW(),
-        NOW(),
-        'M',
-        'NIKE-TS-BLK-M'
-    ),
-    (
-        3,
-        29.99,
-        1,
-        2,
-        NOW(),
-        NOW(),
-        'M',
-        'NIKE-TS-WHT-M'
-    ),
-
-    -- Adidas
-    (
-        4,
-        79.99,
-        2,
-        3,
-        NOW(),
-        NOW(),
-        '42',
-        'ADI-RUN-WHT-42'
-    ),
-    (
-        5,
-        79.99,
-        2,
-        4,
-        NOW(),
-        NOW(),
-        '43',
-        'ADI-RUN-BLK-43'
-    ),
-
-    -- Puma
-    (
-        6,
-        59.99,
-        3,
-        5,
-        NOW(),
-        NOW(),
-        'M',
-        'PUMA-HOOD-GRY-M'
-    ),
-    (
-        7,
-        59.99,
-        3,
-        6,
-        NOW(),
-        NOW(),
-        'L',
-        'PUMA-HOOD-BLK-L'
-    ),
-
-    -- Zara : couleur unique
-    (
-        8,
-        39.99,
-        4,
-        7,
-        NOW(),
-        NOW(),
-        'Unique',
-        'ZARA-BAG-BLK-U'
-    ),
-
-    -- Levis
-    (
-        9,
-        69.99,
-        5,
-        8,
-        NOW(),
-        NOW(),
-        '38',
-        'LEVIS-JEAN-BLU-38'
-    ),
-    (
-        10,
-        69.99,
-        5,
-        8,
-        NOW(),
-        NOW(),
-        '40',
-        'LEVIS-JEAN-BLU-40'
-    ),
-
-    -- Carte cadeau : aucune couleur, aucune taille
-    (
-        11,
-        25.00,
-        6,
-        NULL,
-        NOW(),
-        NOW(),
-        NULL,
-        'GIFT-CARD-25-001'
-    ),
-
-    -- Ceinture : couleur mais pas de taille
-    (
-        12,
-        44.99,
-        7,
-        9,
-        NOW(),
-        NOW(),
-        NULL,
-        'MANGO-BELT-BRN-NA'
-    ),
-
-    -- Bonnet : aucune couleur, taille unique
-    (
-        13,
-        19.99,
-        8,
-        NULL,
-        NOW(),
-        NOW(),
-        'Unique',
-        'UNIQLO-BONNET-NA-U'
-    )
-ON CONFLICT (id) DO NOTHING;
-
-
--- ============================================================
--- PRODUCT IMAGES
---
--- Toutes les images sont maintenant gérées ici.
---
--- product_color_id = NULL
---     => image générale du produit
---
--- product_color_id renseigné
---     => image spécifique à une couleur
---
--- is_main = true
---     => image principale
--- ============================================================
-INSERT INTO product_images (
-    id,
-    product_id,
-    product_color_id,
-    is_main,
-    display_order,
-    created_at,
-    updated_at,
-    alt,
-    url,
-    object_key
-) VALUES
-
-    -- ========================================================
-    -- NIKE
-    -- ========================================================
-
-    -- Image générale
-    (
-        1,
-        1,
-        NULL,
-        true,
-        0,
-        NOW(),
-        NOW(),
-        'T-shirt Nike Basic - image principale',
-        'https://images.pexels.com/photos/5698847/pexels-photo-5698847.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-
-    -- Noir
-    (
-        2,
-        1,
-        1,
-        true,
-        0,
-        NOW(),
-        NOW(),
-        'T-shirt Nike Basic Noir',
-        'https://images.pexels.com/photos/9558598/pexels-photo-9558598.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-    (
-        16,
-        1,
-        1,
-        false,
-        1,
-        NOW(),
-        NOW(),
-        'T-shirt Nike Basic Noir - vue 2',
-        'https://images.pexels.com/photos/1007018/pexels-photo-1007018.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-
-    -- Blanc
-    (
-        3,
-        1,
-        2,
-        true,
-        0,
-        NOW(),
-        NOW(),
-        'T-shirt Nike Basic Blanc',
-        'https://images.pexels.com/photos/6311392/pexels-photo-6311392.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-    (
-        17,
-        1,
-        2,
-        false,
-        1,
-        NOW(),
-        NOW(),
-        'T-shirt Nike Basic Blanc - vue 2',
-        'https://images.pexels.com/photos/5325887/pexels-photo-5325887.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-
-
-    -- ========================================================
-    -- ADIDAS
-    -- ========================================================
-
-    (
-        4,
-        2,
-        NULL,
-        true,
-        0,
-        NOW(),
-        NOW(),
-        'Adidas Runner - image principale',
-        'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-
-    -- Blanc
-    (
-        5,
-        2,
-        3,
-        true,
-        0,
-        NOW(),
-        NOW(),
-        'Adidas Runner Blanc',
-        'https://images.pexels.com/photos/1456735/pexels-photo-1456735.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-    (
-        18,
-        2,
-        3,
-        false,
-        1,
-        NOW(),
-        NOW(),
-        'Adidas Runner Blanc - vue 2',
-        'https://images.pexels.com/photos/2529157/pexels-photo-2529157.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-
-    -- Noir
-    (
-        6,
-        2,
-        4,
-        true,
-        0,
-        NOW(),
-        NOW(),
-        'Adidas Runner Noir',
-        'https://images.pexels.com/photos/1598505/pexels-photo-1598505.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-    (
-        19,
-        2,
-        4,
-        false,
-        1,
-        NOW(),
-        NOW(),
-        'Adidas Runner Noir - vue 2',
-        'https://images.pexels.com/photos/267301/pexels-photo-267301.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-
-
-    -- ========================================================
-    -- PUMA
-    -- ========================================================
-
-    (
-        7,
-        3,
-        NULL,
-        true,
-        0,
-        NOW(),
-        NOW(),
-        'Hoodie Puma Classic - image principale',
-        'https://images.pexels.com/photos/7679720/pexels-photo-7679720.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-
-    -- Gris
-    (
-        8,
-        3,
-        5,
-        true,
-        0,
-        NOW(),
-        NOW(),
-        'Hoodie Puma Classic Gris',
-        'https://images.pexels.com/photos/6311602/pexels-photo-6311602.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-    (
-        20,
-        3,
-        5,
-        false,
-        1,
-        NOW(),
-        NOW(),
-        'Hoodie Puma Classic Gris - vue 2',
-        'https://images.pexels.com/photos/6311608/pexels-photo-6311608.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-
-    -- Noir
-    (
-        9,
-        3,
-        6,
-        true,
-        0,
-        NOW(),
-        NOW(),
-        'Hoodie Puma Classic Noir',
-        'https://images.pexels.com/photos/6311659/pexels-photo-6311659.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-    (
-        21,
-        3,
-        6,
-        false,
-        1,
-        NOW(),
-        NOW(),
-        'Hoodie Puma Classic Noir - vue 2',
-        'https://images.pexels.com/photos/6311669/pexels-photo-6311669.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-
-
-    -- ========================================================
-    -- ZARA
-    -- ========================================================
-
-    (
-        10,
-        4,
-        NULL,
-        true,
-        0,
-        NOW(),
-        NOW(),
-        'Sac Zara Noir - image principale',
-        'https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-    (
-        22,
-        4,
-        7,
-        false,
-        1,
-        NOW(),
-        NOW(),
-        'Sac Zara Noir - vue 1 couleur',
-        'https://images.pexels.com/photos/904350/pexels-photo-904350.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-    (
-        23,
-        4,
-        7,
-        false,
-        2,
-        NOW(),
-        NOW(),
-        'Sac Zara Noir - vue 2 couleur',
-        'https://images.pexels.com/photos/1936848/pexels-photo-1936848.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-
-
-    -- ========================================================
-    -- LEVIS
-    -- ========================================================
-
-    (
-        11,
-        5,
-        NULL,
-        true,
-        0,
-        NOW(),
-        NOW(),
-        'Jean Levis Slim - image principale',
-        'https://images.pexels.com/photos/1598507/pexels-photo-1598507.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-    (
-        12,
-        5,
-        8,
-        true,
-        0,
-        NOW(),
-        NOW(),
-        'Jean Levis Slim Bleu',
-        'https://images.pexels.com/photos/1082529/pexels-photo-1082529.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-    (
-        24,
-        5,
-        8,
-        false,
-        1,
-        NOW(),
-        NOW(),
-        'Jean Levis Slim Bleu - vue 2',
-        'https://images.pexels.com/photos/1598508/pexels-photo-1598508.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-
-
-    -- ========================================================
-    -- CARTE CADEAU
-    -- Produit sans couleur et sans taille
-    -- ========================================================
-
-    (
-        13,
-        6,
-        NULL,
-        true,
-        0,
-        NOW(),
-        NOW(),
-        'Carte Cadeau 25 EUR',
-        'https://images.pexels.com/photos/5632402/pexels-photo-5632402.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-
-
-    -- ========================================================
-    -- CEINTURE
-    -- Couleur marron, pas de taille
-    -- ========================================================
-
-    (
-        14,
-        7,
-        NULL,
-        true,
-        0,
-        NOW(),
-        NOW(),
-        'Ceinture Cuir Classique - image principale',
-        'https://images.pexels.com/photos/45055/pexels-photo-45055.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-    (
-        25,
-        7,
-        9,
-        false,
-        1,
-        NOW(),
-        NOW(),
-        'Ceinture Cuir Classique Marron - vue 1',
-        'https://images.pexels.com/photos/2079249/pexels-photo-2079249.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-    (
-        26,
-        7,
-        9,
-        false,
-        2,
-        NOW(),
-        NOW(),
-        'Ceinture Cuir Classique Marron - vue 2',
-        'https://images.pexels.com/photos/374680/pexels-photo-374680.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    ),
-
-
-    -- ========================================================
-    -- BONNET
-    -- Sans couleur, taille unique
-    -- ========================================================
-
-    (
-        15,
-        8,
-        NULL,
-        true,
-        0,
-        NOW(),
-        NOW(),
-        'Bonnet Minimal',
-        'https://images.pexels.com/photos/634785/pexels-photo-634785.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        NULL
-    )
-
-ON CONFLICT (id) DO NOTHING;
-
-
--- ============================================================
--- STOCKS
--- ============================================================
-INSERT INTO stocks (
-    id,
-    quantity,
-    reserved_quantity,
-    variant_id,
-    created_at,
-    updated_at
-) VALUES
-    (1, 50, 5, 1, NOW(), NOW()),
-    (2, 35, 3, 2, NOW(), NOW()),
-    (3, 40, 4, 3, NOW(), NOW()),
-    (4, 20, 2, 4, NOW(), NOW()),
-    (5, 15, 1, 5, NOW(), NOW()),
-    (6, 25, 5, 6, NOW(), NOW()),
-    (7, 18, 3, 7, NOW(), NOW()),
-    (8, 30, 4, 8, NOW(), NOW()),
-    (9, 22, 2, 9, NOW(), NOW()),
-    (10, 12, 1, 10, NOW(), NOW()),
-    (11, 999, 5, 11, NOW(), NOW()),
-    (12, 14, 3, 12, NOW(), NOW()),
-    (13, 20, 4, 13, NOW(), NOW())
-ON CONFLICT (id) DO NOTHING;
-
-
--- ============================================================
--- CART ITEMS
--- ============================================================
-INSERT INTO cart_items (
-    id,
-    cart_id,
-    quantity,
-    variant_id,
-    created_at,
-    updated_at
-) VALUES
-    (1, 1, 2, 1, NOW(), NOW()),
-    (2, 1, 1, 4, NOW(), NOW()),
-    (3, 2, 1, 6, NOW(), NOW()),
-    (4, 3, 3, 9, NOW(), NOW())
-ON CONFLICT (id) DO NOTHING;
-
-
--- ============================================================
--- PROMOS
--- ============================================================
-INSERT INTO promos (
-    id,
-    discount_value,
-    is_active,
-    created_at,
-    end_date,
-    start_date,
-    updated_at,
-    code
-) VALUES
-    (
-        1,
-        10.00,
-        true,
-        NOW(),
-        '2026-12-31',
-        '2026-01-01',
-        NOW(),
-        'WELCOME10'
-    ),
-    (
-        2,
-        20.00,
-        true,
-        NOW(),
-        '2026-08-31',
-        '2026-06-01',
-        NOW(),
-        'SUMMER20'
-    ),
-    (
-        3,
-        15.00,
-        false,
-        NOW(),
-        '2025-12-31',
-        '2025-01-01',
-        NOW(),
-        'OLDPROMO'
-    )
-ON CONFLICT (id) DO NOTHING;
-
-
--- ============================================================
--- PRODUCT PROMOS
--- ============================================================
-INSERT INTO product_promos (
-    id,
-    product_id,
-    promo_id,
-    created_at,
-    updated_at
-) VALUES
-    (1, 1, 1, NOW(), NOW()),
-    (2, 2, 2, NOW(), NOW()),
-    (3, 3, 1, NOW(), NOW())
-ON CONFLICT (id) DO NOTHING;
-
-
--- ============================================================
--- TAX SETTINGS
--- ============================================================
-INSERT INTO tax_settings (
-    id,
-    rate,
-    active,
-    created_at,
-    updated_at
-) VALUES
-    (1, 0.0850, true, NOW(), NOW()),
-    (2, 0.0725, false, NOW(), NOW())
-ON CONFLICT (id) DO NOTHING;
-
-
--- ============================================================
--- SHIPPING METHODS
--- ============================================================
-INSERT INTO shipping_methods (
-    id,
-    created_at,
-    updated_at,
-    active,
-    code,
-    name,
-    delivery_type,
-    description,
-    min_delivery_days,
-    max_delivery_days,
-    price,
-    free_shipping_threshold
-) VALUES
-    (
-        1,
-        NOW(),
-        NOW(),
-        true,
-        'STANDARD_HOME',
-        'Standard Home Delivery',
-        'HOME',
-        'Reliable delivery for standard orders',
-        3,
-        5,
-        5.99,
-        120.00
-    ),
-    (
-        2,
-        NOW(),
-        NOW(),
-        true,
-        'EXPRESS_HAND',
-        'Express Hand-to-Hand',
-        'HAND_TO_HAND',
-        'Fast delivery with in-person handoff',
-        1,
-        2,
-        12.99,
-        NULL
-    ),
-    (
-        3,
-        NOW(),
-        NOW(),
-        true,
-        'LOCKER_PICKUP',
-        'Locker Pickup',
-        'LOCKER',
-        'Pick up your order at a nearby secure locker',
-        2,
-        4,
-        3.49,
-        80.00
-    ),
-    (
-        4,
-        NOW(),
-        NOW(),
-        true,
-        'PICKUP_POINT',
-        'Pickup Point',
-        'PICKUP_POINT',
-        'Collect from a neighborhood pickup location',
-        2,
-        4,
-        2.99,
-        70.00
-    )
-ON CONFLICT (id) DO NOTHING;
-
-
--- ============================================================
--- COUPONS
--- ============================================================
-INSERT INTO coupons (
-    id,
-    created_at,
-    updated_at,
-    code,
-    description,
-    discount_type,
-    discount_value,
-    minimum_order_amount,
-    start_date,
-    end_date,
-    active,
-    usage_limit,
-    used_count,
-    one_time_per_user
-) VALUES
-    (
-        1,
-        NOW(),
-        NOW(),
-        'WELCOME10',
-        '10% off on first eligible orders',
-        'PERCENTAGE',
-        10.00,
-        50.00,
-        '2026-01-01 00:00:00',
-        '2027-12-31 23:59:59',
-        true,
-        10000,
-        1,
-        true
-    ),
-    (
-        2,
-        NOW(),
-        NOW(),
-        'SAVE20',
-        'Flat 20 off for orders above 100',
-        'FIXED_AMOUNT',
-        20.00,
-        100.00,
-        '2026-01-01 00:00:00',
-        '2027-12-31 23:59:59',
-        true,
-        5000,
-        0,
-        false
-    ),
-    (
-        3,
-        NOW(),
-        NOW(),
-        'FREESHIP',
-        'Free shipping on eligible orders',
-        'FREE_SHIPPING',
-        0.00,
-        40.00,
-        '2026-01-01 00:00:00',
-        '2027-12-31 23:59:59',
-        true,
-        NULL,
-        0,
-        false
-    )
-ON CONFLICT (id) DO NOTHING;
-
-
--- ============================================================
--- ORDERS
--- ============================================================
-INSERT INTO orders (
-    id,
-    delivery_address_id,
-    shipping_order,
-    shipping_cost,
-    shipping_method_name,
-    delivery_type,
-    delivery_min_days,
-    delivery_max_days,
-    shipping_first_name,
-    shipping_last_name,
-    shipping_street,
-    shipping_city,
-    shipping_state,
-    shipping_zip_code,
-    shipping_country,
-    shipping_phone,
-    coupon_code_used,
-    discount_amount,
-    subtotal,
-    tax_rate,
-    tax_amount,
-    total,
-    user_id,
-    created_at,
-    date_order,
-    updated_at,
-    order_number,
-    status
-) VALUES
-    (
-        1,
-        1,
-        5.99,
-        5.99,
-        'Standard Home Delivery',
-        'HOME',
-        3,
-        5,
-        'Alice',
-        'Martin',
-        '12 Market Street',
-        'San Francisco',
-        'CA',
-        '94105',
-        'US',
-        '415-555-0101',
-        'WELCOME10',
-        10.00,
-        59.98,
-        0.20,
-        11.20,
-        66.17,
-        1,
-        NOW(),
-        '2026-05-10 14:00:00',
-        NOW(),
-        'ORD-2026-0001',
-        'PAID'
-    ),
-    (
-        2,
-        2,
-        4.99,
-        4.99,
-        'Pickup Point',
-        'PICKUP_POINT',
-        2,
-        4,
-        'Karim',
-        'Benali',
-        '8 Madison Avenue',
-        'New York',
-        'NY',
-        '10010',
-        'US',
-        '212-555-0102',
-        NULL,
-        0.00,
-        59.99,
-        0.20,
-        12.00,
-        76.98,
-        2,
-        NOW(),
-        '2026-05-11 10:30:00',
-        NOW(),
-        'ORD-2026-0002',
-        'PENDING'
-    ),
-    (
-        3,
-        3,
-        6.99,
-        6.99,
-        'Express Hand-to-Hand',
-        'HAND_TO_HAND',
-        1,
-        2,
-        'Sophie',
-        'Durand',
-        '25 Lakeshore Drive',
-        'Chicago',
-        'IL',
-        '60601',
-        'US',
-        '312-555-0103',
-        NULL,
-        0.00,
-        209.96,
-        0.20,
-        41.99,
-        258.94,
-        3,
-        NOW(),
-        '2026-05-12 16:45:00',
-        NOW(),
-        'ORD-2026-0003',
-        'SHIPPED'
-    )
-ON CONFLICT (id) DO NOTHING;
-
-
--- ============================================================
--- ORDER ITEMS
---
--- IMPORTANT :
--- Les snapshots permettent de conserver l'état historique
--- du produit au moment de la commande.
--- ============================================================
-INSERT INTO order_items (
-    id,
-    order_id,
-    variant_id,
-    quantity,
-    unit_price,
-    total_price,
-    product_name_snapshot,
-    variant_sku_snapshot,
-    color_snapshot,
-    image_url_snapshot,
-    product_description_snapshot,
-    size_snapshot,
-    created_at,
-    updated_at
-) VALUES
-
-    -- ========================================================
-    -- ORDER 1 - Alice
-    -- 2 x Nike Noir S
-    -- ========================================================
-    (
-        1,
-        1,
-        1,
-        2,
-        29.99,
-        59.98,
-        'T-shirt Nike Basic',
-        'NIKE-TS-BLK-S',
-        'Noir / S',
-        'https://images.pexels.com/photos/9558598/pexels-photo-9558598.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        'T-shirt Nike en coton confortable',
-        'S',
-        NOW(),
-        NOW()
-    ),
-
-    -- ========================================================
-    -- ORDER 2 - Karim
-    -- 1 x Adidas Runner Blanc 42
-    -- ========================================================
-    (
-        2,
-        2,
-        4,
-        1,
-        79.99,
-        79.99,
-        'Adidas Runner',
-        'ADI-RUN-WHT-42',
-        'Blanc / 42',
-        'https://images.pexels.com/photos/1456735/pexels-photo-1456735.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        'Sneakers Adidas légères pour tous les jours',
-        '42',
-        NOW(),
-        NOW()
-    ),
-
-    -- ========================================================
-    -- ORDER 3 - Sophie
-    -- 2 x Puma Gris M
-    -- 2 x Puma Noir L
-    -- ========================================================
-    (
-        3,
-        3,
-        6,
-        2,
-        59.99,
-        119.98,
-        'Hoodie Puma Classic',
-        'PUMA-HOOD-GRY-M',
-        'Gris / M',
-        'https://images.pexels.com/photos/6311602/pexels-photo-6311602.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        'Sweat à capuche Puma doux et chaud',
-        'M',
-        NOW(),
-        NOW()
-    ),
-    (
-        4,
-        3,
-        7,
-        1,
-        59.99,
-        59.99,
-        'Hoodie Puma Classic',
-        'PUMA-HOOD-BLK-L',
-        'Noir / L',
-        'https://images.pexels.com/photos/6311659/pexels-photo-6311659.jpeg?auto=compress&cs=tinysrgb&w=1200',
-        'Sweat à capuche Puma doux et chaud',
-        'L',
-        NOW(),
-        NOW()
-    )
-ON CONFLICT (id) DO NOTHING;
-
-
--- ============================================================
--- COUPON USAGES
--- ============================================================
-INSERT INTO coupon_usages (
-    id,
-    coupon_id,
-    user_id,
-    order_id,
-    used_at,
-    created_at,
-    updated_at
-) VALUES
-    (
-        1,
-        1,
-        1,
-        1,
-        '2026-05-10 14:00:00',
-        NOW(),
-        NOW()
-    )
-ON CONFLICT (id) DO NOTHING;
-
-
--- ============================================================
--- DELIVERY PREFERENCES
--- ============================================================
-INSERT INTO delivery_preferences (
-    id,
-    order_id,
-    leave_at_door,
-    require_signature,
-    delivery_note,
-    created_at,
-    updated_at
-) VALUES
-    (
-        1,
-        1,
-        true,
-        false,
-        'Leave package with concierge if absent',
-        NOW(),
-        NOW()
-    ),
-    (
-        2,
-        2,
-        false,
-        true,
-        'Signature required at front desk',
-        NOW(),
-        NOW()
-    ),
-    (
-        3,
-        3,
-        false,
-        false,
-        'Call 10 minutes before arrival',
-        NOW(),
-        NOW()
-    )
-ON CONFLICT (id) DO NOTHING;
-
-
--- ============================================================
--- PAYMENTS
--- ============================================================
-INSERT INTO payments (
-    id,
-    amount,
-    order_id,
-    created_at,
-    paid_at,
-    updated_at,
-    payment_method,
-    status,
-    stripe_payment_intent_id
-) VALUES
-    (
-        1,
-        66.17,
-        1,
-        NOW(),
-        '2026-05-10 14:30:00',
-        NOW(),
-        'CARD',
-        'PAID',
-        'pi_1'
-    ),
-    (
-        2,
-        76.98,
-        2,
-        NOW(),
-        NULL,
-        NOW(),
-        'PAYPAL',
-        'PENDING',
-        'pi_2'
-    ),
-    (
-        3,
-        258.94,
-        3,
-        NOW(),
-        '2026-05-12 17:15:00',
-        NOW(),
-        'CARD',
-        'PAID',
-        'pi_3'
-    )
-ON CONFLICT (id) DO NOTHING;
-
-
--- ============================================================
--- INVOICES
--- ============================================================
-INSERT INTO invoices (
-    id,
-    order_id,
-    total,
-    created_at,
-    date_invoice,
-    updated_at,
-    invoice_number
-) VALUES
-    (
-        1,
-        1,
-        66.17,
-        NOW(),
-        '2026-05-10',
-        NOW(),
-        'INV-2026-0001'
-    ),
-    (
-        2,
-        2,
-        76.98,
-        NOW(),
-        '2026-05-11',
-        NOW(),
-        'INV-2026-0002'
-    ),
-    (
-        3,
-        3,
-        258.94,
-        NOW(),
-        '2026-05-12',
-        NOW(),
-        'INV-2026-0003'
-    )
-ON CONFLICT (id) DO NOTHING;
-
-
--- ============================================================
--- RESET SEQUENCES
 -- ============================================================
 
-SELECT setval(
-    pg_get_serial_sequence('users', 'id'),
-    COALESCE((SELECT MAX(id) FROM users), 0) + 1,
-    false
-);
+INSERT INTO variants
+(id, price, product_id, created_at, updated_at, sku)
+VALUES
+(1,29.99,1,NOW(),NOW(),'NIKE-TS-BLK-S'),
+(2,29.99,1,NOW(),NOW(),'NIKE-TS-BLK-M'),
+(3,29.99,1,NOW(),NOW(),'NIKE-TS-WHT-M'),
 
-SELECT setval(
-    pg_get_serial_sequence('delivery_addresses', 'id'),
-    COALESCE((SELECT MAX(id) FROM delivery_addresses), 0) + 1,
-    false
-);
+(4,79.99,2,NOW(),NOW(),'ADI-RUN-WHT-42'),
+(5,79.99,2,NOW(),NOW(),'ADI-RUN-BLK-43'),
 
-SELECT setval(
-    pg_get_serial_sequence('carts', 'id'),
-    COALESCE((SELECT MAX(id) FROM carts), 0) + 1,
-    false
-);
+(6,59.99,3,NOW(),NOW(),'PUMA-HOOD-GRY-M'),
+(7,59.99,3,NOW(),NOW(),'PUMA-HOOD-BLK-L'),
 
-SELECT setval(
-    pg_get_serial_sequence('categories', 'id'),
-    COALESCE((SELECT MAX(id) FROM categories), 0) + 1,
-    false
-);
+(8,39.99,4,NOW(),NOW(),'ZARA-BAG-BLK-U'),
 
-SELECT setval(
-    pg_get_serial_sequence('products', 'id'),
-    COALESCE((SELECT MAX(id) FROM products), 0) + 1,
-    false
-);
+(9,69.99,5,NOW(),NOW(),'LEVIS-JEAN-BLU-38'),
+(10,69.99,5,NOW(),NOW(),'LEVIS-JEAN-BLU-40'),
 
-SELECT setval(
-    pg_get_serial_sequence('product_colors', 'id'),
-    COALESCE((SELECT MAX(id) FROM product_colors), 0) + 1,
-    false
-);
+(11,25.00,6,NOW(),NOW(),'GIFT-CARD-25-001'),
 
-SELECT setval(
-    pg_get_serial_sequence('product_categories', 'id'),
-    COALESCE((SELECT MAX(id) FROM product_categories), 0) + 1,
-    false
-);
+(12,44.99,7,NOW(),NOW(),'MANGO-BELT-BRN-U'),
 
-SELECT setval(
-    pg_get_serial_sequence('product_images', 'id'),
-    COALESCE((SELECT MAX(id) FROM product_images), 0) + 1,
-    false
-);
+(13,19.99,8,NOW(),NOW(),'UNIQLO-BONNET-GRY-U');
 
-SELECT setval(
-    pg_get_serial_sequence('variants', 'id'),
-    COALESCE((SELECT MAX(id) FROM variants), 0) + 1,
-    false
-);
+-- ============================================================
+-- VARIANT ATTRIBUTE VALUES
+-- ============================================================
 
-SELECT setval(
-    pg_get_serial_sequence('stocks', 'id'),
-    COALESCE((SELECT MAX(id) FROM stocks), 0) + 1,
-    false
-);
+INSERT INTO variant_attribute_values
+(id, variant_id, attribute_value_id, created_at, updated_at)
+VALUES
+(1,1,1,NOW(),NOW()),
+(2,1,6,NOW(),NOW()),
 
-SELECT setval(
-    pg_get_serial_sequence('cart_items', 'id'),
-    COALESCE((SELECT MAX(id) FROM cart_items), 0) + 1,
-    false
-);
+(3,2,1,NOW(),NOW()),
+(4,2,7,NOW(),NOW()),
 
-SELECT setval(
-    pg_get_serial_sequence('promos', 'id'),
-    COALESCE((SELECT MAX(id) FROM promos), 0) + 1,
-    false
-);
+(5,3,2,NOW(),NOW()),
+(6,3,7,NOW(),NOW()),
 
-SELECT setval(
-    pg_get_serial_sequence('product_promos', 'id'),
-    COALESCE((SELECT MAX(id) FROM product_promos), 0) + 1,
-    false
-);
+(7,4,2,NOW(),NOW()),
+(8,4,11,NOW(),NOW()),
 
-SELECT setval(
-    pg_get_serial_sequence('shipping_methods', 'id'),
-    COALESCE((SELECT MAX(id) FROM shipping_methods), 0) + 1,
-    false
-);
+(9,5,1,NOW(),NOW()),
+(10,5,12,NOW(),NOW()),
 
-SELECT setval(
-    pg_get_serial_sequence('coupons', 'id'),
-    COALESCE((SELECT MAX(id) FROM coupons), 0) + 1,
-    false
-);
+(11,6,3,NOW(),NOW()),
+(12,6,7,NOW(),NOW()),
 
-SELECT setval(
-    pg_get_serial_sequence('orders', 'id'),
-    COALESCE((SELECT MAX(id) FROM orders), 0) + 1,
-    false
-);
+(13,7,1,NOW(),NOW()),
+(14,7,8,NOW(),NOW()),
 
-SELECT setval(
-    pg_get_serial_sequence('delivery_preferences', 'id'),
-    COALESCE((SELECT MAX(id) FROM delivery_preferences), 0) + 1,
-    false
-);
+(15,8,1,NOW(),NOW()),
+(16,8,13,NOW(),NOW()),
 
-SELECT setval(
-    pg_get_serial_sequence('coupon_usages', 'id'),
-    COALESCE((SELECT MAX(id) FROM coupon_usages), 0) + 1,
-    false
-);
+(17,9,4,NOW(),NOW()),
+(18,9,9,NOW(),NOW()),
 
-SELECT setval(
-    pg_get_serial_sequence('order_items', 'id'),
-    COALESCE((SELECT MAX(id) FROM order_items), 0) + 1,
-    false
-);
+(19,10,4,NOW(),NOW()),
+(20,10,10,NOW(),NOW()),
 
-SELECT setval(
-    pg_get_serial_sequence('payments', 'id'),
-    COALESCE((SELECT MAX(id) FROM payments), 0) + 1,
-    false
-);
+(21,12,5,NOW(),NOW()),
+(22,12,13,NOW(),NOW()),
 
-SELECT setval(
-    pg_get_serial_sequence('invoices', 'id'),
-    COALESCE((SELECT MAX(id) FROM invoices), 0) + 1,
-    false
-);
+(23,13,3,NOW(),NOW()),
+(24,13,13,NOW(),NOW());
 
-SELECT setval(
-    pg_get_serial_sequence('tax_settings', 'id'),
-    COALESCE((SELECT MAX(id) FROM tax_settings), 0) + 1,
-    false
-);
+-- ============================================================
+-- STOCKS (DISPONIBLES POUR TEST)
+-- ============================================================
+
+INSERT INTO stocks
+(id, quantity, reserved_quantity, variant_id, created_at, updated_at)
+VALUES
+(1, 14, 0, 1, NOW(), NOW()),
+(2, 11, 0, 2, NOW(), NOW()),
+(3, 7, 0, 3, NOW(), NOW()),
+(4, 8, 0, 4, NOW(), NOW()),
+(5, 10, 0, 5, NOW(), NOW()),
+(6, 9, 0, 6, NOW(), NOW()),
+(7, 6, 0, 7, NOW(), NOW()),
+(8, 5, 0, 8, NOW(), NOW()),
+(9, 12, 0, 9, NOW(), NOW()),
+(10, 9, 0, 10, NOW(), NOW()),
+(11, 20, 0, 11, NOW(), NOW()),
+(12, 13, 0, 12, NOW(), NOW()),
+(13, 15, 0, 13, NOW(), NOW());
+
+-- ============================================================
+-- PRODUCT IMAGES (URLS REELLES ACCESSIBLES)
+-- ============================================================
+
+INSERT INTO product_images
+(id, url, object_key, alt, is_main, display_order, product_id, visual_attribute_value_id, created_at, updated_at)
+VALUES
+-- Produit 1 : T-shirt Nike Basic
+(1, 'https://picsum.photos/seed/tshirt-nike-main/1200/1200', null, 'T-shirt Nike Basic vue principale', true, 0, 1, null, NOW(), NOW()),
+(2, 'https://picsum.photos/seed/tshirt-nike-noir/1200/1200', null, 'T-shirt Nike Basic noir', false, 1, 1, 1, NOW(), NOW()),
+(3, 'https://picsum.photos/seed/tshirt-nike-blanc/1200/1200', null, 'T-shirt Nike Basic blanc', false, 2, 1, 2, NOW(), NOW()),
+
+-- Produit 2 : Adidas Runner
+(4, 'https://picsum.photos/seed/adidas-runner-main/1200/1200', null, 'Adidas Runner vue principale', true, 0, 2, null, NOW(), NOW()),
+(5, 'https://picsum.photos/seed/adidas-runner-blanc/1200/1200', null, 'Adidas Runner blanc', false, 1, 2, 2, NOW(), NOW()),
+(6, 'https://picsum.photos/seed/adidas-runner-noir/1200/1200', null, 'Adidas Runner noir', false, 2, 2, 1, NOW(), NOW()),
+
+-- Produit 3 : Hoodie Puma Classic
+(7, 'https://picsum.photos/seed/hoodie-puma-main/1200/1200', null, 'Hoodie Puma Classic vue principale', true, 0, 3, null, NOW(), NOW()),
+(8, 'https://picsum.photos/seed/hoodie-puma-gris/1200/1200', null, 'Hoodie Puma Classic gris', false, 1, 3, 3, NOW(), NOW()),
+(9, 'https://picsum.photos/seed/hoodie-puma-noir/1200/1200', null, 'Hoodie Puma Classic noir', false, 2, 3, 1, NOW(), NOW()),
+
+-- Produit 4 : Sac Zara Noir
+(10, 'https://picsum.photos/seed/sac-zara-main/1200/1200', null, 'Sac Zara Noir vue principale', true, 0, 4, null, NOW(), NOW()),
+(11, 'https://picsum.photos/seed/sac-zara-noir/1200/1200', null, 'Sac Zara Noir détail', false, 1, 4, 1, NOW(), NOW()),
+
+-- Produit 5 : Jean Levis Slim
+(12, 'https://picsum.photos/seed/jean-levis-main/1200/1200', null, 'Jean Levis Slim vue principale', true, 0, 5, null, NOW(), NOW()),
+(13, 'https://picsum.photos/seed/jean-levis-bleu/1200/1200', null, 'Jean Levis Slim bleu', false, 1, 5, 4, NOW(), NOW()),
+
+-- Produit 6 : Carte cadeau
+(14, 'https://picsum.photos/seed/gift-card-main/1200/1200', null, 'Carte cadeau 25 EUR', true, 0, 6, null, NOW(), NOW()),
+
+-- Produit 7 : Ceinture Mango
+(15, 'https://picsum.photos/seed/ceinture-mango-main/1200/1200', null, 'Ceinture Cuir Classique vue principale', true, 0, 7, null, NOW(), NOW()),
+(16, 'https://picsum.photos/seed/ceinture-mango-marron/1200/1200', null, 'Ceinture Cuir Classique marron', false, 1, 7, 5, NOW(), NOW()),
+
+-- Produit 8 : Bonnet Uniqlo
+(17, 'https://picsum.photos/seed/bonnet-uniqlo-main/1200/1200', null, 'Bonnet Minimal vue principale', true, 0, 8, null, NOW(), NOW()),
+(18, 'https://picsum.photos/seed/bonnet-uniqlo-gris/1200/1200', null, 'Bonnet Minimal gris', false, 1, 8, 3, NOW(), NOW());
+
+-- ============================================================
+-- PROMOS (POUR TEST CATALOGUE)
+-- ============================================================
+
+INSERT INTO promos
+(id, created_at, updated_at, code, discount_value, start_date, end_date, is_active)
+VALUES
+(1, NOW(), NOW(), 'GLOBAL-TSHIRT-20', 20.00, NOW() - INTERVAL '7 day', NOW() + INTERVAL '21 day', true),
+(2, NOW(), NOW(), 'GLOBAL-LEVIS-15', 15.00, NOW() - INTERVAL '7 day', NOW() + INTERVAL '21 day', true),
+(3, NOW(), NOW(), 'VAR-ADIDAS-10', 10.00, NOW() - INTERVAL '7 day', NOW() + INTERVAL '21 day', true),
+(4, NOW(), NOW(), 'VAR-ADIDAS-35', 35.00, NOW() - INTERVAL '7 day', NOW() + INTERVAL '21 day', true),
+(5, NOW(), NOW(), 'VAR-LEVIS-30', 30.00, NOW() - INTERVAL '7 day', NOW() + INTERVAL '21 day', true);
+
+-- ============================================================
+-- PRODUIT <-> PROMO (REMISE GLOBALE)
+-- ============================================================
+
+INSERT INTO product_promos
+(id, created_at, updated_at, product_id, promo_id)
+VALUES
+(1, NOW(), NOW(), 1, 1),
+(2, NOW(), NOW(), 5, 2);
+
+-- ============================================================
+-- VARIANTE <-> PROMO (REMISE SPECIFIQUE)
+-- ============================================================
+
+INSERT INTO variant_promos
+(id, created_at, updated_at, variant_id, promo_id)
+VALUES
+(1, NOW(), NOW(), 4, 3),
+(2, NOW(), NOW(), 5, 4),
+(3, NOW(), NOW(), 9, 5);
+
+-- ============================================================
+-- CATALOG PRODUCT
+-- ============================================================
+
+INSERT INTO catalog_product
+(id, product_id, created_at, updated_at, name, slug, price,
+ brand, image_url, category_id, category_name,
+ base_price_min, base_price_max, final_price_min, final_price_max,
+ display_price, discount_percent_global, discount_percent_min,
+ discount_percent_max, has_discount, promo_scope)
+VALUES
+
+(1,1,NOW(),NOW(),
+'T-shirt Nike Basic',
+'t-shirt-nike-basic',
+23.99,
+'Nike',
+'https://picsum.photos/seed/tshirt-nike-main/1200/1200',
+20,
+'T-shirts',
+29.99, 29.99, 23.99, 23.99,
+23.99, 20.00, 20.00,
+20.00, true, 'GLOBAL'),
+
+(2,2,NOW(),NOW(),
+'Adidas Runner',
+'adidas-runner',
+51.99,
+'Adidas',
+'https://picsum.photos/seed/adidas-runner-main/1200/1200',
+44,
+'Sneakers',
+79.99, 79.99, 51.99, 71.99,
+51.99, 0.00, 10.00,
+35.00, true, 'VARIANT'),
+
+(3,3,NOW(),NOW(),
+'Hoodie Puma Classic',
+'hoodie-puma-classic',
+59.99,
+'Puma',
+'https://picsum.photos/seed/hoodie-puma-main/1200/1200',
+41,
+'Sweats',
+59.99, 59.99, 59.99, 59.99,
+59.99, 0.00, 0.00,
+0.00, false, 'NONE'),
+
+(4,4,NOW(),NOW(),
+'Sac Zara Noir',
+'sac-zara-noir',
+39.99,
+'Zara',
+'https://picsum.photos/seed/sac-zara-main/1200/1200',
+70,
+'Sacs',
+39.99, 39.99, 39.99, 39.99,
+39.99, 0.00, 0.00,
+0.00, false, 'NONE'),
+
+(5,5,NOW(),NOW(),
+'Jean Levis Slim',
+'jean-levis-slim',
+48.99,
+'Levis',
+'https://picsum.photos/seed/jean-levis-main/1200/1200',
+43,
+'Pantalons',
+69.99, 69.99, 48.99, 59.49,
+48.99, 15.00, 15.00,
+30.00, true, 'VARIANT'),
+
+(6,6,NOW(),NOW(),
+'Carte Cadeau 25 EUR',
+'carte-cadeau-25-eur',
+25.00,
+'NiceShop',
+'https://picsum.photos/seed/gift-card-main/1200/1200',
+4,
+'Accessoires',
+25.00, 25.00, 25.00, 25.00,
+25.00, 0.00, 0.00,
+0.00, false, 'NONE'),
+
+(7,7,NOW(),NOW(),
+'Ceinture Cuir Classique',
+'ceinture-cuir-classique',
+44.99,
+'Mango',
+'https://picsum.photos/seed/ceinture-mango-main/1200/1200',
+71,
+'Ceintures',
+44.99, 44.99, 44.99, 44.99,
+44.99, 0.00, 0.00,
+0.00, false, 'NONE'),
+
+(8,8,NOW(),NOW(),
+'Bonnet Minimal',
+'bonnet-minimal',
+19.99,
+'Uniqlo',
+'https://picsum.photos/seed/bonnet-uniqlo-main/1200/1200',
+73,
+'Chapeaux',
+19.99, 19.99, 19.99, 19.99,
+19.99, 0.00, 0.00,
+0.00, false, 'NONE');
+
+-- ============================================================
+-- CATALOG PRODUCT FACET
+-- ============================================================
+
+INSERT INTO catalog_product_facet
+(id, product_id, facet_id, facet_code,
+ facet_value_id, value_code, value_label,
+ created_at, updated_at)
+VALUES
+
+-- Produit 1
+(1,1,1,'color',1,'1','Noir',NOW(),NOW()),
+(2,1,1,'color',2,'2','Blanc',NOW(),NOW()),
+(3,1,2,'size',6,'6','S',NOW(),NOW()),
+(4,1,2,'size',7,'7','M',NOW(),NOW()),
+(5,1,3,'brand',0,'nike','Nike',NOW(),NOW()),
+
+-- Produit 2
+(6,2,1,'color',2,'2','Blanc',NOW(),NOW()),
+(7,2,1,'color',1,'1','Noir',NOW(),NOW()),
+(8,2,2,'size',11,'11','42',NOW(),NOW()),
+(9,2,2,'size',12,'12','43',NOW(),NOW()),
+(10,2,3,'brand',0,'adidas','Adidas',NOW(),NOW()),
+
+-- Produit 3
+(11,3,1,'color',3,'3','Gris',NOW(),NOW()),
+(12,3,1,'color',1,'1','Noir',NOW(),NOW()),
+(13,3,2,'size',7,'7','M',NOW(),NOW()),
+(14,3,2,'size',8,'8','L',NOW(),NOW()),
+(15,3,3,'brand',0,'puma','Puma',NOW(),NOW()),
+
+-- Produit 4
+(16,4,1,'color',1,'1','Noir',NOW(),NOW()),
+(17,4,2,'size',13,'13','Unique',NOW(),NOW()),
+(18,4,3,'brand',0,'zara','Zara',NOW(),NOW()),
+
+-- Produit 5
+(19,5,1,'color',4,'4','Bleu',NOW(),NOW()),
+(20,5,2,'size',9,'9','38',NOW(),NOW()),
+(21,5,2,'size',10,'10','40',NOW(),NOW()),
+(22,5,3,'brand',0,'levis','Levis',NOW(),NOW()),
+
+-- Produit 7
+(23,7,1,'color',5,'5','Marron',NOW(),NOW()),
+(24,7,2,'size',13,'13','Unique',NOW(),NOW()),
+(25,7,3,'brand',0,'mango','Mango',NOW(),NOW()),
+
+-- Produit 8
+(26,8,1,'color',3,'3','Gris',NOW(),NOW()),
+(27,8,2,'size',13,'13','Unique',NOW(),NOW()),
+(28,8,3,'brand',0,'uniqlo','Uniqlo',NOW(),NOW());
+
+-- ============================================================
+-- EXTRA PRODUCTS (RICHER SEED DATASET)
+-- ============================================================
+
+INSERT INTO products
+(id, category_id, price, created_at, updated_at, brand, description, name, slug)
+VALUES
+(101,22,49.99,NOW(),NOW(),'Mango','Robe legere en lin coupe midi','Robe Linen Breeze','robe-linen-breeze'),
+(102,42,54.99,NOW(),NOW(),'Celio','Chemise oxford ajustee facile a porter','Chemise Oxford Modern','chemise-oxford-modern'),
+(103,21,64.99,NOW(),NOW(),'Puma','Sweat crop doux pour un style casual','Sweat Crop Soft Touch','sweat-crop-soft-touch'),
+(104,24,89.99,NOW(),NOW(),'Adidas','Sneakers femme semelle confortable','Sneakers Urban Pulse Femme','sneakers-urban-pulse-femme'),
+(105,40,24.99,NOW(),NOW(),'Uniqlo','T-shirt homme basique coton premium','T-shirt Essential Homme','t-shirt-essential-homme'),
+(106,62,34.99,NOW(),NOW(),'Zara Kids','Jogger enfant souple et resistant','Pantalon Jogger Kids','pantalon-jogger-kids'),
+(107,63,59.99,NOW(),NOW(),'Nike Kids','Sneakers enfant legeres pour tous les jours','Sneakers Kids Sprint','sneakers-kids-sprint'),
+(108,70,69.99,NOW(),NOW(),'Zara','Sac cabas grand format usage quotidien','Sac Cabas City','sac-cabas-city'),
+(109,72,29.99,NOW(),NOW(),'Mango','Collier minimal finition doree','Collier Minimal Dore','collier-minimal-dore'),
+(110,73,22.99,NOW(),NOW(),'Uniqlo','Bob coton unisexe leger','Bob Coton Weekend','bob-coton-weekend'),
+(111,71,39.99,NOW(),NOW(),'Levis','Ceinture cuir boucle metal classique','Ceinture Classique Homme','ceinture-classique-homme'),
+(112,23,74.99,NOW(),NOW(),'Levis','Jean femme mom fit taille haute','Jean Mom Fit Femme','jean-mom-fit-femme');
+
+INSERT INTO variants
+(id, price, product_id, created_at, updated_at, sku)
+VALUES
+(1001,49.99,101,NOW(),NOW(),'MNG-ROBE-BLU-S'),
+(1002,49.99,101,NOW(),NOW(),'MNG-ROBE-BLU-M'),
+(1003,54.99,101,NOW(),NOW(),'MNG-ROBE-BLK-L'),
+
+(1004,54.99,102,NOW(),NOW(),'CELIO-OXF-WHT-M'),
+(1005,54.99,102,NOW(),NOW(),'CELIO-OXF-WHT-L'),
+(1006,59.99,102,NOW(),NOW(),'CELIO-OXF-BLU-L'),
+
+(1007,64.99,103,NOW(),NOW(),'PUMA-CROP-GRY-S'),
+(1008,64.99,103,NOW(),NOW(),'PUMA-CROP-GRY-M'),
+(1009,69.99,103,NOW(),NOW(),'PUMA-CROP-BLK-L'),
+
+(1010,89.99,104,NOW(),NOW(),'ADI-UPF-WHT-42'),
+(1011,89.99,104,NOW(),NOW(),'ADI-UPF-WHT-43'),
+(1012,94.99,104,NOW(),NOW(),'ADI-UPF-BLK-43'),
+
+(1013,24.99,105,NOW(),NOW(),'UNIQ-TSH-WHT-S'),
+(1014,24.99,105,NOW(),NOW(),'UNIQ-TSH-WHT-M'),
+(1015,26.99,105,NOW(),NOW(),'UNIQ-TSH-BLK-L'),
+
+(1016,34.99,106,NOW(),NOW(),'ZKID-JOG-GRY-38'),
+(1017,34.99,106,NOW(),NOW(),'ZKID-JOG-GRY-40'),
+(1018,36.99,106,NOW(),NOW(),'ZKID-JOG-BLU-40'),
+
+(1019,59.99,107,NOW(),NOW(),'NKID-SPR-WHT-42'),
+(1020,59.99,107,NOW(),NOW(),'NKID-SPR-WHT-43'),
+(1021,62.99,107,NOW(),NOW(),'NKID-SPR-BLK-43'),
+
+(1022,69.99,108,NOW(),NOW(),'ZARA-CAB-BRN-U'),
+(1023,72.99,108,NOW(),NOW(),'ZARA-CAB-BLK-U'),
+
+(1024,29.99,109,NOW(),NOW(),'MNG-COLL-GOLD-U'),
+(1025,32.99,109,NOW(),NOW(),'MNG-COLL-SILV-U'),
+
+(1026,22.99,110,NOW(),NOW(),'UNIQ-BOB-BEI-U'),
+(1027,22.99,110,NOW(),NOW(),'UNIQ-BOB-BLK-U'),
+
+(1028,39.99,111,NOW(),NOW(),'LEVIS-BEL-BRN-U'),
+(1029,39.99,111,NOW(),NOW(),'LEVIS-BEL-BLK-U'),
+
+(1030,74.99,112,NOW(),NOW(),'LEVIS-MOM-BLU-38'),
+(1031,74.99,112,NOW(),NOW(),'LEVIS-MOM-BLU-40'),
+(1032,79.99,112,NOW(),NOW(),'LEVIS-MOM-BLK-40');
+
+INSERT INTO variant_attribute_values
+(id, variant_id, attribute_value_id, created_at, updated_at)
+VALUES
+(5001,1001,4,NOW(),NOW()),(5002,1001,6,NOW(),NOW()),
+(5003,1002,4,NOW(),NOW()),(5004,1002,7,NOW(),NOW()),
+(5005,1003,1,NOW(),NOW()),(5006,1003,8,NOW(),NOW()),
+
+(5007,1004,2,NOW(),NOW()),(5008,1004,7,NOW(),NOW()),
+(5009,1005,2,NOW(),NOW()),(5010,1005,8,NOW(),NOW()),
+(5011,1006,4,NOW(),NOW()),(5012,1006,8,NOW(),NOW()),
+
+(5013,1007,3,NOW(),NOW()),(5014,1007,6,NOW(),NOW()),
+(5015,1008,3,NOW(),NOW()),(5016,1008,7,NOW(),NOW()),
+(5017,1009,1,NOW(),NOW()),(5018,1009,8,NOW(),NOW()),
+
+(5019,1010,2,NOW(),NOW()),(5020,1010,11,NOW(),NOW()),
+(5021,1011,2,NOW(),NOW()),(5022,1011,12,NOW(),NOW()),
+(5023,1012,1,NOW(),NOW()),(5024,1012,12,NOW(),NOW()),
+
+(5025,1013,2,NOW(),NOW()),(5026,1013,6,NOW(),NOW()),
+(5027,1014,2,NOW(),NOW()),(5028,1014,7,NOW(),NOW()),
+(5029,1015,1,NOW(),NOW()),(5030,1015,8,NOW(),NOW()),
+
+(5031,1016,3,NOW(),NOW()),(5032,1016,9,NOW(),NOW()),
+(5033,1017,3,NOW(),NOW()),(5034,1017,10,NOW(),NOW()),
+(5035,1018,4,NOW(),NOW()),(5036,1018,10,NOW(),NOW()),
+
+(5037,1019,2,NOW(),NOW()),(5038,1019,11,NOW(),NOW()),
+(5039,1020,2,NOW(),NOW()),(5040,1020,12,NOW(),NOW()),
+(5041,1021,1,NOW(),NOW()),(5042,1021,12,NOW(),NOW()),
+
+(5043,1022,5,NOW(),NOW()),(5044,1022,13,NOW(),NOW()),
+(5045,1023,1,NOW(),NOW()),(5046,1023,13,NOW(),NOW()),
+
+(5047,1024,5,NOW(),NOW()),(5048,1024,13,NOW(),NOW()),
+(5049,1025,3,NOW(),NOW()),(5050,1025,13,NOW(),NOW()),
+
+(5051,1026,2,NOW(),NOW()),(5052,1026,13,NOW(),NOW()),
+(5053,1027,1,NOW(),NOW()),(5054,1027,13,NOW(),NOW()),
+
+(5055,1028,5,NOW(),NOW()),(5056,1028,13,NOW(),NOW()),
+(5057,1029,1,NOW(),NOW()),(5058,1029,13,NOW(),NOW()),
+
+(5059,1030,4,NOW(),NOW()),(5060,1030,9,NOW(),NOW()),
+(5061,1031,4,NOW(),NOW()),(5062,1031,10,NOW(),NOW()),
+(5063,1032,1,NOW(),NOW()),(5064,1032,10,NOW(),NOW());
+
+INSERT INTO stocks
+(id, quantity, reserved_quantity, variant_id, created_at, updated_at)
+VALUES
+(7001,18,0,1001,NOW(),NOW()),(7002,15,0,1002,NOW(),NOW()),(7003,9,0,1003,NOW(),NOW()),
+(7004,16,0,1004,NOW(),NOW()),(7005,11,0,1005,NOW(),NOW()),(7006,7,0,1006,NOW(),NOW()),
+(7007,13,0,1007,NOW(),NOW()),(7008,12,0,1008,NOW(),NOW()),(7009,8,0,1009,NOW(),NOW()),
+(7010,14,0,1010,NOW(),NOW()),(7011,10,0,1011,NOW(),NOW()),(7012,6,0,1012,NOW(),NOW()),
+(7013,20,0,1013,NOW(),NOW()),(7014,17,0,1014,NOW(),NOW()),(7015,9,0,1015,NOW(),NOW()),
+(7016,19,0,1016,NOW(),NOW()),(7017,16,0,1017,NOW(),NOW()),(7018,10,0,1018,NOW(),NOW()),
+(7019,13,0,1019,NOW(),NOW()),(7020,11,0,1020,NOW(),NOW()),(7021,7,0,1021,NOW(),NOW()),
+(7022,12,0,1022,NOW(),NOW()),(7023,8,0,1023,NOW(),NOW()),
+(7024,22,0,1024,NOW(),NOW()),(7025,14,0,1025,NOW(),NOW()),
+(7026,15,0,1026,NOW(),NOW()),(7027,10,0,1027,NOW(),NOW()),
+(7028,18,0,1028,NOW(),NOW()),(7029,13,0,1029,NOW(),NOW()),
+(7030,12,0,1030,NOW(),NOW()),(7031,10,0,1031,NOW(),NOW()),(7032,6,0,1032,NOW(),NOW());
+
+INSERT INTO product_images
+(id, url, object_key, alt, is_main, display_order, product_id, visual_attribute_value_id, created_at, updated_at)
+VALUES
+(9001,'https://picsum.photos/seed/fashion-101/1200/1200',null,'Robe Linen Breeze vue principale',true,0,101,null,NOW(),NOW()),
+(9002,'https://picsum.photos/seed/fashion-102/1200/1200',null,'Robe Linen Breeze bleu',false,1,101,4,NOW(),NOW()),
+(9003,'https://picsum.photos/seed/fashion-103/1200/1200',null,'Robe Linen Breeze noir',false,2,101,1,NOW(),NOW()),
+
+(9004,'https://picsum.photos/seed/fashion-104/1200/1200',null,'Chemise Oxford Modern vue principale',true,0,102,null,NOW(),NOW()),
+(9005,'https://picsum.photos/seed/fashion-105/1200/1200',null,'Chemise Oxford Modern blanc',false,1,102,2,NOW(),NOW()),
+(9006,'https://picsum.photos/seed/fashion-106/1200/1200',null,'Chemise Oxford Modern bleu',false,2,102,4,NOW(),NOW()),
+
+(9007,'https://picsum.photos/seed/fashion-107/1200/1200',null,'Sweat Crop Soft Touch vue principale',true,0,103,null,NOW(),NOW()),
+(9008,'https://picsum.photos/seed/fashion-108/1200/1200',null,'Sweat Crop Soft Touch gris',false,1,103,3,NOW(),NOW()),
+(9009,'https://picsum.photos/seed/fashion-109/1200/1200',null,'Sweat Crop Soft Touch noir',false,2,103,1,NOW(),NOW()),
+
+(9010,'https://picsum.photos/seed/fashion-110/1200/1200',null,'Sneakers Urban Pulse Femme vue principale',true,0,104,null,NOW(),NOW()),
+(9011,'https://picsum.photos/seed/fashion-111/1200/1200',null,'Sneakers Urban Pulse Femme blanc',false,1,104,2,NOW(),NOW()),
+(9012,'https://picsum.photos/seed/fashion-112/1200/1200',null,'Sneakers Urban Pulse Femme noir',false,2,104,1,NOW(),NOW()),
+
+(9013,'https://picsum.photos/seed/fashion-113/1200/1200',null,'T-shirt Essential Homme vue principale',true,0,105,null,NOW(),NOW()),
+(9014,'https://picsum.photos/seed/fashion-114/1200/1200',null,'T-shirt Essential Homme blanc',false,1,105,2,NOW(),NOW()),
+(9015,'https://picsum.photos/seed/fashion-115/1200/1200',null,'T-shirt Essential Homme noir',false,2,105,1,NOW(),NOW()),
+
+(9016,'https://picsum.photos/seed/fashion-116/1200/1200',null,'Pantalon Jogger Kids vue principale',true,0,106,null,NOW(),NOW()),
+(9017,'https://picsum.photos/seed/fashion-117/1200/1200',null,'Pantalon Jogger Kids gris',false,1,106,3,NOW(),NOW()),
+(9018,'https://picsum.photos/seed/fashion-118/1200/1200',null,'Pantalon Jogger Kids bleu',false,2,106,4,NOW(),NOW()),
+
+(9019,'https://picsum.photos/seed/fashion-119/1200/1200',null,'Sneakers Kids Sprint vue principale',true,0,107,null,NOW(),NOW()),
+(9020,'https://picsum.photos/seed/fashion-120/1200/1200',null,'Sneakers Kids Sprint blanc',false,1,107,2,NOW(),NOW()),
+(9021,'https://picsum.photos/seed/fashion-121/1200/1200',null,'Sneakers Kids Sprint noir',false,2,107,1,NOW(),NOW()),
+
+(9022,'https://picsum.photos/seed/fashion-122/1200/1200',null,'Sac Cabas City vue principale',true,0,108,null,NOW(),NOW()),
+(9023,'https://picsum.photos/seed/fashion-123/1200/1200',null,'Sac Cabas City marron',false,1,108,5,NOW(),NOW()),
+(9024,'https://picsum.photos/seed/fashion-124/1200/1200',null,'Sac Cabas City noir',false,2,108,1,NOW(),NOW()),
+
+(9025,'https://picsum.photos/seed/fashion-125/1200/1200',null,'Collier Minimal Dore vue principale',true,0,109,null,NOW(),NOW()),
+(9026,'https://picsum.photos/seed/fashion-126/1200/1200',null,'Collier Minimal Dore dore',false,1,109,5,NOW(),NOW()),
+(9027,'https://picsum.photos/seed/fashion-127/1200/1200',null,'Collier Minimal Dore argent',false,2,109,3,NOW(),NOW()),
+
+(9028,'https://picsum.photos/seed/fashion-128/1200/1200',null,'Bob Coton Weekend vue principale',true,0,110,null,NOW(),NOW()),
+(9029,'https://picsum.photos/seed/fashion-129/1200/1200',null,'Bob Coton Weekend beige',false,1,110,2,NOW(),NOW()),
+(9030,'https://picsum.photos/seed/fashion-130/1200/1200',null,'Bob Coton Weekend noir',false,2,110,1,NOW(),NOW()),
+
+(9031,'https://picsum.photos/seed/fashion-131/1200/1200',null,'Ceinture Classique Homme vue principale',true,0,111,null,NOW(),NOW()),
+(9032,'https://picsum.photos/seed/fashion-132/1200/1200',null,'Ceinture Classique Homme marron',false,1,111,5,NOW(),NOW()),
+(9033,'https://picsum.photos/seed/fashion-133/1200/1200',null,'Ceinture Classique Homme noir',false,2,111,1,NOW(),NOW()),
+
+(9034,'https://picsum.photos/seed/fashion-134/1200/1200',null,'Jean Mom Fit Femme vue principale',true,0,112,null,NOW(),NOW()),
+(9035,'https://picsum.photos/seed/fashion-135/1200/1200',null,'Jean Mom Fit Femme bleu',false,1,112,4,NOW(),NOW()),
+(9036,'https://picsum.photos/seed/fashion-136/1200/1200',null,'Jean Mom Fit Femme noir',false,2,112,1,NOW(),NOW());
+
+INSERT INTO catalog_product
+(id, product_id, created_at, updated_at, name, slug, price,
+ brand, image_url, category_id, category_name,
+ base_price_min, base_price_max, final_price_min, final_price_max,
+ display_price, discount_percent_global, discount_percent_min,
+ discount_percent_max, has_discount, promo_scope)
+VALUES
+(1101,101,NOW(),NOW(),'Robe Linen Breeze','robe-linen-breeze',49.99,'Mango','https://picsum.photos/seed/fashion-101/1200/1200',22,'Robes',49.99,54.99,49.99,54.99,49.99,0.00,0.00,0.00,false,'NONE'),
+(1102,102,NOW(),NOW(),'Chemise Oxford Modern','chemise-oxford-modern',54.99,'Celio','https://picsum.photos/seed/fashion-104/1200/1200',42,'Chemises',54.99,59.99,54.99,59.99,54.99,0.00,0.00,0.00,false,'NONE'),
+(1103,103,NOW(),NOW(),'Sweat Crop Soft Touch','sweat-crop-soft-touch',64.99,'Puma','https://picsum.photos/seed/fashion-107/1200/1200',21,'Sweats',64.99,69.99,64.99,69.99,64.99,0.00,0.00,0.00,false,'NONE'),
+(1104,104,NOW(),NOW(),'Sneakers Urban Pulse Femme','sneakers-urban-pulse-femme',89.99,'Adidas','https://picsum.photos/seed/fashion-110/1200/1200',24,'Sneakers',89.99,94.99,89.99,94.99,89.99,0.00,0.00,0.00,false,'NONE'),
+(1105,105,NOW(),NOW(),'T-shirt Essential Homme','t-shirt-essential-homme',24.99,'Uniqlo','https://picsum.photos/seed/fashion-113/1200/1200',40,'T-shirts',24.99,26.99,24.99,26.99,24.99,0.00,0.00,0.00,false,'NONE'),
+(1106,106,NOW(),NOW(),'Pantalon Jogger Kids','pantalon-jogger-kids',34.99,'Zara Kids','https://picsum.photos/seed/fashion-116/1200/1200',62,'Pantalons',34.99,36.99,34.99,36.99,34.99,0.00,0.00,0.00,false,'NONE'),
+(1107,107,NOW(),NOW(),'Sneakers Kids Sprint','sneakers-kids-sprint',59.99,'Nike Kids','https://picsum.photos/seed/fashion-119/1200/1200',63,'Sneakers',59.99,62.99,59.99,62.99,59.99,0.00,0.00,0.00,false,'NONE'),
+(1108,108,NOW(),NOW(),'Sac Cabas City','sac-cabas-city',69.99,'Zara','https://picsum.photos/seed/fashion-122/1200/1200',70,'Sacs',69.99,72.99,69.99,72.99,69.99,0.00,0.00,0.00,false,'NONE'),
+(1109,109,NOW(),NOW(),'Collier Minimal Dore','collier-minimal-dore',29.99,'Mango','https://picsum.photos/seed/fashion-125/1200/1200',72,'Bijoux',29.99,32.99,29.99,32.99,29.99,0.00,0.00,0.00,false,'NONE'),
+(1110,110,NOW(),NOW(),'Bob Coton Weekend','bob-coton-weekend',22.99,'Uniqlo','https://picsum.photos/seed/fashion-128/1200/1200',73,'Chapeaux',22.99,22.99,22.99,22.99,22.99,0.00,0.00,0.00,false,'NONE'),
+(1111,111,NOW(),NOW(),'Ceinture Classique Homme','ceinture-classique-homme',39.99,'Levis','https://picsum.photos/seed/fashion-131/1200/1200',71,'Ceintures',39.99,39.99,39.99,39.99,39.99,0.00,0.00,0.00,false,'NONE'),
+(1112,112,NOW(),NOW(),'Jean Mom Fit Femme','jean-mom-fit-femme',74.99,'Levis','https://picsum.photos/seed/fashion-134/1200/1200',23,'Pantalons',74.99,79.99,74.99,79.99,74.99,0.00,0.00,0.00,false,'NONE');
+
+INSERT INTO catalog_product_facet
+(id, product_id, facet_id, facet_code, facet_value_id, value_code, value_label, created_at, updated_at)
+VALUES
+(13001,101,1,'color',4,'4','Bleu',NOW(),NOW()),(13002,101,1,'color',1,'1','Noir',NOW(),NOW()),(13003,101,2,'size',7,'7','M',NOW(),NOW()),(13004,101,3,'brand',0,'mango','Mango',NOW(),NOW()),
+(13005,102,1,'color',2,'2','Blanc',NOW(),NOW()),(13006,102,1,'color',4,'4','Bleu',NOW(),NOW()),(13007,102,2,'size',8,'8','L',NOW(),NOW()),(13008,102,3,'brand',0,'celio','Celio',NOW(),NOW()),
+(13009,103,1,'color',3,'3','Gris',NOW(),NOW()),(13010,103,1,'color',1,'1','Noir',NOW(),NOW()),(13011,103,2,'size',7,'7','M',NOW(),NOW()),(13012,103,3,'brand',0,'puma','Puma',NOW(),NOW()),
+(13013,104,1,'color',2,'2','Blanc',NOW(),NOW()),(13014,104,1,'color',1,'1','Noir',NOW(),NOW()),(13015,104,2,'size',12,'12','43',NOW(),NOW()),(13016,104,3,'brand',0,'adidas','Adidas',NOW(),NOW()),
+(13017,105,1,'color',2,'2','Blanc',NOW(),NOW()),(13018,105,1,'color',1,'1','Noir',NOW(),NOW()),(13019,105,2,'size',7,'7','M',NOW(),NOW()),(13020,105,3,'brand',0,'uniqlo','Uniqlo',NOW(),NOW()),
+(13021,106,1,'color',3,'3','Gris',NOW(),NOW()),(13022,106,1,'color',4,'4','Bleu',NOW(),NOW()),(13023,106,2,'size',10,'10','40',NOW(),NOW()),(13024,106,3,'brand',0,'zara-kids','Zara Kids',NOW(),NOW()),
+(13025,107,1,'color',2,'2','Blanc',NOW(),NOW()),(13026,107,1,'color',1,'1','Noir',NOW(),NOW()),(13027,107,2,'size',12,'12','43',NOW(),NOW()),(13028,107,3,'brand',0,'nike-kids','Nike Kids',NOW(),NOW()),
+(13029,108,1,'color',5,'5','Marron',NOW(),NOW()),(13030,108,1,'color',1,'1','Noir',NOW(),NOW()),(13031,108,2,'size',13,'13','Unique',NOW(),NOW()),(13032,108,3,'brand',0,'zara','Zara',NOW(),NOW()),
+(13033,109,1,'color',5,'5','Marron',NOW(),NOW()),(13034,109,1,'color',3,'3','Gris',NOW(),NOW()),(13035,109,2,'size',13,'13','Unique',NOW(),NOW()),(13036,109,3,'brand',0,'mango','Mango',NOW(),NOW()),
+(13037,110,1,'color',2,'2','Blanc',NOW(),NOW()),(13038,110,1,'color',1,'1','Noir',NOW(),NOW()),(13039,110,2,'size',13,'13','Unique',NOW(),NOW()),(13040,110,3,'brand',0,'uniqlo','Uniqlo',NOW(),NOW()),
+(13041,111,1,'color',5,'5','Marron',NOW(),NOW()),(13042,111,1,'color',1,'1','Noir',NOW(),NOW()),(13043,111,2,'size',13,'13','Unique',NOW(),NOW()),(13044,111,3,'brand',0,'levis','Levis',NOW(),NOW()),
+(13045,112,1,'color',4,'4','Bleu',NOW(),NOW()),(13046,112,1,'color',1,'1','Noir',NOW(),NOW()),(13047,112,2,'size',10,'10','40',NOW(),NOW()),(13048,112,3,'brand',0,'levis','Levis',NOW(),NOW());

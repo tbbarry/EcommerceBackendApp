@@ -1,25 +1,19 @@
 package com.backend.ecommerce.controller;
 
-import com.backend.ecommerce.dto.CatalogProductDetailResponse;
-import com.backend.ecommerce.dto.CatalogSearchRequest;
-import com.backend.ecommerce.dto.CatalogSearchResponse;
-import com.backend.ecommerce.service.CatalogService;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+
 import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
-import java.util.List;
+
 
 @RestController
-@RequestMapping("/api/catalog/products")
+@RequestMapping("/api/catalog/products2")
 @RequiredArgsConstructor
 public class CatalogController {
-
+    /* 
     private final CatalogService catalogService;
 
     @GetMapping
@@ -52,4 +46,5 @@ public class CatalogController {
     public ResponseEntity<CatalogProductDetailResponse> details(@PathVariable String slug) {
         return ResponseEntity.ok(catalogService.getProductDetailsBySlug(slug));
     }
+    */ 
 }

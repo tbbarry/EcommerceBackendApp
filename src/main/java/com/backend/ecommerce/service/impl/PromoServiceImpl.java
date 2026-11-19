@@ -3,14 +3,19 @@ package com.backend.ecommerce.service.impl;
 import com.backend.ecommerce.dto.PromoDto;
 import com.backend.ecommerce.entity.Promo;
 import com.backend.ecommerce.exception.ResourceNotFoundException;
+import com.backend.ecommerce.repository.ProductPromoRepository;
 import com.backend.ecommerce.repository.PromoRepository;
+import com.backend.ecommerce.repository.VariantPromoRepository;
+import com.backend.ecommerce.service.CatalogProductPricingIndexService;
 import com.backend.ecommerce.service.PromoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +23,9 @@ import java.util.List;
 public class PromoServiceImpl implements PromoService {
 
     private final PromoRepository promoRepository;
+    private final ProductPromoRepository productPromoRepository;
+    private final VariantPromoRepository variantPromoRepository;
+    private final CatalogProductPricingIndexService catalogProductPricingIndexService;
 
     @Override
     @Transactional(readOnly = true)
@@ -35,20 +43,37 @@ public class PromoServiceImpl implements PromoService {
     public PromoDto create(PromoDto dto) {
         Promo entity = new Promo();
         applyDtoToEntity(dto, entity);
-        return toDto(promoRepository.save(entity));
+        Promo saved = promoRepository.save(entity);
+        refreshCatalogPricingForPromo(saved.getId());
+        return toDto(saved);
     }
 
     @Override
     public PromoDto update(Integer id, PromoDto dto) {
         Promo entity = getEntityById(id);
         applyDtoToEntity(dto, entity);
-        return toDto(promoRepository.save(entity));
+        Promo saved = promoRepository.save(entity);
+        refreshCatalogPricingForPromo(saved.getId());
+        return toDto(saved);
     }
 
     @Override
     public void delete(Integer id) {
+        refreshCatalogPricingForPromo(id);
         Promo entity = getEntityById(id);
         promoRepository.delete(entity);
+    }
+
+    private void refreshCatalogPricingForPromo(Integer promoId) {
+        if (promoId == null) {
+            return;
+        }
+
+        Set<Integer> impactedProductIds = new HashSet<>();
+        impactedProductIds.addAll(productPromoRepository.findProductIdsByPromoId(promoId));
+        impactedProductIds.addAll(variantPromoRepository.findProductIdsByPromoId(promoId));
+
+        catalogProductPricingIndexService.refreshProducts(impactedProductIds);
     }
 
     private Promo getEntityById(Integer id) {
