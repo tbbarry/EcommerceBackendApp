@@ -59,9 +59,14 @@ public class PromoServiceImpl implements PromoService {
 
     @Override
     public void delete(Integer id) {
-        refreshCatalogPricingForPromo(id);
         Promo entity = getEntityById(id);
+        Set<Integer> impactedProductIds = findImpactedProductIds(id);
+        // Retirer les associations avant de recalculer les prix sans cette promo.
+        productPromoRepository.deleteByPromoId(id);
+        variantPromoRepository.deleteByPromoId(id);
         promoRepository.delete(entity);
+        promoRepository.flush();
+        catalogProductPricingIndexService.refreshProducts(impactedProductIds);
     }
 
     private void refreshCatalogPricingForPromo(Integer promoId) {
@@ -69,11 +74,14 @@ public class PromoServiceImpl implements PromoService {
             return;
         }
 
+        catalogProductPricingIndexService.refreshProducts(findImpactedProductIds(promoId));
+    }
+
+    private Set<Integer> findImpactedProductIds(Integer promoId) {
         Set<Integer> impactedProductIds = new HashSet<>();
         impactedProductIds.addAll(productPromoRepository.findProductIdsByPromoId(promoId));
         impactedProductIds.addAll(variantPromoRepository.findProductIdsByPromoId(promoId));
-
-        catalogProductPricingIndexService.refreshProducts(impactedProductIds);
+        return impactedProductIds;
     }
 
     private Promo getEntityById(Integer id) {

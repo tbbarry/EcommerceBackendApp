@@ -28,7 +28,7 @@ public class Stock extends BaseEntity {
     private Integer reservedQuantity = 0;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "variantId", nullable = false)
+    @JoinColumn(name = "variant_id", nullable = false)
     private Variant variant;
 
     @Transient

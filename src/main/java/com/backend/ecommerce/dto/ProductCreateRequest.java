@@ -32,15 +32,16 @@ public class ProductCreateRequest {
     @NotBlank
     private String brand;
 
-    @Min(0)
-    private Integer stock;
+    @NotNull
+    private Integer categoryId;
 
-    private List<String> colors = new ArrayList<>();
+    private String slug;
 
-    private List<String> sizes = new ArrayList<>();
-
+    // Variantes du produit (au moins une requise)
     @Valid
-    private List<VariantRequest> variants = new ArrayList<>();
+    private List<VariantFullRequest> variants = new ArrayList<>();
 
-    private List<String> imageUrls = new ArrayList<>();
+    // Images du produit
+    @Valid
+    private List<ProductImageRequest> images = new ArrayList<>();
 }

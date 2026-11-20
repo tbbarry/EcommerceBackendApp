@@ -48,8 +48,13 @@ public class ProductPromoServiceImpl implements ProductPromoService {
     @Override
     public ProductPromoDto update(Integer id, ProductPromoDto dto) {
         ProductPromo entity = getEntityById(id);
+        Integer previousProductId = entity.getProduct() != null ? entity.getProduct().getId() : null;
         applyDtoToEntity(dto, entity);
         ProductPromo saved = productPromoRepository.save(entity);
+        Integer productId = saved.getProduct() != null ? saved.getProduct().getId() : null;
+        if (previousProductId != null && !previousProductId.equals(productId)) {
+            catalogProductPricingIndexService.refreshProduct(previousProductId);
+        }
         refreshCatalogProductPricing(saved);
         return toDto(saved);
     }
@@ -59,6 +64,7 @@ public class ProductPromoServiceImpl implements ProductPromoService {
         ProductPromo entity = getEntityById(id);
         Integer productId = entity.getProduct() != null ? entity.getProduct().getId() : null;
         productPromoRepository.delete(entity);
+        productPromoRepository.flush();
         catalogProductPricingIndexService.refreshProduct(productId);
     }
 

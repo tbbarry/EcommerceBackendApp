@@ -4,12 +4,17 @@ import com.backend.ecommerce.dto.VariantDiscountRow;
 import com.backend.ecommerce.entity.VariantPromo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 public interface VariantPromoRepository extends JpaRepository<VariantPromo, Integer> {
+
+    @Modifying
+    @Query("DELETE FROM VariantPromo vp WHERE vp.promo.id = :promoId")
+    void deleteByPromoId(@Param("promoId") Integer promoId);
 
     @Query("""
         SELECT vp

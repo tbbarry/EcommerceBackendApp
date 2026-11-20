@@ -7,6 +7,7 @@ import com.backend.ecommerce.entity.Product;
 import com.backend.ecommerce.repository.ProductRepository;
 import com.backend.ecommerce.repository.VariantRepository;
 import com.backend.ecommerce.service.VariantService;
+import com.backend.ecommerce.service.CatalogProductPricingIndexService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ public class VariantServiceImpl implements VariantService {
 
     private final VariantRepository variantRepository;
     private final ProductRepository productRepository;
+        private final CatalogProductPricingIndexService catalogProductPricingIndexService;
 
 
     @Override
@@ -40,23 +42,35 @@ public class VariantServiceImpl implements VariantService {
 
         applyDtoToEntity(dto, entity);
 
-        return toDto(variantRepository.save(entity));
+        Variant saved = variantRepository.save(entity);
+        catalogProductPricingIndexService.refreshProduct(saved.getProduct().getId());
+        return toDto(saved);
     }
 
     @Override
     public VariantDto update(Integer id, VariantDto dto) {
         Variant entity = getEntityById(id);
 
+                Integer previousProductId = entity.getProduct().getId();
+
         applyDtoToEntity(dto, entity);
 
-        return toDto(variantRepository.save(entity));
+                Variant saved = variantRepository.save(entity);
+                catalogProductPricingIndexService.refreshProduct(previousProductId);
+                if (!previousProductId.equals(saved.getProduct().getId())) {
+                        catalogProductPricingIndexService.refreshProduct(saved.getProduct().getId());
+                }
+                return toDto(saved);
     }
 
     @Override
     public void delete(Integer id) {
         Variant entity = getEntityById(id);
 
+        Integer productId = entity.getProduct().getId();
         variantRepository.delete(entity);
+        variantRepository.flush();
+        catalogProductPricingIndexService.refreshProduct(productId);
     }
 
     private Variant getEntityById(Integer id) {
