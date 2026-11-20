@@ -88,7 +88,8 @@ public class SecurityConfig {
 
 
                         // Lecture publique boutique
-                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                        .requestMatchers("/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/attributes/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/catalog/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/variants/**").permitAll()

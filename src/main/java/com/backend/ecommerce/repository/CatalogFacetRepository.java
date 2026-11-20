@@ -14,6 +14,8 @@ import java.util.List;
 public interface CatalogFacetRepository
         extends JpaRepository<CatalogProductFacet, Long> {
 
+    void deleteByProductId(Long productId);
+
     @Query("""
         SELECT DISTINCT f.productId
         FROM CatalogProductFacet f

@@ -1,0 +1,257 @@
+📋 RÉCAPITULATIF DES APIS CRÉÉES / ENRICHIES
+
+🏗️ STRUCTURE GLOBALE
+
+Hiérarchie :
+  Product (produit)
+    ├── Variants (variantes)
+    │   ├── VariantAttributeValues (valeurs d'attributs : taille, couleur, etc.)
+    │   └── Stock (stock de la variante)
+    ├── ProductImages (images du produit)
+    │   └── Optionnel : lien à un AttributeValue (couleur)
+    └── Category (catégorie du produit)
+  
+  Attribute (type d'attribut : Taille, Couleur, Matière...)
+    └── AttributeValues (valeurs : M, L, XL pour Taille)
+
+═══════════════════════════════════════════════════════════════
+
+📡 ENDPOINTS API
+
+1️⃣ ATTRIBUTES (Types d'attributs)
+
+GET /api/attributes
+  - Récupérer TOUS les attributs avec leurs valeurs
+  - Publique
+  - Réponse: List<AttributeDto>
+
+GET /api/attributes/{id}
+  - Récupérer UN attribut avec ses valeurs
+  - Publique
+  - Réponse: AttributeDto
+
+POST /api/attributes
+  - Créer un nouvel attribut (Taille, Couleur, Matière...)
+  - Restreint ADMIN
+  - Body: { "name": "Taille" }
+  - Réponse: AttributeDto
+
+PUT /api/attributes/{id}
+  - Modifier un attribut
+  - Restreint ADMIN
+  - Réponse: AttributeDto
+
+DELETE /api/attributes/{id}
+  - Supprimer un attribut
+  - Restreint ADMIN
+
+═══════════════════════════════════════════════════════════════
+
+2️⃣ ATTRIBUTE VALUES (Valeurs d'attributs)
+
+GET /api/attribute-values
+  - Récupérer TOUTES les valeurs d'attribut
+  - Publique
+  - Réponse: List<AttributeValueDto>
+
+GET /api/attribute-values/{id}
+  - Récupérer UNE valeur d'attribut
+  - Publique
+  - Réponse: AttributeValueDto
+
+GET /api/attribute-values/by-attribute/{attributeId}
+  - Récupérer TOUTES les valeurs pour un attribut spécifique
+  - Publique
+  - Réponse: List<AttributeValueDto>
+
+POST /api/attribute-values
+  - Créer une valeur d'attribut (ex: "M" pour Taille)
+  - Restreint ADMIN
+  - Body: { "value": "M", "attributeId": 1 }
+  - Réponse: AttributeValueDto
+
+PUT /api/attribute-values/{id}
+  - Modifier une valeur d'attribut
+  - Restreint ADMIN
+  - Réponse: AttributeValueDto
+
+DELETE /api/attribute-values/{id}
+  - Supprimer une valeur d'attribut
+  - Restreint ADMIN
+
+═══════════════════════════════════════════════════════════════
+
+3️⃣ CATEGORIES
+
+GET /api/categories
+  - Récupérer TOUTES les catégories (hierarchiques)
+  - Publique
+  - Réponse: List<CategoryDto2> (arborescence)
+
+GET /api/categories/{id}
+  - Récupérer UNE catégorie
+  - Publique
+  - Réponse: CategoryDto
+
+POST /api/categories
+  - Créer une catégorie
+  - Restreint ADMIN
+  - Body: { "name": "Vêtements", "description": "...", "categoryId": null }
+  - Réponse: CategoryDto
+
+PUT /api/categories/{id}
+  - Modifier une catégorie
+  - Restreint ADMIN
+  - Réponse: CategoryDto
+
+DELETE /api/categories/{id}
+  - Supprimer une catégorie
+  - Restreint ADMIN
+
+═══════════════════════════════════════════════════════════════
+
+4️⃣ PRODUCTS (Produits avec variantes et images)
+
+GET /api/products/slug/{slug}
+  - Récupérer détails d'un produit par son slug
+  - Publique
+  - Réponse: ProductDetailResponse
+
+POST /api/products
+  - Créer un PRODUIT COMPLET avec variantes et images
+  - Restreint ADMIN
+  - Body:
+    {
+      "name": "T-shirt coton",
+      "description": "T-shirt 100% coton premium",
+      "price": 29.99,
+      "brand": "Nike",
+      "categoryId": 1,
+      "slug": "t-shirt-coton",
+      "variants": [
+        {
+          "sku": "PROD-S-ROUGE-001",
+          "price": 29.99,
+          "quantity": 50,
+          "reservedQuantity": 10,
+          "attributeValues": [
+            { "attributeValueId": 2 },  // Taille: S
+            { "attributeValueId": 5 }   // Couleur: Rouge
+          ]
+        },
+        {
+          "sku": "PROD-M-ROUGE-001",
+          "price": 29.99,
+          "quantity": 30,
+          "reservedQuantity": 5,
+          "attributeValues": [
+            { "attributeValueId": 3 },  // Taille: M
+            { "attributeValueId": 5 }   // Couleur: Rouge
+          ]
+        }
+      ],
+      "images": [
+        {
+          "url": "https://example.com/image1.jpg",
+          "alt": "Vue de face du t-shirt",
+          "isMain": true,
+          "displayOrder": 1,
+          "visualAttributeValueId": 5  // Optionnel : pour couleur rouge
+        },
+        {
+          "url": "https://example.com/image2.jpg",
+          "alt": "Vue de dos du t-shirt",
+          "isMain": false,
+          "displayOrder": 2
+        }
+      ]
+    }
+  - Réponse: ProductFullResponse
+
+GET /api/products/{id}/full
+  - Récupérer un produit avec TOUTES ses variantes, attributs et images
+  - Publique
+  - Réponse: ProductFullResponse
+
+═══════════════════════════════════════════════════════════════
+
+📦 DTOs CRÉÉES / MODIFIÉES
+
+DTOs Attribute :
+  ✓ AttributeDto
+  ✓ AttributeCreateRequest
+
+DTOs AttributeValue :
+  ✓ AttributeValueDto
+  ✓ AttributeValueCreateRequest
+
+DTOs Produit :
+  ✓ ProductCreateRequest (enrichie avec variants & images)
+  ✓ ProductFullResponse
+  ✓ ProductFullResponse
+
+DTOs Variante :
+  ✓ VariantFullRequest
+  ✓ VariantFullResponse
+  ✓ VariantAttributeValueRequest
+  ✓ VariantAttributeValueDto
+
+DTOs Stock :
+  ✓ VariantStockResponse
+
+DTOs Image :
+  ✓ ProductImageRequest
+  ✓ ProductImageDto
+
+═══════════════════════════════════════════════════════════════
+
+🔧 SERVICES CRÉÉS / ENRICHIS
+
+✓ AttributeService & AttributeServiceImpl
+✓ AttributeValueService & AttributeValueServiceImpl
+✓ CategoryService (existant, inchangé)
+✓ ProductService (enrichi avec createProductFull, getProductFull)
+
+═══════════════════════════════════════════════════════════════
+
+🗂️ REPOSITORIES ENRICHIS
+
+✓ AttributeRepository (existant)
+✓ AttributeValueRepository (ajout : findByAttributeId)
+✓ VariantRepository (existant, complet)
+✓ StockRepository (existant)
+✓ ProductImageRepository (existant)
+✓ VariantAttributeValueRepository (ajout : findByVariantId)
+✓ CategoryRepository (existant)
+
+═══════════════════════════════════════════════════════════════
+
+🎯 FLUX DE CRÉATION D'UN PRODUIT (Angular)
+
+1️⃣ Charger les données statiques :
+   - GET /api/attributes → List<AttributeDto> avec leurs values
+   - GET /api/categories → List<CategoryDto2> hierarchique
+
+2️⃣ L'utilisateur crée le produit en remplissant :
+   - Infos de base (nom, description, prix, marque, catégorie)
+   - Crée variantes (combine attributs + prix + stock)
+   - Ajoute images
+
+3️⃣ Envoyer au backend :
+   - POST /api/products avec ProductCreateRequest complète
+
+4️⃣ Récupérer ensuite :
+   - GET /api/products/{id}/full pour affichage complet
+
+═══════════════════════════════════════════════════════════════
+
+💡 POINTS IMPORTANTS
+
+✅ Les variantes sont OBLIGATOIRES (au moins 1)
+✅ Chaque variante a son propre SKU unique
+✅ Chaque variante a son propre stock (quantity + reservedQuantity)
+✅ Les attributs sont DYNAMIQUES (viennent de la base de données)
+✅ Les images peuvent être liées à un AttributeValue (couleur)
+✅ Le slug est auto-généré mais peut être personnalisé
+
+═══════════════════════════════════════════════════════════════

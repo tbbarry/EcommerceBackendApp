@@ -110,6 +110,8 @@ public interface CatalogProductRepository
 
     Optional<CatalogProduct> findByProductId(Long productId);
 
+    void deleteByProductId(Long productId);
+
     List<CatalogProduct> findByProductIdIn(List<Long> productIds);
 
 }

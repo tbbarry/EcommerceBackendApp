@@ -2,9 +2,17 @@ package com.backend.ecommerce.service.impl;
 
 import com.backend.ecommerce.dto.VariantDiscountRow;
 import com.backend.ecommerce.entity.CatalogProduct;
+import com.backend.ecommerce.entity.CatalogProductFacet;
+import com.backend.ecommerce.entity.AttributeValue;
+import com.backend.ecommerce.entity.Product;
+import com.backend.ecommerce.entity.ProductImage;
 import com.backend.ecommerce.entity.Variant;
+import com.backend.ecommerce.repository.CatalogFacetRepository;
 import com.backend.ecommerce.repository.CatalogProductRepository;
 import com.backend.ecommerce.repository.ProductPromoRepository;
+import com.backend.ecommerce.repository.ProductRepository;
+import com.backend.ecommerce.repository.ProductImageRepository;
+import com.backend.ecommerce.repository.VariantAttributeValueRepository;
 import com.backend.ecommerce.repository.VariantPromoRepository;
 import com.backend.ecommerce.repository.VariantRepository;
 import com.backend.ecommerce.service.CatalogProductPricingIndexService;
@@ -19,7 +27,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,6 +42,10 @@ public class CatalogProductPricingIndexServiceImpl implements CatalogProductPric
     private final ProductPromoRepository productPromoRepository;
     private final VariantPromoRepository variantPromoRepository;
     private final CatalogProductRepository catalogProductRepository;
+    private final ProductRepository productRepository;
+    private final ProductImageRepository productImageRepository;
+    private final VariantAttributeValueRepository variantAttributeValueRepository;
+    private final CatalogFacetRepository catalogFacetRepository;
 
     @Override
     public void refreshProduct(Integer productId) {
@@ -41,26 +53,52 @@ public class CatalogProductPricingIndexServiceImpl implements CatalogProductPric
             return;
         }
 
-        CatalogProduct catalogProduct = catalogProductRepository.findByProductId(productId.longValue())
-                .orElse(null);
-
-        if (catalogProduct == null) {
+        Product product = productRepository.findById(productId).orElse(null);
+        if (product == null) {
             return;
         }
+        // La fiche de recherche est creee au premier indexage, puis reutilisee.
+        CatalogProduct catalogProduct = catalogProductRepository.findByProductId(productId.longValue())
+            .orElseGet(() -> CatalogProduct.builder().productId(productId.longValue()).build());
+        catalogProduct.setName(product.getName());
+        catalogProduct.setSlug(product.getSlug());
+        catalogProduct.setBrand(product.getBrand());
+        catalogProduct.setCategoryId(product.getCategory() == null ? null : product.getCategory().getId().longValue());
+        catalogProduct.setCategoryName(product.getCategory() == null ? null : product.getCategory().getName());
+        catalogProduct.setImageUrl(productImageRepository.findByProductId(productId).stream()
+            .sorted(Comparator.comparing(ProductImage::isMain).reversed()
+                .thenComparing(ProductImage::getDisplayOrder, Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(ProductImage::getId))
+            .map(ProductImage::getUrl).findFirst().orElse(null));
+
+        // Une valeur utilisee par plusieurs variantes ne doit apparaitre qu'une fois.
+        catalogFacetRepository.deleteByProductId(productId.longValue());
+        Map<Integer, AttributeValue> values = variantAttributeValueRepository.findDetailedByProductId(productId)
+            .stream().map(association -> association.getAttributeValue())
+            .collect(Collectors.toMap(AttributeValue::getId, value -> value, (first, duplicate) -> first));
+        catalogFacetRepository.saveAll(values.values().stream().map(value -> CatalogProductFacet.builder()
+            .productId(productId.longValue())
+            .facetId(value.getAttribute().getId().longValue())
+            .facetCode(value.getAttribute().getName())
+            .facetValueId(value.getId().longValue())
+            .valueCode(value.getValue())
+            .valueLabel(value.getValue())
+            .build()).toList());
+
+        LocalDateTime now = LocalDateTime.now();
+        BigDecimal globalDiscount = defaultPercent(
+            productPromoRepository.findActiveGlobalMaxDiscountPercentByProductId(productId, now)
+        );
 
         List<Variant> variants = variantRepository.findByProductId(productId);
         if (variants == null || variants.isEmpty()) {
-            applyNoVariantPricing(catalogProduct);
+            catalogProduct.setPrice(product.getPrice());
+            applyNoVariantPricing(catalogProduct, globalDiscount);
             catalogProductRepository.save(catalogProduct);
             return;
         }
 
-        LocalDateTime now = LocalDateTime.now();
-
-        BigDecimal globalDiscount = defaultPercent(
-                productPromoRepository.findActiveGlobalMaxDiscountPercentByProductId(productId, now)
-        );
-
+        // Pour chaque variante, la plus forte remise active l'emporte.
         Map<Integer, BigDecimal> variantDiscountMap = variantPromoRepository
                 .findActiveMaxDiscountPercentByProductId(productId, now)
                 .stream()
@@ -137,18 +175,30 @@ public class CatalogProductPricingIndexServiceImpl implements CatalogProductPric
         }
     }
 
-    private void applyNoVariantPricing(CatalogProduct catalogProduct) {
+    @Override
+    public void deleteProduct(Integer productId) {
+        if (productId != null) {
+            // Supprimer aussi les lignes de recherche qui n'ont pas de cle etrangere.
+            catalogFacetRepository.deleteByProductId(productId.longValue());
+            catalogProductRepository.deleteByProductId(productId.longValue());
+        }
+    }
+
+    private void applyNoVariantPricing(CatalogProduct catalogProduct, BigDecimal globalDiscount) {
         BigDecimal fallbackPrice = safeMoney(catalogProduct.getPrice());
+        BigDecimal finalPrice = computeFinalPrice(fallbackPrice, globalDiscount);
+        boolean hasDiscount = globalDiscount.compareTo(BigDecimal.ZERO) > 0;
         catalogProduct.setBasePriceMin(fallbackPrice);
         catalogProduct.setBasePriceMax(fallbackPrice);
-        catalogProduct.setFinalPriceMin(fallbackPrice);
-        catalogProduct.setFinalPriceMax(fallbackPrice);
-        catalogProduct.setDisplayPrice(fallbackPrice);
-        catalogProduct.setDiscountPercentGlobal(ZERO);
-        catalogProduct.setDiscountPercentMin(ZERO);
-        catalogProduct.setDiscountPercentMax(ZERO);
-        catalogProduct.setHasDiscount(false);
-        catalogProduct.setPromoScope("NONE");
+        catalogProduct.setFinalPriceMin(finalPrice);
+        catalogProduct.setFinalPriceMax(finalPrice);
+        catalogProduct.setDisplayPrice(finalPrice);
+        catalogProduct.setPrice(finalPrice);
+        catalogProduct.setDiscountPercentGlobal(globalDiscount);
+        catalogProduct.setDiscountPercentMin(globalDiscount);
+        catalogProduct.setDiscountPercentMax(globalDiscount);
+        catalogProduct.setHasDiscount(hasDiscount);
+        catalogProduct.setPromoScope(hasDiscount ? "GLOBAL" : "NONE");
     }
 
     private BigDecimal computeFinalPrice(BigDecimal basePrice, BigDecimal discountPercent) {

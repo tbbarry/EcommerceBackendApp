@@ -1,0 +1,489 @@
+🚀 GUIDE RAPIDE POUR ANGULAR - PAGE AJOUT PRODUIT
+
+════════════════════════════════════════════════════════════════
+
+📡 SERVICES À CRÉER (src/app/services)
+
+1. attribute.service.ts
+   - getAll(): Observable<AttributeDto[]>
+   - getById(id: number): Observable<AttributeDto>
+   - create(request: AttributeCreateRequest): Observable<AttributeDto>
+   - update(id: number, dto: AttributeDto): Observable<AttributeDto>
+   - delete(id: number): Observable<void>
+
+2. attribute-value.service.ts
+   - getAll(): Observable<AttributeValueDto[]>
+   - getById(id: number): Observable<AttributeValueDto>
+   - getByAttributeId(attributeId: number): Observable<AttributeValueDto[]>
+   - create(request: AttributeValueCreateRequest): Observable<AttributeValueDto>
+   - update(id: number, dto: AttributeValueDto): Observable<AttributeValueDto>
+   - delete(id: number): Observable<void>
+
+3. category.service.ts (enrichi si existant)
+   - getAll(): Observable<CategoryDto2[]> (hierarchique)
+   - getById(id: number): Observable<CategoryDto>
+   - create(dto: CategoryDto): Observable<CategoryDto>
+   - update(id: number, dto: CategoryDto): Observable<CategoryDto>
+   - delete(id: number): Observable<void>
+
+4. product.service.ts (enrichi si existant)
+   - createFull(request: ProductCreateRequest): Observable<ProductFullResponse>
+   - getProductFull(id: number): Observable<ProductFullResponse>
+   - getBySlug(slug: string): Observable<ProductDetailResponse>
+
+════════════════════════════════════════════════════════════════
+
+📦 MODÈLES / INTERFACES À CRÉER (src/app/models)
+
+export interface AttributeDto {
+  id: number;
+  name: string;
+  values: AttributeValueDto[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface AttributeValueDto {
+  id: number;
+  value: string;
+  attributeId: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface AttributeCreateRequest {
+  name: string;
+}
+
+export interface AttributeValueCreateRequest {
+  value: string;
+  attributeId: number;
+}
+
+export interface CategoryDto2 {
+  id: number;
+  name: string;
+  children: CategoryDto2[];
+}
+
+export interface VariantFullRequest {
+  sku: string;
+  price: number;
+  quantity: number;
+  reservedQuantity?: number;
+  attributeValues: VariantAttributeValueRequest[];
+}
+
+export interface VariantAttributeValueRequest {
+  attributeValueId: number;
+}
+
+export interface ProductImageRequest {
+  url: string;
+  alt: string;
+  isMain: boolean;
+  displayOrder: number;
+  visualAttributeValueId?: number;
+}
+
+export interface ProductCreateRequest {
+  name: string;
+  description?: string;
+  price: number;
+  brand: string;
+  categoryId: number;
+  slug?: string;
+  variants: VariantFullRequest[];
+  images: ProductImageRequest[];
+}
+
+export interface ProductFullResponse {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  slug: string;
+  brand: string;
+  categoryId: number;
+  categoryName: string;
+  variants: VariantFullResponse[];
+  images: ProductImageDto[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface VariantFullResponse {
+  id: number;
+  sku: string;
+  price: number;
+  attributeValues: VariantAttributeValueDto[];
+  stock: VariantStockResponse;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface VariantAttributeValueDto {
+  id: number;
+  attributeValueId: number;
+  attributeValueName: string;
+  attributeId: number;
+  attributeName: string;
+}
+
+export interface VariantStockResponse {
+  id: number;
+  quantity: number;
+  reservedQuantity: number;
+  availableQuantity: number;
+}
+
+export interface ProductImageDto {
+  id: number;
+  url: string;
+  alt: string;
+  isMain: boolean;
+  displayOrder: number;
+  visualAttributeValueId?: number;
+  visualAttributeValueName?: string;
+}
+
+════════════════════════════════════════════════════════════════
+
+🏗️ COMPOSANT PRINCIPAL (product-add.component.ts)
+
+export class ProductAddComponent implements OnInit {
+
+  form: FormGroup;
+  
+  // Données statiques chargées au démarrage
+  attributes: AttributeDto[] = [];
+  categories: CategoryDto2[] = [];
+  
+  // Données du formulaire
+  variants: VariantFullRequest[] = [];
+  images: ProductImageRequest[] = [];
+  
+  constructor(
+    private formBuilder: FormBuilder,
+    private productService: ProductService,
+    private attributeService: AttributeService,
+    private categoryService: CategoryService,
+    private snackBar: MatSnackBar,
+    private router: Router
+  ) {}
+  
+  ngOnInit() {
+    this.initForm();
+    this.loadStaticData();
+  }
+  
+  private initForm() {
+    this.form = this.formBuilder.group({
+      // Onglet 1: Infos de base
+      name: ['', [Validators.required, Validators.minLength(3)]],
+      description: ['', [Validators.required]],
+      price: [0, [Validators.required, Validators.min(0)]],
+      brand: ['', Validators.required],
+      categoryId: ['', Validators.required],
+      slug: [''] // Auto-généré mais éditable
+    });
+  }
+  
+  private loadStaticData() {
+    // Charger attributs (avec toutes leurs valeurs)
+    this.attributeService.getAll().subscribe(
+      (attrs) => this.attributes = attrs,
+      (error) => this.showError('Erreur chargement attributs')
+    );
+    
+    // Charger catégories
+    this.categoryService.getAll().subscribe(
+      (cats) => this.categories = cats,
+      (error) => this.showError('Erreur chargement catégories')
+    );
+  }
+  
+  // Méthodes pour gérer les variantes
+  addVariant(formData: any) {
+    const variant: VariantFullRequest = {
+      sku: formData.sku, // Généré ou fourni
+      price: formData.price,
+      quantity: formData.quantity,
+      reservedQuantity: formData.reservedQuantity || 0,
+      attributeValues: formData.selectedAttributeValues // List des IDs sélectionnés
+    };
+    
+    // Vérifier qu'on n'a pas la même combo d'attributs
+    if (this.isDuplicateVariant(variant)) {
+      this.showError('Cette combinaison de variante existe déjà');
+      return;
+    }
+    
+    this.variants.push(variant);
+  }
+  
+  removeVariant(index: number) {
+    this.variants.splice(index, 1);
+  }
+  
+  isDuplicateVariant(newVariant: VariantFullRequest): boolean {
+    // Comparer les IDs des attributs sélectionnés
+    return this.variants.some(v => 
+      this.hasSameAttributes(v.attributeValues, newVariant.attributeValues)
+    );
+  }
+  
+  hasSameAttributes(attrs1: VariantAttributeValueRequest[], attrs2: VariantAttributeValueRequest[]): boolean {
+    if (attrs1.length !== attrs2.length) return false;
+    return attrs1.every(a1 => attrs2.some(a2 => a2.attributeValueId === a1.attributeValueId));
+  }
+  
+  // Méthodes pour gérer les images
+  addImage(imageRequest: ProductImageRequest) {
+    this.images.push(imageRequest);
+  }
+  
+  removeImage(index: number) {
+    this.images.splice(index, 1);
+  }
+  
+  setMainImage(index: number) {
+    this.images.forEach((img, i) => {
+      img.isMain = (i === index);
+    });
+  }
+  
+  reorderImages(images: ProductImageRequest[]) {
+    this.images = images;
+    this.images.forEach((img, i) => {
+      img.displayOrder = i + 1;
+    });
+  }
+  
+  // Auto-générer le slug
+  generateSlug() {
+    const name = this.form.get('name')?.value;
+    if (name) {
+      const slug = name
+        .toLowerCase()
+        .replace(/[àâä]/g, 'a')
+        .replace(/[éèêë]/g, 'e')
+        .replace(/[ôö]/g, 'o')
+        .replace(/[ù]/g, 'u')
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+      this.form.patchValue({ slug: slug });
+    }
+  }
+  
+  // Validation globale
+  isFormValid(): boolean {
+    return this.form.valid && 
+           this.variants.length > 0 && 
+           this.images.length > 0;
+  }
+  
+  // Publier le produit
+  publishProduct() {
+    if (!this.isFormValid()) {
+      this.showError('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+    
+    const request: ProductCreateRequest = {
+      ...this.form.value,
+      variants: this.variants,
+      images: this.images
+    };
+    
+    this.productService.createFull(request).subscribe(
+      (response) => {
+        this.showSuccess('✅ Produit créé avec succès !');
+        this.router.navigate(['/products', response.id]);
+      },
+      (error) => {
+        this.showError('❌ Erreur : ' + error.message);
+      }
+    );
+  }
+  
+  private showError(message: string) {
+    this.snackBar.open(message, 'Fermer', { duration: 5000, panelClass: 'error-snackbar' });
+  }
+  
+  private showSuccess(message: string) {
+    this.snackBar.open(message, 'Fermer', { duration: 3000, panelClass: 'success-snackbar' });
+  }
+}
+
+════════════════════════════════════════════════════════════════
+
+🎨 TEMPLATE HTML (product-add.component.html)
+
+<div class="product-form-container">
+  <h1>Ajouter un Produit</h1>
+  
+  <mat-tab-group>
+    <!-- ONGLET 1 : Infos de base -->
+    <mat-tab label="Infos de base">
+      <form [formGroup]="form">
+        <div class="form-section">
+          <mat-form-field appearance="fill">
+            <mat-label>Nom du produit</mat-label>
+            <input matInput formControlName="name" (blur)="generateSlug()">
+            <mat-error *ngIf="form.get('name')?.hasError('required')">Obligatoire</mat-error>
+            <mat-error *ngIf="form.get('name')?.hasError('minlength')">Min 3 caractères</mat-error>
+          </mat-form-field>
+          
+          <mat-form-field appearance="fill">
+            <mat-label>Description</mat-label>
+            <textarea matInput formControlName="description" rows="4"></textarea>
+            <mat-error *ngIf="form.get('description')?.hasError('required')">Obligatoire</mat-error>
+          </mat-form-field>
+          
+          <mat-form-field appearance="fill">
+            <mat-label>Marque</mat-label>
+            <input matInput formControlName="brand">
+            <mat-error *ngIf="form.get('brand')?.hasError('required')">Obligatoire</mat-error>
+          </mat-form-field>
+          
+          <mat-form-field appearance="fill">
+            <mat-label>Prix</mat-label>
+            <input matInput type="number" formControlName="price" prefix="€">
+            <mat-error *ngIf="form.get('price')?.hasError('required')">Obligatoire</mat-error>
+            <mat-error *ngIf="form.get('price')?.hasError('min')">≥ 0</mat-error>
+          </mat-form-field>
+          
+          <mat-form-field appearance="fill">
+            <mat-label>Catégorie</mat-label>
+            <mat-select formControlName="categoryId">
+              <mat-optgroup *ngFor="let cat of categories" [label]="cat.name">
+                <mat-option *ngFor="let subcat of cat.children" [value]="subcat.id">
+                  {{ subcat.name }}
+                </mat-option>
+              </mat-optgroup>
+            </mat-select>
+            <mat-error *ngIf="form.get('categoryId')?.hasError('required')">Obligatoire</mat-error>
+          </mat-form-field>
+          
+          <mat-form-field appearance="fill">
+            <mat-label>Slug</mat-label>
+            <input matInput formControlName="slug">
+          </mat-form-field>
+        </div>
+      </form>
+    </mat-tab>
+    
+    <!-- ONGLET 2 : Variantes -->
+    <mat-tab label="Variantes">
+      <!-- Liste des variantes créées -->
+      <table mat-table [dataSource]="variants">
+        <!-- Colonnes du tableau -->
+        <ng-container matColumnDef="sku">
+          <th mat-header-cell>SKU</th>
+          <td mat-cell>{{ element.sku }}</td>
+        </ng-container>
+        
+        <ng-container matColumnDef="attributeValues">
+          <th mat-header-cell>Attributs</th>
+          <td mat-cell>
+            <mat-chip-set>
+              <mat-chip *ngFor="let attr of element.attributeValues">
+                {{ attr.attributeName }}: {{ attr.attributeValueName }}
+              </mat-chip>
+            </mat-chip-set>
+          </td>
+        </ng-container>
+        
+        <ng-container matColumnDef="price">
+          <th mat-header-cell>Prix</th>
+          <td mat-cell>{{ element.price }}€</td>
+        </ng-container>
+        
+        <ng-container matColumnDef="quantity">
+          <th mat-header-cell>Stock</th>
+          <td mat-cell>{{ element.quantity }}</td>
+        </ng-container>
+        
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell>Actions</th>
+          <td mat-cell>
+            <button mat-icon-button (click)="removeVariant(i)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+        
+        <tr mat-header-row *matHeaderRowDef="['sku', 'attributeValues', 'price', 'quantity', 'actions']"></tr>
+        <tr mat-row *matRowDef="let row; let i = index"></tr>
+      </table>
+      
+      <!-- Bouton ajouter variante -->
+      <button mat-raised-button color="primary" (click)="openVariantDialog()">
+        <mat-icon>add</mat-icon> Ajouter une variante
+      </button>
+    </mat-tab>
+    
+    <!-- ONGLET 3 : Images -->
+    <mat-tab label="Images">
+      <!-- Zone drag-drop -->
+      <div cdkDropList (cdkDropListDropped)="onImageDrop($event)">
+        <div class="upload-zone">
+          <input type="file" #fileInput multiple accept="image/jpeg,image/png" 
+                 (change)="onImageSelected($event)">
+          <p>Glissez-déposez les images ici ou cliquez</p>
+        </div>
+      </div>
+      
+      <!-- Galerie d'images -->
+      <div class="gallery" cdkDropList (cdkDropListDropped)="reorderImages($event.container.data)">
+        <div *ngFor="let img of images; let i = index" class="image-item" cdkDrag>
+          <img [src]="img.url" [alt]="img.alt">
+          <div class="image-controls">
+            <mat-checkbox [(ngModel)]="img.isMain" (change)="setMainImage(i)">
+              Image principale
+            </mat-checkbox>
+            <button mat-icon-button (click)="removeImage(i)">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+    
+    <!-- ONGLET 4 : Résumé -->
+    <mat-tab label="Résumé">
+      <div class="summary">
+        <h3>✓ Infos produit :</h3>
+        <p>{{ form.get('name')?.value }} - {{ form.get('price')?.value }}€</p>
+        
+        <h3>✓ Variantes : {{ variants.length }}</h3>
+        <mat-list>
+          <mat-list-item *ngFor="let v of variants">
+            {{ v.sku }} - {{ v.quantity }} pcs
+          </mat-list-item>
+        </mat-list>
+        
+        <h3>✓ Images : {{ images.length }}</h3>
+        
+        <mat-progress-bar *ngIf="isFormValid()" value="100" color="accent"></mat-progress-bar>
+        <p *ngIf="!isFormValid()" style="color: red;">⚠️ Remplissez tous les champs</p>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+  
+  <!-- Barre d'actions (sticky) -->
+  <div class="action-bar">
+    <button mat-raised-button (click)="router.navigate(['/products'])">
+      Annuler
+    </button>
+    <button mat-raised-button color="primary" [disabled]="!isFormValid()" 
+            (click)="publishProduct()">
+      📦 Publier le produit
+    </button>
+  </div>
+</div>
+
+════════════════════════════════════════════════════════════════

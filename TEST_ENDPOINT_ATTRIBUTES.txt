@@ -1,0 +1,144 @@
+🧪 TEST DE L'API ATTRIBUTES
+
+════════════════════════════════════════════════════════════════════════════════════
+
+📝 AVEC CURL
+
+# Récupérer tous les attributs avec leurs valeurs (FORMAT OPTIMISÉ POUR ANGULAR)
+curl -X GET "http://localhost:8080/api/attributes/with-values" \
+  -H "Content-Type: application/json"
+
+# Résultat attendu (200 OK):
+[
+  {
+    "id": 1,
+    "name": "Taille",
+    "values": [
+      { "id": 1, "value": "XS", "createdAt": "2024-01-15T10:30:00", "updatedAt": "2024-01-15T10:30:00" },
+      { "id": 2, "value": "S", "createdAt": "2024-01-15T10:30:00", "updatedAt": "2024-01-15T10:30:00" },
+      { "id": 3, "value": "M", "createdAt": "2024-01-15T10:30:00", "updatedAt": "2024-01-15T10:30:00" },
+      { "id": 4, "value": "L", "createdAt": "2024-01-15T10:30:00", "updatedAt": "2024-01-15T10:30:00" },
+      { "id": 5, "value": "XL", "createdAt": "2024-01-15T10:30:00", "updatedAt": "2024-01-15T10:30:00" }
+    ],
+    "createdAt": "2024-01-15T10:30:00",
+    "updatedAt": "2024-01-15T10:30:00"
+  },
+  {
+    "id": 2,
+    "name": "Couleur",
+    "values": [
+      { "id": 10, "value": "Noir", "createdAt": "2024-01-15T10:30:00", "updatedAt": "2024-01-15T10:30:00" },
+      { "id": 11, "value": "Blanc", "createdAt": "2024-01-15T10:30:00", "updatedAt": "2024-01-15T10:30:00" },
+      { "id": 12, "value": "Rouge", "createdAt": "2024-01-15T10:30:00", "updatedAt": "2024-01-15T10:30:00" }
+    ],
+    "createdAt": "2024-01-15T10:30:00",
+    "updatedAt": "2024-01-15T10:30:00"
+  }
+]
+
+════════════════════════════════════════════════════════════════════════════════════
+
+🧪 AVEC POSTMAN
+
+1. Créer une nouvelle requête GET
+2. URL: http://localhost:8080/api/attributes/with-values
+3. Headers:
+   Content-Type: application/json
+4. Cliquer sur "Send"
+5. Vérifier la réponse dans l'onglet "Body"
+
+════════════════════════════════════════════════════════════════════════════════════
+
+🔧 TEST DEPUIS ANGULAR
+
+Dans le composant ou service:
+
+this.http.get<AttributeWithValues[]>('http://localhost:8080/api/attributes/with-values')
+  .subscribe(
+    (data) => {
+      console.log('Données reçues:', data);
+      // Vérifier la structure
+      console.log('Premier attribut:', data[0].name);
+      console.log('Ses valeurs:', data[0].values);
+    },
+    (error) => {
+      console.error('Erreur:', error);
+    }
+  );
+
+════════════════════════════════════════════════════════════════════════════════════
+
+📊 RÉSULTAT ATTENDU (STRUCTURE)
+
+✓ Array de 3+ objets (selon vos données)
+✓ Chaque objet a : id, name, values[], createdAt, updatedAt
+✓ Chaque valeur a : id, value, createdAt, updatedAt
+✓ Pas d'erreur 401 (authentification)
+✓ Pas d'erreur 403 (autorisation)
+✓ Pas d'erreur 500 (serveur)
+✓ Statut HTTP 200 OK
+
+════════════════════════════════════════════════════════════════════════════════════
+
+🐛 TROUBLESHOOTING
+
+ERREUR 404 Not Found
+  → Vérifier que le serveur est démarré
+  → Vérifier que l'URL est correcte
+  → Vérifier que l'endpoint n'a pas de typo
+
+ERREUR 401 Unauthorized
+  → Cet endpoint ne devrait pas demander d'authentification
+  → Vérifier la configuration @PreAuthorize du contrôleur
+
+ERREUR 500 Internal Server Error
+  → Regarder les logs du serveur
+  → Vérifier qu'il n'y a pas d'exception dans AttributeServiceImpl
+
+RÉSULTAT VIDE []
+  → Vérifier qu'il y a des attributs dans la base de données
+  → Créer des attributs + valeurs d'abord via les endpoints POST
+
+════════════════════════════════════════════════════════════════════════════════════
+
+➕ CRÉER UN ATTRIBUT + VALEURS (TEST)
+
+# 1. Créer l'attribut
+curl -X POST "http://localhost:8080/api/attributes" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -d '{"name": "Taille"}'
+
+# 2. Récupérer l'ID retourné (ex: 1)
+
+# 3. Créer des valeurs pour cet attribut
+curl -X POST "http://localhost:8080/api/attribute-values" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -d '{"value": "S", "attributeId": 1}'
+
+curl -X POST "http://localhost:8080/api/attribute-values" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -d '{"value": "M", "attributeId": 1}'
+
+curl -X POST "http://localhost:8080/api/attribute-values" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -d '{"value": "L", "attributeId": 1}'
+
+# 4. Tester l'endpoint /with-values
+curl -X GET "http://localhost:8080/api/attributes/with-values"
+
+════════════════════════════════════════════════════════════════════════════════════
+
+✅ RÉSUMÉ DU TEST
+
+Endpoint: GET /api/attributes/with-values
+Status: 200 OK
+Content-Type: application/json
+Réponse: Array<AttributeWithValuesDto>
+Auth: Publique (pas requise)
+Utilisation: Formulaire d'ajout de produit Angular
+
+════════════════════════════════════════════════════════════════════════════════════

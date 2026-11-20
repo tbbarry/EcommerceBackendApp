@@ -65,12 +65,11 @@ public class Variant extends BaseEntity {
      * Stock de la variante.
      */
     @Valid
-    @Builder.Default
     @OneToOne(
         mappedBy = "variant",
         cascade = CascadeType.ALL
     )
-    private Stock stock = new Stock();
+    private Stock stock;
 
     /**
      * Articles présents dans les paniers.

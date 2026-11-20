@@ -1,0 +1,378 @@
+📱 UTILISATION CÔTÉ ANGULAR - API ATTRIBUTS
+
+════════════════════════════════════════════════════════════════════════════════════
+
+🎯 ENDPOINT PRINCIPAL
+
+GET /api/attributes/with-values
+  Description: Récupère TOUS les attributs avec toutes leurs valeurs en une seule requête
+  Authentification: Publique (pas d'authentification requise)
+  
+Réponse (Array of AttributeWithValuesDto):
+[
+  {
+    "id": 1,
+    "name": "Taille",
+    "values": [
+      { "id": 1, "value": "XS", "createdAt": "2024-01-15T10:30:00", "updatedAt": "2024-01-15T10:30:00" },
+      { "id": 2, "value": "S", "createdAt": "2024-01-15T10:30:00", "updatedAt": "2024-01-15T10:30:00" },
+      { "id": 3, "value": "M", "createdAt": "2024-01-15T10:30:00", "updatedAt": "2024-01-15T10:30:00" },
+      { "id": 4, "value": "L", "createdAt": "2024-01-15T10:30:00", "updatedAt": "2024-01-15T10:30:00" },
+      { "id": 5, "value": "XL", "createdAt": "2024-01-15T10:30:00", "updatedAt": "2024-01-15T10:30:00" }
+    ],
+    "createdAt": "2024-01-15T10:30:00",
+    "updatedAt": "2024-01-15T10:30:00"
+  },
+  {
+    "id": 2,
+    "name": "Couleur",
+    "values": [
+      { "id": 10, "value": "Noir", "createdAt": "2024-01-15T10:30:00", "updatedAt": "2024-01-15T10:30:00" },
+      { "id": 11, "value": "Blanc", "createdAt": "2024-01-15T10:30:00", "updatedAt": "2024-01-15T10:30:00" },
+      { "id": 12, "value": "Rouge", "createdAt": "2024-01-15T10:30:00", "updatedAt": "2024-01-15T10:30:00" },
+      { "id": 13, "value": "Bleu", "createdAt": "2024-01-15T10:30:00", "updatedAt": "2024-01-15T10:30:00" }
+    ],
+    "createdAt": "2024-01-15T10:30:00",
+    "updatedAt": "2024-01-15T10:30:00"
+  },
+  {
+    "id": 3,
+    "name": "Matière",
+    "values": [
+      { "id": 20, "value": "Coton", "createdAt": "2024-01-15T10:30:00", "updatedAt": "2024-01-15T10:30:00" },
+      { "id": 21, "value": "Polyester", "createdAt": "2024-01-15T10:30:00", "updatedAt": "2024-01-15T10:30:00" },
+      { "id": 22, "value": "Laine", "createdAt": "2024-01-15T10:30:00", "updatedAt": "2024-01-15T10:30:00" }
+    ],
+    "createdAt": "2024-01-15T10:30:00",
+    "updatedAt": "2024-01-15T10:30:00"
+  }
+]
+
+════════════════════════════════════════════════════════════════════════════════════
+
+💻 IMPLÉMENTATION ANGULAR
+
+1. CRÉER LES INTERFACES (src/app/models/attribute.model.ts)
+
+export interface AttributeValueSimple {
+  id: number;
+  value: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface AttributeWithValues {
+  id: number;
+  name: string;
+  values: AttributeValueSimple[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+════════════════════════════════════════════════════════════════════════════════════
+
+2. CRÉER LE SERVICE (src/app/services/attribute.service.ts)
+
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { AttributeWithValues } from '../models/attribute.model';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AttributeService {
+
+  private apiUrl = 'http://localhost:8080/api/attributes';
+
+  constructor(private http: HttpClient) { }
+
+  /**
+   * Récupérer tous les attributs avec leurs valeurs
+   * Utilisé principalement pour le formulaire d'ajout de produit
+   */
+  getAllAttributesWithValues(): Observable<AttributeWithValues[]> {
+    return this.http.get<AttributeWithValues[]>(`${this.apiUrl}/with-values`);
+  }
+}
+
+════════════════════════════════════════════════════════════════════════════════════
+
+3. UTILISER DANS LE COMPOSANT (product-add.component.ts)
+
+import { Component, OnInit } from '@angular/core';
+import { AttributeService } from './services/attribute.service';
+import { AttributeWithValues } from './models/attribute.model';
+
+@Component({
+  selector: 'app-product-add',
+  templateUrl: './product-add.component.html',
+  styleUrls: ['./product-add.component.css']
+})
+export class ProductAddComponent implements OnInit {
+
+  attributes: AttributeWithValues[] = [];
+  loading = false;
+  error: string | null = null;
+
+  constructor(private attributeService: AttributeService) { }
+
+  ngOnInit() {
+    this.loadAttributes();
+  }
+
+  loadAttributes() {
+    this.loading = true;
+    this.error = null;
+
+    this.attributeService.getAllAttributesWithValues().subscribe(
+      (data) => {
+        this.attributes = data;
+        console.log('Attributs chargés:', this.attributes);
+        this.loading = false;
+      },
+      (error) => {
+        this.error = 'Erreur lors du chargement des attributs';
+        console.error(error);
+        this.loading = false;
+      }
+    );
+  }
+}
+
+════════════════════════════════════════════════════════════════════════════════════
+
+4. UTILISER DANS LE TEMPLATE (product-add.component.html)
+
+<!-- Affichage des attributs en checkboxes/sélecteurs -->
+<div class="attributes-section" *ngIf="!loading; else loadingSpinner">
+  
+  <div *ngFor="let attribute of attributes" class="attribute-group">
+    <h4>{{ attribute.name }}</h4>
+    
+    <!-- Type 1: Checkboxes pour sélectionner plusieurs valeurs -->
+    <div class="checkbox-group">
+      <label *ngFor="let value of attribute.values">
+        <input 
+          type="checkbox" 
+          [value]="value.id"
+          (change)="onAttributeValueSelected(attribute.id, value.id, $event)">
+        {{ value.value }}
+      </label>
+    </div>
+  </div>
+
+</div>
+
+<ng-template #loadingSpinner>
+  <mat-spinner></mat-spinner>
+</ng-template>
+
+════════════════════════════════════════════════════════════════════════════════════
+
+5. EXEMPLE AVANCÉ - CRÉATION DE VARIANTES
+
+export class ProductAddComponent implements OnInit {
+
+  attributes: AttributeWithValues[] = [];
+  selectedAttributes: Map<number, number[]> = new Map(); // attributeId -> [valueIds]
+  variants: Variant[] = [];
+
+  // ... autres propriétés
+
+  ngOnInit() {
+    this.loadAttributes();
+  }
+
+  /**
+   * Appelée quand l'utilisateur coche une valeur d'attribut
+   */
+  onAttributeValueSelected(attributeId: number, valueId: number, event: any) {
+    if (!this.selectedAttributes.has(attributeId)) {
+      this.selectedAttributes.set(attributeId, []);
+    }
+
+    const values = this.selectedAttributes.get(attributeId)!;
+    
+    if (event.target.checked) {
+      values.push(valueId);
+    } else {
+      const index = values.indexOf(valueId);
+      if (index > -1) {
+        values.splice(index, 1);
+      }
+    }
+
+    console.log('Attributs sélectionnés:', this.selectedAttributes);
+  }
+
+  /**
+   * Créer une variante avec les attributs sélectionnés
+   */
+  createVariantWithSelectedAttributes() {
+    // Vérifier qu'au moins un attribut est sélectionné par type
+    if (this.selectedAttributes.size === 0) {
+      alert('Veuillez sélectionner au moins une valeur pour chaque attribut');
+      return;
+    }
+
+    // Construire la variante
+    const attributeValues = Array.from(this.selectedAttributes.entries()).map(([attributeId, valueIds]) => {
+      return valueIds.map(valueId => ({
+        attributeValueId: valueId
+      }));
+    }).flat();
+
+    const variant: Variant = {
+      sku: this.generateSku(),
+      price: this.form.get('price')?.value,
+      quantity: this.form.get('quantity')?.value,
+      reservedQuantity: 0,
+      attributeValues: attributeValues
+    };
+
+    this.variants.push(variant);
+    this.selectedAttributes.clear(); // Réinitialiser pour la prochaine variante
+    console.log('Variante créée:', variant);
+  }
+
+  /**
+   * Afficher les variantes créées
+   */
+  displayVariants() {
+    return this.variants.map(v => {
+      const attributesText = v.attributeValues
+        .map(av => this.getAttributeValueName(av.attributeValueId))
+        .join(' | ');
+      
+      return `${v.sku} - ${attributesText} - €${v.price}`;
+    });
+  }
+
+  /**
+   * Récupérer le nom d'une valeur d'attribut par son ID
+   */
+  getAttributeValueName(valueId: number): string {
+    for (const attr of this.attributes) {
+      const value = attr.values.find(v => v.id === valueId);
+      if (value) {
+        return `${attr.name}: ${value.value}`;
+      }
+    }
+    return 'Valeur inconnue';
+  }
+
+  private generateSku(): string {
+    // Exemple: PROD-001, PROD-002, etc.
+    return `PROD-${String(this.variants.length + 1).padStart(3, '0')}`;
+  }
+}
+
+════════════════════════════════════════════════════════════════════════════════════
+
+6. TEMPLATE AVANCÉ - AFFICHAGE DES VARIANTES
+
+<section class="variants-section">
+  <h3>Variantes créées</h3>
+  
+  <div *ngIf="variants.length === 0" class="no-variants">
+    Aucune variante créée. Sélectionnez des attributs et cliquez sur "Créer variante"
+  </div>
+
+  <table *ngIf="variants.length > 0" mat-table [dataSource]="variants">
+    
+    <!-- SKU Column -->
+    <ng-container matColumnDef="sku">
+      <th mat-header-cell *matHeaderCellDef>SKU</th>
+      <td mat-cell *matCellDef="let element">{{ element.sku }}</td>
+    </ng-container>
+
+    <!-- Attributs Column -->
+    <ng-container matColumnDef="attributes">
+      <th mat-header-cell *matHeaderCellDef>Combinaison</th>
+      <td mat-cell *matCellDef="let element">
+        <mat-chip-list>
+          <mat-chip *ngFor="let av of element.attributeValues">
+            {{ getAttributeValueName(av.attributeValueId) }}
+          </mat-chip>
+        </mat-chip-list>
+      </td>
+    </ng-container>
+
+    <!-- Prix Column -->
+    <ng-container matColumnDef="price">
+      <th mat-header-cell *matHeaderCellDef>Prix</th>
+      <td mat-cell *matCellDef="let element">€ {{ element.price }}</td>
+    </ng-container>
+
+    <!-- Quantité Column -->
+    <ng-container matColumnDef="quantity">
+      <th mat-header-cell *matHeaderCellDef>Quantité</th>
+      <td mat-cell *matCellDef="let element">{{ element.quantity }}</td>
+    </ng-container>
+
+    <!-- Actions Column -->
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef>Actions</th>
+      <td mat-cell *matCellDef="let element; let i = index">
+        <button mat-icon-button (click)="removeVariant(i)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="['sku', 'attributes', 'price', 'quantity', 'actions']"></tr>
+    <tr mat-row *matRowDef="let row"></tr>
+  </table>
+
+  <button mat-raised-button color="primary" (click)="createVariantWithSelectedAttributes()">
+    <mat-icon>add</mat-icon> Créer variante
+  </button>
+</section>
+
+════════════════════════════════════════════════════════════════════════════════════
+
+🎯 CAS D'USAGE COURANTS
+
+✅ Charger les attributs au démarrage du formulaire
+   this.attributeService.getAllAttributesWithValues()
+
+✅ Afficher les attributs disponibles
+   *ngFor="let attribute of attributes"
+
+✅ Laisser l'utilisateur sélectionner des valeurs
+   Input checkboxes/select pour chaque valeur
+
+✅ Créer des variantes dynamiques
+   Combiner les sélections utilisateur dans un objet Variant
+
+✅ Afficher les variantes créées
+   Tableau avec les informations de chaque variante
+
+════════════════════════════════════════════════════════════════════════════════════
+
+🔗 ENDPOINTS COMPLÉMENTAIRES
+
+GET /api/attributes
+  → Récupère tous les attributs (sans optimisation spéciale)
+
+GET /api/attributes/{id}
+  → Récupère un attribut spécifique par ID
+
+GET /api/attribute-values
+  → Récupère toutes les valeurs d'attribut
+
+GET /api/attribute-values/by-attribute/{attributeId}
+  → Récupère les valeurs d'un attribut spécifique
+
+════════════════════════════════════════════════════════════════════════════════════
+
+⚠️ POINTS IMPORTANTS
+
+✓ L'endpoint /api/attributes/with-values est OPTIMISÉ pour le front
+✓ Il retourne TOUT en une seule requête (pas de N+1 queries)
+✓ AUCUNE authentification requise (endpoint public)
+✓ Les données sont hiérarchisées (attribut → valeurs)
+✓ À charger UNE SEULE FOIS au démarrage du formulaire
+
+════════════════════════════════════════════════════════════════════════════════════
