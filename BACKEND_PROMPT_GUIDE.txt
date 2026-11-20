@@ -1,0 +1,312 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║          ✅ PROMPT BACKEND - ENDPOINTS D'ÉCRITURE ADMIN PRODUITS              ║
+║                                                                                ║
+║  Fichier créé: PROMPT_BACKEND_ENDPOINTS_WRITE.md                             ║
+║  Status: Prêt à envoyer à l'équipe backend                                   ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+════════════════════════════════════════════════════════════════════════════════
+
+📋 RÉSUMÉ DES 10 ENDPOINTS À IMPLÉMENTER
+
+1️⃣  PATCH /api/admin/products/{productId}
+    └─ Modifier les infos du produit (nom, prix, description, etc.)
+
+2️⃣  POST /api/admin/products/{productId}/variants
+    └─ Ajouter une variante avec attributs et stock initial
+
+3️⃣  PATCH /api/admin/products/{productId}/variants/{variantId}
+    └─ Modifier une variante (SKU, prix, attributs)
+
+4️⃣  PATCH /api/admin/products/{productId}/variants/{variantId}/stock
+    └─ Modifier le stock total d'une variante
+
+5️⃣  DELETE /api/admin/products/{productId}/variants/{variantId}
+    └─ Supprimer une variante
+
+6️⃣  POST /api/admin/products/{productId}/variants/bulk-delete
+    └─ Supprimer plusieurs variantes (ATOMIQUE)
+
+7️⃣  POST /api/admin/products/{productId}/images
+    └─ Ajouter une image (avec URL, pas de fichier)
+
+8️⃣  PATCH /api/admin/products/{productId}/images/{imageId}
+    └─ Modifier une image (alt, ordre, principale)
+
+9️⃣  DELETE /api/admin/products/{productId}/images/{imageId}
+    └─ Supprimer une image
+
+🔟 PATCH /api/admin/products/{productId}/status
+    └─ Archiver un produit
+
+════════════════════════════════════════════════════════════════════════════════
+
+🔐 SÉCURITÉ OBLIGATOIRE
+
+✅ Tous les endpoints requièrent:
+   - JWT valide (Authorization: Bearer {token})
+   - Rôle ADMIN (@PreAuthorize("hasRole('ADMIN')"))
+   - Retourner 401 si pas d'authentification
+   - Retourner 403 si pas de rôle ADMIN
+
+════════════════════════════════════════════════════════════════════════════════
+
+📊 POINTS CLÉS DE CHAQUE ENDPOINT
+
+ENDPOINT 1: Modifier produit
+  ✅ Valider: name, price, slug, categoryId
+  ✅ Modifier uniquement les champs présents
+  ✅ Appeler refreshProduct() après
+
+ENDPOINT 2: Ajouter variante
+  ✅ Créer Variant + Stock dans MÊME transaction
+  ✅ Valider unicité du SKU
+  ✅ Vérifier existence attributeValueIds
+  ✅ Stock initial: quantity, reservedQuantity=0, availableQuantity=quantity
+
+ENDPOINT 3: Modifier variante
+  ✅ Vérifier appartenance au produit
+  ✅ Remplacer les associations d'attributs
+  ✅ NE PAS modifier le stock
+
+ENDPOINT 4: Modifier stock
+  ✅ Valider: quantity >= reservedQuantity
+  ✅ Recalculer: availableQuantity = quantity - reservedQuantity
+  ✅ Protéger contre modifications concurrentes (verrous)
+
+ENDPOINT 5: Supprimer variante
+  ✅ Vérifier: pas de réservations, pas de références en commandes
+  ✅ Retourner 409 avec message lisible si impossible
+
+ENDPOINT 6: Supprimer variantes (Bulk) ⚡ ATOMICITÉ OBLIGATOIRE
+  ✅ Si UNE variante pose problème → RIEN n'est supprimé
+  ✅ Retourner 409 avec détails du conflit
+  ✅ Appeler refreshProduct() UNE SEULE FOIS
+
+ENDPOINT 7: Ajouter image
+  ✅ Valider: URL http(s), alt non-vide, displayOrder >= 0
+  ✅ Si isMain=true: passer l'ancienne image principale à false
+  ✅ Retourner avec champ `main` booléen
+
+ENDPOINT 8: Modifier image
+  ✅ Modifier uniquement champs présents
+  ✅ Si isMain=true: passer ancienne principale à false
+  ✅ Si visualAttributeValueId=null: supprimer association
+  ✅ Support requête minimale: { "isMain": true }
+
+ENDPOINT 9: Supprimer image
+  ✅ Refuser si: image principale + autres images existent
+  ✅ Accepter si: image principale + c'est la seule
+  ✅ Retourner 409 avec message lisible si refusé
+
+ENDPOINT 10: Archiver produit
+  ✅ Valider statut "ARCHIVED" (ou valeur confirmée)
+  ✅ NE PAS supprimer les données (conserve pour commandes)
+  ✅ Communiquer si valeur attendue ne correspond pas
+
+════════════════════════════════════════════════════════════════════════════════
+
+🎯 CYCLE DE VIE DES OPÉRATIONS
+
+Frontend effectue:
+
+   1. Appelle endpoint d'écriture (PATCH/POST/DELETE)
+   2. Reçoit 200/201/204 ✅
+   3. Effectue GET /api/admin/products/{productId} pour recharger
+   4. Affiche les données modifiées
+
+Le détail doit TOUJOURS contenir:
+  ✅ variants: [] (tableau, vide si aucune)
+  ✅ images: [] (tableau, vide si aucune)
+  ✅ Champ `main` booléen pour images (pas `isMain`)
+  ✅ Tous les détails actualisés
+
+════════════════════════════════════════════════════════════════════════════════
+
+📝 DTOs À CRÉER
+
+Request:
+  ✅ AdminProductUpdateRequest
+  ✅ AdminVariantCreateRequest
+  ✅ AdminVariantUpdateRequest
+  ✅ AdminStockUpdateRequest
+  ✅ AdminImageCreateRequest
+  ✅ AdminImageUpdateRequest
+  ✅ AdminVariantBulkDeleteRequest
+  ✅ AdminProductStatusRequest
+
+Response:
+  ✅ Utiliser ProductAdminDetailResponse existant
+  ✅ Avec `main` booléen pour images (pas `isMain`)
+  ✅ Variantes avec stock et attributs complets
+
+════════════════════════════════════════════════════════════════════════════════
+
+⚠️ POINTS CRITIQUES D'ERREUR
+
+❌ Oublier refreshProduct() après chaque opération
+   → L'index catalog ne se met pas à jour
+   → Chercher/facettes ne fonctionnent pas
+
+❌ Utiliser `isMain` en response au lieu de `main`
+   → Frontend attend `main: boolean`
+   → Désynchronisation interface
+
+❌ Oublier l'atomicité du bulk delete
+   → Si une variante échoue, les autres sont supprimées
+   → Perte de données irrécupérable
+
+❌ Autoriser réduction stock sous quantité réservée
+   → Incohérence données, commandes brisées
+
+❌ Autoriser suppression variante avec réservations
+   → Référence cassée, problèmes de fulfillment
+
+❌ Oublier transactions @Transactional
+   → Création variante sans stock
+   → Données orphelines
+
+❌ Ne pas vérifier l'authentification côté serveur
+   → Failles de sécurité critiques
+
+════════════════════════════════════════════════════════════════════════════════
+
+🧪 TESTS OBLIGATOIRES
+
+Couverture minimale:
+
+✅ Authentification (401/403 non-admin)
+✅ Validation des entrées (400 invalide)
+✅ Création/modification/suppression réussies
+✅ Unicité SKU (409 doublon)
+✅ Stock réservé (400 réduction impossible)
+✅ Bulk delete atomique (409 = rien n'est supprimé)
+✅ Image principale (une seule)
+✅ Suppression image principale (409 avec autres images)
+✅ Appartenance ressource (404 variante/image)
+✅ Index catalog rafraîchi (vérifier appel refreshProduct)
+✅ GET après écriture = données modifiées
+✅ Archivage préserve données
+
+════════════════════════════════════════════════════════════════════════════════
+
+📌 STRUCTURE DU CODE ATTENDUE
+
+BackendApp/src/main/java/com/backend/ecommerce/
+├── controller/
+│   └── AdminProductController.java  (ADD: 10 endpoints)
+│
+├── service/
+│   ├── AdminProductService.java (interface)
+│   └── impl/
+│       └── AdminProductServiceImpl.java (implémentation)
+│
+├── dto/
+│   ├── AdminProductUpdateRequest.java (NEW)
+│   ├── AdminVariantCreateRequest.java (NEW)
+│   ├── AdminVariantUpdateRequest.java (NEW)
+│   ├── AdminStockUpdateRequest.java (NEW)
+│   ├── AdminImageCreateRequest.java (NEW)
+│   ├── AdminImageUpdateRequest.java (NEW)
+│   ├── AdminVariantBulkDeleteRequest.java (NEW)
+│   └── AdminProductStatusRequest.java (NEW)
+│
+└── exception/
+    └── AdminProductException.java (optionnel)
+
+════════════════════════════════════════════════════════════════════════════════
+
+✅ CODES HTTP ATTENDUS
+
+✅ 200 OK: modification avec réponse
+✅ 201 Created: création avec réponse
+✅ 204 No Content: opération réussie sans réponse
+✅ 400 Bad Request: validation échouée
+✅ 401 Unauthorized: pas d'authentification
+✅ 403 Forbidden: pas d'accès admin
+✅ 404 Not Found: ressource inexistante
+✅ 409 Conflict: conflit métier (SKU, réservations, statut)
+
+════════════════════════════════════════════════════════════════════════════════
+
+🔄 MISE À JOUR CATALOG
+
+Après chaque opération, OBLIGATOIRE:
+
+```java
+catalogProductPricingIndexService.refreshProduct(productId);
+```
+
+Met à jour:
+  ✅ Index de recherche
+  ✅ Prix et remises
+  ✅ Facettes d'attributs
+  ✅ Images
+
+Voir: CatalogProductPricingIndexServiceImpl.java
+
+════════════════════════════════════════════════════════════════════════════════
+
+📋 CHECKLIST AVANT LIVRAISON
+
+✅ Tous les 10 endpoints implémentés
+✅ Sécurité @PreAuthorize("hasRole('ADMIN')") sur chaque
+✅ Validations métier correctes
+✅ Messages d'erreur clairs
+✅ refreshProduct() appelé systématiquement
+✅ Transactions @Transactional pour atomicité
+✅ DTOs créés et validés
+✅ Tests unitaires complets
+✅ GET après écriture retourne données modifiées
+✅ Champ `main` booléen (pas `isMain`) en response
+✅ Tableaux vides si aucune variante/image
+✅ Pas d'erreurs de compilation
+✅ Pas de dépendances manquantes
+
+════════════════════════════════════════════════════════════════════════════════
+
+📂 FICHIER PRINCIPAL
+
+📄 PROMPT_BACKEND_ENDPOINTS_WRITE.md
+
+Contient:
+  ✅ Spécification détaillée de chaque endpoint
+  ✅ Requêtes/réponses JSON exactes
+  ✅ Logique métier de chaque opération
+  ✅ Validations obligatoires
+  ✅ Gestion des erreurs
+  ✅ DTOs complets
+  ✅ Tests obligatoires
+  ✅ Checklist implémentation
+
+════════════════════════════════════════════════════════════════════════════════
+
+🚀 UTILISATION DU PROMPT
+
+1. Envoyer à l'équipe backend:
+   📄 PROMPT_BACKEND_ENDPOINTS_WRITE.md
+
+2. Ils implémentent les 10 endpoints dans l'ordre
+
+3. Tests pour chaque endpoint
+
+4. Vérification finale contre frontend
+
+5. Déploiement
+
+════════════════════════════════════════════════════════════════════════════════
+
+⏱️ TEMPS ESTIMÉ
+
+Implémentation:  8-12 heures
+Tests:           4-6 heures
+Débogage:        2-4 heures
+─────────────────────────────
+TOTAL:           14-22 heures
+
+════════════════════════════════════════════════════════════════════════════════
+
+Le prompt est situé à:
+C:\Users\tbbar\Documents\EcommerceApp\BackendApp\PROMPT_BACKEND_ENDPOINTS_WRITE.md
+
+Prêt à envoyer à votre équipe backend! 🚀

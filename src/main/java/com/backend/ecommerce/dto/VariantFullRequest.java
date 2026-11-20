@@ -33,5 +33,5 @@ public class VariantFullRequest {
 
 
     @Valid
-    private List<VariantAttributeValueRequest> attributeValues = new ArrayList<>();
+    private List<VariantAttributeValueRequest> attributeValueIds = new ArrayList<>();
 }

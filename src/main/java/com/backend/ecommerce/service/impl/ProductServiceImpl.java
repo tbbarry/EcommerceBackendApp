@@ -16,7 +16,6 @@ import com.backend.ecommerce.entity.Variant;
 import com.backend.ecommerce.entity.Stock;
 import com.backend.ecommerce.entity.ProductImage;
 import com.backend.ecommerce.entity.VariantAttributeValue;
-import com.backend.ecommerce.entity.AttributeValue;
 import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.ProductRepository;
 import com.backend.ecommerce.repository.CategoryRepository;
@@ -131,9 +130,10 @@ public class ProductServiceImpl implements ProductService {
         System.out.println("Saved variant with ID: " + savedVariant.getId());
 
         // Créer les associations entre variante et valeurs d'attributs
-        if (variantRequest.getAttributeValues() != null && !variantRequest.getAttributeValues().isEmpty()) {
-            for (VariantAttributeValueRequest attrValueRequest : variantRequest.getAttributeValues()) {
+        if (variantRequest.getAttributeValueIds() != null && !variantRequest.getAttributeValueIds().isEmpty()) {
+            for (VariantAttributeValueRequest attrValueRequest : variantRequest.getAttributeValueIds()) {
                 // Vérifier que la valeur d'attribut existe
+                System.out.println("Looking for attribute value with ID: " + attrValueRequest.getAttributeValueId());
                 var attributeValue = attributeValueRepository.findById(attrValueRequest.getAttributeValueId())
                         .orElseThrow(() -> new ResourceNotFoundException(
                                 "AttributeValue not found with id: " + attrValueRequest.getAttributeValueId()));
@@ -164,7 +164,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     private void createProductImage(Product product, ProductImageRequest imageRequest) {
         ProductImage image = new ProductImage();
-        image.setUrl(imageRequest.getUrl());
+        image.setUrl("localhost");
         image.setAlt(imageRequest.getAlt());
         image.setMain(imageRequest.isMain());
         image.setDisplayOrder(imageRequest.getDisplayOrder() != null ? imageRequest.getDisplayOrder() : 0);

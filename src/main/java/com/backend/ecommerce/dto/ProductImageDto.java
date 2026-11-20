@@ -15,7 +15,7 @@ public class ProductImageDto {
     private Integer id;
     private String url;
     private String alt;
-    private boolean isMain;
+    private boolean main;  // Changed from isMain to main for API response
     private Integer displayOrder;
     private Integer visualAttributeValueId;
     private String visualAttributeValueName;
