@@ -79,7 +79,6 @@ public class UserServiceImpl implements UserService {
         dto.setFirstname(entity.getFirstname());
         dto.setLastname(entity.getLastname());
         dto.setEmail(entity.getEmail());
-        dto.setPassword(entity.getPassword());
         return dto;
     }
 
@@ -119,6 +118,8 @@ public class UserServiceImpl implements UserService {
         dto.setLastname(user.getLastname());
         dto.setPhone(user.getPhone());
         dto.setEmail(user.getEmail());
+        dto.setRole(user.getRole());
+        dto.setMustChangePassword(user.isMustChangePassword());
         return dto;
     }
 
@@ -139,6 +140,7 @@ public class UserServiceImpl implements UserService {
 
         //  encoder nouveau mot de passe
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setMustChangePassword(false);
 
         userRepository.save(user);
     }

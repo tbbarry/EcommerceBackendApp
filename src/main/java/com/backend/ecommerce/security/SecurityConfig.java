@@ -68,42 +68,33 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
+                .exceptionHandling(errors -> errors.authenticationEntryPoint(
+                        (request, response, exception) -> response.sendError(401, "Authentication required")))
 
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // Auth public
-                         .requestMatchers("/auth/**").permitAll()
-
-                        // Stripe public
-                        .requestMatchers("/api/stripe/webhook").permitAll()
-                        .requestMatchers("/api/payments/stripe/**").permitAll()
-
-                        //Swagger doc 
-                         .requestMatchers( "/swagger-ui/**",
-                            "/v3/api-docs/**",
-                            "/v3/api-docs",
-                            "/swagger-resources/**",
-                            "/webjars/**").permitAll()
-
-
-                        // Lecture publique boutique
-                        .requestMatchers("/api/products/**").permitAll()
-                        .requestMatchers("/api/admin/**").permitAll()
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/stripe/webhook").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/contact-messages").permitAll()
+                        .requestMatchers("/api/admin/**", "/admin/**",
+                                "/swagger-ui/**", "/v3/api-docs/**", "/v3/api-docs",
+                                "/swagger-resources/**", "/webjars/**", "/api/test/**").hasRole("ADMIN")
+                        .requestMatchers("/api/promos/admin", "/api/promos/*/assignments/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/attributes/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/attribute-values/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/catalog/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/variants/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/images/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/promos/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/store-settings", "/api/store-settings/logo").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/promos", "/api/promos/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/shipping-methods/**").permitAll()
 
-                        // Admin global si tu as des routes /admin/**
-                         .requestMatchers("/admin/**").hasRole("ADMIN")
-
-
-                         .requestMatchers(HttpMethod.POST, "/api/test/kafka/**").permitAll()
-                         .anyRequest().authenticated()
+                        .requestMatchers("/api/products/**", "/api/categories/**", "/api/attributes/**",
+                                "/api/attribute-values/**", "/api/promos/**").hasRole("ADMIN")
+                        .anyRequest().authenticated()
                 )
 
                 // 🔥 AJOUT CRUCIAL

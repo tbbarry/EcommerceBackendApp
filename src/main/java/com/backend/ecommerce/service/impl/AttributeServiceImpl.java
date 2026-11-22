@@ -10,6 +10,7 @@ import com.backend.ecommerce.entity.AttributeValue;
 import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.AttributeRepository;
 import com.backend.ecommerce.repository.VariantAttributeValueRepository;
+import com.backend.ecommerce.repository.ProductImageRepository;
 import com.backend.ecommerce.service.CatalogProductPricingIndexService;
 import com.backend.ecommerce.service.AttributeService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class AttributeServiceImpl implements AttributeService {
 
     private final AttributeRepository attributeRepository;
     private final VariantAttributeValueRepository variantAttributeValueRepository;
+    private final ProductImageRepository productImageRepository;
     private final CatalogProductPricingIndexService catalogProductPricingIndexService;
 
     @Override
@@ -44,7 +46,7 @@ public class AttributeServiceImpl implements AttributeService {
     @Override
     public AttributeDto create(AttributeCreateRequest request) {
         Attribute entity = Attribute.builder()
-                .name(request.getName())
+                .name(request.getName().trim())
                 .build();
         return toDto(attributeRepository.save(entity));
     }
@@ -52,14 +54,14 @@ public class AttributeServiceImpl implements AttributeService {
     @Override
     public AttributeDto create(AttributeDto dto) {
         Attribute entity = new Attribute();
-        entity.setName(dto.getName());
+        entity.setName(dto.getName().trim());
         return toDto(attributeRepository.save(entity));
     }
 
     @Override
     public AttributeDto update(Integer id, AttributeDto dto) {
         Attribute entity = getEntityById(id);
-        entity.setName(dto.getName());
+        entity.setName(dto.getName().trim());
         Attribute saved = attributeRepository.save(entity);
         // Le nom de l'attribut est aussi le code de facette dans le catalogue.
         catalogProductPricingIndexService.refreshProducts(
@@ -70,6 +72,10 @@ public class AttributeServiceImpl implements AttributeService {
     @Override
     public void delete(Integer id) {
         Attribute entity = getEntityById(id);
+        if (variantAttributeValueRepository.existsByAttributeValueAttributeId(id)
+                || productImageRepository.existsByVisualAttributeValueAttributeId(id)) {
+            throw new IllegalArgumentException("Cet attribut est utilisé par des variantes ou des images.");
+        }
         attributeRepository.delete(entity);
     }
 

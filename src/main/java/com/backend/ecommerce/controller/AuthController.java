@@ -2,6 +2,7 @@ package com.backend.ecommerce.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.*;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import com.backend.ecommerce.dto.ForgotPasswordRequest;
@@ -9,6 +10,7 @@ import com.backend.ecommerce.dto.LoginRequest;
 import com.backend.ecommerce.dto.ResetPasswordRequest;
 import com.backend.ecommerce.dto.RegisterDto;
 import com.backend.ecommerce.security.JwtUtil;
+import com.backend.ecommerce.security.CustomUserDetailsService;
 import com.backend.ecommerce.service.AuthService;
 
 import jakarta.validation.Valid;
@@ -20,27 +22,30 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final AuthService authService;
+    private final CustomUserDetailsService userDetailsService;
 
     public AuthController(AuthenticationManager authenticationManager,
                           JwtUtil jwtUtil,
-                          AuthService authService) {
+                          AuthService authService,
+                          CustomUserDetailsService userDetailsService) {
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
         this.authService = authService;
+        this.userDetailsService = userDetailsService;
     }
 
     // 🔐 LOGIN
     @PostMapping("/login")
     public String login(@RequestBody LoginRequest request) {
 
-        authenticationManager.authenticate(
+        Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
                         request.getPassword()
                 )
         );
 
-        return jwtUtil.generateToken(request.getEmail());
+        return jwtUtil.generateToken(userDetailsService.loadUserByUsername(authentication.getName()));
     }
 
     // 🆕 REGISTER

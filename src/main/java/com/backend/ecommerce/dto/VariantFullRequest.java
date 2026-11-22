@@ -20,7 +20,6 @@ import java.util.List;
 @AllArgsConstructor
 public class VariantFullRequest {
 
-    @NotBlank
     private String sku;
 
     @NotNull

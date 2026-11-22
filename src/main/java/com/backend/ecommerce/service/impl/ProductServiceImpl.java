@@ -26,6 +26,7 @@ import com.backend.ecommerce.repository.AttributeValueRepository;
 import com.backend.ecommerce.repository.VariantAttributeValueRepository;
 import com.backend.ecommerce.service.ProductService;
 import com.backend.ecommerce.service.CatalogProductPricingIndexService;
+import com.backend.ecommerce.service.ImageUploadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -47,6 +48,7 @@ public class ProductServiceImpl implements ProductService {
     private final AttributeValueRepository attributeValueRepository;
     private final VariantAttributeValueRepository variantAttributeValueRepository;
     private final CatalogProductPricingIndexService catalogProductPricingIndexService;
+    private final ImageUploadService imageUploadService;
 
     @Override
     @Transactional(readOnly = true)
@@ -85,8 +87,8 @@ public class ProductServiceImpl implements ProductService {
         product.setDescription(request.getDescription());
         product.setPrice(request.getPrice());
         product.setBrand(request.getBrand());
-        product.setSlug(request.getSlug() != null ? request.getSlug() : generateSlug(request.getName()));
         product.setCategory(category);
+        product.setSlug(ProductIdentifiers.slug(product));
 
         // Sauvegarder le produit
         Product savedProduct = productRepository.save(product);
@@ -118,9 +120,8 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     private void createVariantWithStock(Product product, VariantFullRequest variantRequest) {
         // Créer et sauvegarder la variante
-        System.out.println("Creating variant : " + variantRequest.getSku());
         Variant variant = new Variant();
-        variant.setSku(variantRequest.getSku());
+        variant.setSku(ProductIdentifiers.sku(product));
         variant.setPrice(variantRequest.getPrice());
         variant.setProduct(product);
 
@@ -164,8 +165,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     private void createProductImage(Product product, ProductImageRequest imageRequest) {
         ProductImage image = new ProductImage();
-        image.setUrl("localhost");
-        image.setAlt(imageRequest.getAlt());
+        image.setUrl(imageUploadService.storeProductImageData(imageRequest.getUrl(), product.getId()));
         image.setMain(imageRequest.isMain());
         image.setDisplayOrder(imageRequest.getDisplayOrder() != null ? imageRequest.getDisplayOrder() : 0);
         image.setProduct(product);
@@ -177,6 +177,7 @@ public class ProductServiceImpl implements ProductService {
                             "AttributeValue not found with id: " + imageRequest.getVisualAttributeValueId()));
             image.setVisualAttributeValue(attributeValue);
         }
+        image.setAlt(ProductIdentifiers.imageAlt(product, image.getVisualAttributeValue()));
 
         productImageRepository.save(image);
     }

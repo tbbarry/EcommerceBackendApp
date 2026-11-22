@@ -25,7 +25,7 @@ public class ProductController {
     }
     
     // ADMIN : créer un produit avec variantes et images
-    //@PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ProductFullResponse> createProduct(@Valid @RequestBody ProductCreateRequest request) {
         System.out.println("Creating product with request: " + request);

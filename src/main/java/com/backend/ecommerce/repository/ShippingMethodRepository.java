@@ -11,4 +11,6 @@ public interface ShippingMethodRepository extends JpaRepository<ShippingMethod, 
     List<ShippingMethod> findByActiveTrueOrderByPriceAsc();
 
     Optional<ShippingMethod> findByIdAndActiveTrue(Integer id);
+
+    Optional<ShippingMethod> findByCodeIgnoreCase(String code);
 }

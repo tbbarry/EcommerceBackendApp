@@ -15,4 +15,6 @@ public class UserProfileDto {
     private String lastname;
     private String phone;
     private String email;
+    private String role;
+    private boolean mustChangePassword;
 }

@@ -54,7 +54,7 @@ public class UserController {
     }
 
     // ADMIN ou utilisateur propriétaire
-    @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#id)")
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<RegisterDto> update(@PathVariable Integer id, @Valid @RequestBody RegisterDto dto) {
         return ResponseEntity.ok(userService.update(id, dto));
@@ -69,8 +69,9 @@ public class UserController {
     }
 
 
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/change-password")
-    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
+    public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
 
         String email = SecurityContextHolder.getContext()
                 .getAuthentication()

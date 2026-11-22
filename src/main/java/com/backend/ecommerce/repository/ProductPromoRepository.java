@@ -12,6 +12,21 @@ import java.util.List;
 
 public interface ProductPromoRepository extends JpaRepository<ProductPromo, Integer> {
 
+	boolean existsByPromoIdAndProductId(Integer promoId, Integer productId);
+
+	@Query("SELECT pp FROM ProductPromo pp JOIN FETCH pp.product WHERE pp.promo.id = :promoId")
+	List<ProductPromo> findAssignmentsByPromoId(@Param("promoId") Integer promoId);
+
+	@Query("""
+		SELECT DISTINCT pp.product.id FROM ProductPromo pp
+		JOIN pp.promo p
+		LEFT JOIN CatalogProduct cp ON cp.productId = pp.product.id
+		WHERE p.isActive = true AND (cp.id IS NULL
+			OR (p.startDate > cp.updatedAt AND p.startDate <= :now)
+			OR (p.endDate >= cp.updatedAt AND p.endDate < :now))
+	""")
+	List<Integer> findProductsWithDuePromotionChanges(@Param("now") LocalDateTime now);
+
 	@Modifying
 	@Query("DELETE FROM ProductPromo pp WHERE pp.promo.id = :promoId")
 	void deleteByPromoId(@Param("promoId") Integer promoId);

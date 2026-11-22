@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -110,6 +111,15 @@ public class SecurityService {
 
         return paymentRepository.findById(paymentId)
                 .map(payment -> payment.getOrder().getUser().getEmail().equals(email))
+                .orElse(false);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isCheckoutSessionOwner(String sessionId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.isAuthenticated()
+                && paymentRepository.findByStripeCheckoutSessionId(sessionId)
+                .map(payment -> payment.getOrder().getUser().getEmail().equals(authentication.getName()))
                 .orElse(false);
     }
 }

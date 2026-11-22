@@ -6,6 +6,7 @@ import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.*;
 import com.backend.ecommerce.service.AdminProductService;
 import com.backend.ecommerce.service.CatalogProductPricingIndexService;
+import com.backend.ecommerce.service.ImageUploadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,6 +37,8 @@ public class AdminProductServiceImpl implements AdminProductService {
     private final AttributeValueRepository attributeValueRepository;
     private final CategoryRepository categoryRepository;
     private final CatalogProductPricingIndexService catalogProductPricingIndexService;
+    private final ImageUploadService imageUploadService;
+    private final VariantPromoRepository variantPromoRepository;
 
     @Override
     public Page<ProductAdminListResponse> getAllProductsForAdmin(int page, int size) {
@@ -63,7 +67,7 @@ public class AdminProductServiceImpl implements AdminProductService {
             }
             response.setTotalStock(totalStock);
             
-            response.setStatus("ACTIVE");
+            response.setStatus(product.getStatus() != null ? product.getStatus().name() : "ACTIVE");
             response.setCreatedAt(product.getCreatedAt());
             response.setUpdatedAt(product.getUpdatedAt());
             
@@ -103,20 +107,12 @@ public class AdminProductServiceImpl implements AdminProductService {
             product.setPrice(request.getPrice());
         }
         
-        if (request.getSlug() != null && !request.getSlug().isBlank()) {
-            if (!product.getSlug().equals(request.getSlug())) {
-                if (productRepository.existsBySlug(request.getSlug())) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Slug already exists");
-                }
-            }
-            product.setSlug(request.getSlug());
-        }
-        
         if (request.getCategoryId() != null) {
             Category category = categoryRepository.findById(request.getCategoryId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category not found"));
             product.setCategory(category);
         }
+        product.getImages().forEach(image -> image.setAlt(ProductIdentifiers.imageAlt(product, image.getVisualAttributeValue())));
         
         product.setUpdatedAt(LocalDateTime.now());
         Product updated = productRepository.save(product);
@@ -132,10 +128,6 @@ public class AdminProductServiceImpl implements AdminProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
         
-        if (request.getSku() == null || request.getSku().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "SKU is required");
-        }
-        
         if (request.getPrice() == null || request.getPrice().compareTo(BigDecimal.ZERO) < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Price must be positive");
         }
@@ -149,7 +141,7 @@ public class AdminProductServiceImpl implements AdminProductService {
         }
         
         Variant variant = new Variant();
-        variant.setSku(request.getSku());
+        variant.setSku(ProductIdentifiers.sku(product));
         variant.setPrice(request.getPrice());
         variant.setProduct(product);
         
@@ -173,9 +165,8 @@ public class AdminProductServiceImpl implements AdminProductService {
         product.getVariants().add(variant);
         Product saved = productRepository.save(product);
         
-        // Find the saved variant by SKU
         Variant savedVariant = saved.getVariants().stream()
-                .filter(v -> v.getSku().equals(request.getSku()))
+                .filter(v -> v.getSku().equals(variant.getSku()))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Variant not found after save"));
         
@@ -195,19 +186,6 @@ public class AdminProductServiceImpl implements AdminProductService {
                 .filter(v -> v.getId().equals(variantId))
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Variant not found with id: " + variantId));
-        
-        if (request.getSku() != null && !request.getSku().isBlank()) {
-            if (!variant.getSku().equals(request.getSku())) {
-                // Vérifier unicité du SKU
-                boolean skuExists = productRepository.findAll().stream()
-                        .flatMap(p -> p.getVariants().stream())
-                        .anyMatch(v -> v.getSku().equals(request.getSku()) && !v.getId().equals(variantId));
-                if (skuExists) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "SKU already exists");
-                }
-            }
-            variant.setSku(request.getSku());
-        }
         
         if (request.getPrice() != null && request.getPrice().compareTo(BigDecimal.ZERO) >= 0) {
             variant.setPrice(request.getPrice());
@@ -290,6 +268,8 @@ public class AdminProductServiceImpl implements AdminProductService {
                     "Cette variante possède des unités réservées et ne peut pas être supprimée.");
         }
         
+        variantPromoRepository.deleteByVariantIds(List.of(variantId));
+        variantPromoRepository.flush();
         product.getVariants().remove(variant);
         productRepository.save(product);
         
@@ -321,6 +301,8 @@ public class AdminProductServiceImpl implements AdminProductService {
             }
         }
         
+        variantPromoRepository.deleteByVariantIds(request.getVariantIds());
+        variantPromoRepository.flush();
         // Si tous les contrôles passent, supprimer
         for (Integer variantId : request.getVariantIds()) {
             Variant variant = product.getVariants().stream()
@@ -341,18 +323,35 @@ public class AdminProductServiceImpl implements AdminProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
         
-        if (request.getUrl() == null || request.getUrl().isBlank() 
-                || (!request.getUrl().startsWith("http://") && !request.getUrl().startsWith("https://"))) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "URL must be valid HTTP/HTTPS");
-        }
+        String imageUrl;
         
-        if (request.getAlt() == null || request.getAlt().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Alt text is required");
+        // Cas 1: Upload de fichier
+        if (request.getFile() != null && !request.getFile().isEmpty()) {
+            try {
+                String uploadedPath = imageUploadService.uploadProductImage(request.getFile(), productId);
+                imageUrl = uploadedPath;
+            } catch (IOException e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                        "Error uploading file: " + e.getMessage());
+            } catch (IllegalArgumentException e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+            }
+        }
+        // Cas 2: URL directe
+        else if (request.getUrl() != null && !request.getUrl().isBlank()) {
+            if (!request.getUrl().startsWith("http://") && !request.getUrl().startsWith("https://")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "URL must be valid HTTP/HTTPS");
+            }
+            imageUrl = request.getUrl();
+        }
+        // Aucun des deux
+        else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                    "Either file or URL must be provided");
         }
         
         ProductImage image = new ProductImage();
-        image.setUrl(request.getUrl());
-        image.setAlt(request.getAlt());
+        image.setUrl(imageUrl);
         image.setMain(request.isMain());
         image.setDisplayOrder(request.getDisplayOrder() != null ? request.getDisplayOrder() : 0);
         image.setProduct(product);
@@ -363,6 +362,7 @@ public class AdminProductServiceImpl implements AdminProductService {
                             "AttributeValue not found with id: " + request.getVisualAttributeValueId()));
             image.setVisualAttributeValue(attributeValue);
         }
+        image.setAlt(ProductIdentifiers.imageAlt(product, image.getVisualAttributeValue()));
         
         // Si cette image est principale, enlever le statut principal des autres
         if (request.isMain()) {
@@ -377,7 +377,7 @@ public class AdminProductServiceImpl implements AdminProductService {
         Product saved = productRepository.save(product);
         
         ProductImage savedImage = saved.getImages().stream()
-                .filter(img -> img.getUrl().equals(request.getUrl()))
+                .filter(img -> img.getUrl().equals(imageUrl))
                 .findFirst()
                 .orElseThrow();
         
@@ -396,10 +396,6 @@ public class AdminProductServiceImpl implements AdminProductService {
                 .filter(img -> img.getId().equals(imageId))
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Image not found with id: " + imageId));
-        
-        if (request.getAlt() != null && !request.getAlt().isBlank()) {
-            image.setAlt(request.getAlt());
-        }
         
         if (request.getDisplayOrder() != null) {
             image.setDisplayOrder(request.getDisplayOrder());
@@ -428,6 +424,7 @@ public class AdminProductServiceImpl implements AdminProductService {
                                 "AttributeValue not found with id: " + request.getVisualAttributeValueId()));
                 image.setVisualAttributeValue(attributeValue);
             }
+            image.setAlt(ProductIdentifiers.imageAlt(product, image.getVisualAttributeValue()));
         }
         
         image.setUpdatedAt(LocalDateTime.now());
@@ -459,6 +456,11 @@ public class AdminProductServiceImpl implements AdminProductService {
                     "L'image principale ne peut pas être supprimée tant qu'une autre image n'a pas été définie comme principale.");
         }
         
+        // Supprimer le fichier du système de fichiers si c'est un fichier uploadé (pas une URL externe)
+        if (image.getUrl() != null && !image.getUrl().startsWith("http")) {
+            imageUploadService.deleteProductImage(image.getUrl());
+        }
+        
         product.getImages().remove(image);
         productRepository.save(product);
         
@@ -476,11 +478,13 @@ public class AdminProductServiceImpl implements AdminProductService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status is required");
         }
         
-        // Vérifier que le statut est valide (ACTIVE, ARCHIVED, etc.)
+        // Vérifier que le statut est valide (ACTIVE, ARCHIVED, INACTIVE)
         try {
-            String.valueOf(request.getStatus());
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid status");
+            ProductStatus status = ProductStatus.valueOf(request.getStatus().toUpperCase());
+            product.setStatus(status);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                    "Invalid status. Valid values are: ACTIVE, INACTIVE, ARCHIVED");
         }
         
         product.setUpdatedAt(LocalDateTime.now());
@@ -500,7 +504,7 @@ public class AdminProductServiceImpl implements AdminProductService {
         response.setBrand(product.getBrand());
         response.setSlug(product.getSlug());
         response.setPrice(product.getPrice());
-        response.setStatus("ACTIVE");
+        response.setStatus(product.getStatus() != null ? product.getStatus().name() : "ACTIVE");
         response.setCreatedAt(product.getCreatedAt());
         response.setUpdatedAt(product.getUpdatedAt());
         

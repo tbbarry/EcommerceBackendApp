@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/admin/products")
+@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class AdminProductController {
 
@@ -53,7 +54,6 @@ public class AdminProductController {
      * 1. Modifie les informations du produit.
      */
     @PatchMapping("/{productId}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ProductAdminDetailResponse> updateProduct(
             @PathVariable Integer productId,
             @RequestBody AdminProductUpdateRequest request) {
@@ -64,7 +64,6 @@ public class AdminProductController {
      * 2. Ajoute une variante au produit avec son stock.
      */
     @PostMapping("/{productId}/variants")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<VariantAdminResponse> createVariant(
             @PathVariable Integer productId,
             @RequestBody AdminVariantCreateRequest request) {
@@ -76,7 +75,6 @@ public class AdminProductController {
      * 3. Modifie une variante (sans toucher au stock).
      */
     @PatchMapping("/{productId}/variants/{variantId}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<VariantAdminResponse> updateVariant(
             @PathVariable Integer productId,
             @PathVariable Integer variantId,
@@ -88,7 +86,6 @@ public class AdminProductController {
      * 4. Modifie le stock d'une variante.
      */
     @PatchMapping("/{productId}/variants/{variantId}/stock")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> updateVariantStock(
             @PathVariable Integer productId,
             @PathVariable Integer variantId,
@@ -101,7 +98,6 @@ public class AdminProductController {
      * 5. Supprime une variante.
      */
     @DeleteMapping("/{productId}/variants/{variantId}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteVariant(
             @PathVariable Integer productId,
             @PathVariable Integer variantId) {
@@ -113,7 +109,6 @@ public class AdminProductController {
      * 6. Supprime plusieurs variantes de façon atomique.
      */
     @PostMapping("/{productId}/variants/bulk-delete")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> bulkDeleteVariants(
             @PathVariable Integer productId,
             @RequestBody AdminVariantBulkDeleteRequest request) {
@@ -125,10 +120,9 @@ public class AdminProductController {
      * 7. Ajoute une image au produit.
      */
     @PostMapping("/{productId}/images")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ProductImageDto> createImage(
             @PathVariable Integer productId,
-            @RequestBody AdminImageCreateRequest request) {
+            @ModelAttribute AdminImageCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(adminProductService.createImage(productId, request));
     }
@@ -137,7 +131,6 @@ public class AdminProductController {
      * 8. Modifie une image du produit.
      */
     @PatchMapping("/{productId}/images/{imageId}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ProductImageDto> updateImage(
             @PathVariable Integer productId,
             @PathVariable Integer imageId,
@@ -149,7 +142,6 @@ public class AdminProductController {
      * 9. Supprime une image du produit.
      */
     @DeleteMapping("/{productId}/images/{imageId}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteImage(
             @PathVariable Integer productId,
             @PathVariable Integer imageId) {
@@ -161,7 +153,6 @@ public class AdminProductController {
      * 10. Change le statut d'un produit (archivage).
      */
     @PatchMapping("/{productId}/status")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ProductAdminDetailResponse> updateProductStatus(
             @PathVariable Integer productId,
             @RequestBody AdminProductStatusRequest request) {

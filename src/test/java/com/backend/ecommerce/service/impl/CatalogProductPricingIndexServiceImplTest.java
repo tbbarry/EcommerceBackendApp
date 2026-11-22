@@ -75,7 +75,7 @@ class CatalogProductPricingIndexServiceImplTest {
 
     @Test
     void createsCatalogAndDistinctFacetsWithBestDiscountPerVariant() {
-        when(productRepository.findById(1)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdForPricing(1)).thenReturn(Optional.of(product));
         Attribute attribute = Attribute.builder().name("Couleur").build();
         attribute.setId(3);
         AttributeValue value = AttributeValue.builder().attribute(attribute).value("Rouge").build();
@@ -106,6 +106,7 @@ class CatalogProductPricingIndexServiceImplTest {
         assertEquals(new BigDecimal("150.00"), indexed.getFinalPriceMax());
         assertEquals("VARIANT", indexed.getPromoScope());
         assertTrue(indexed.getHasDiscount());
+        verify(catalogProductRepository).markPricingAsOf(eq(1L), any());
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Iterable<CatalogProductFacet>> facetCaptor = ArgumentCaptor.forClass(Iterable.class);
@@ -120,7 +121,7 @@ class CatalogProductPricingIndexServiceImplTest {
 
     @Test
     void appliesGlobalDiscountWithoutVariants() {
-        when(productRepository.findById(1)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdForPricing(1)).thenReturn(Optional.of(product));
         when(productPromoRepository.findActiveGlobalMaxDiscountPercentByProductId(eq(1), any()))
                 .thenReturn(new BigDecimal("20"));
 
@@ -131,6 +132,37 @@ class CatalogProductPricingIndexServiceImplTest {
         assertEquals(new BigDecimal("100.00"), captor.getValue().getBasePriceMin());
         assertEquals(new BigDecimal("80.00"), captor.getValue().getDisplayPrice());
         assertEquals("GLOBAL", captor.getValue().getPromoScope());
+    }
+
+    @Test
+    void refreshesProductsWhosePromotionDatesHavePassed() {
+        when(productPromoRepository.findProductsWithDuePromotionChanges(any())).thenReturn(List.of(1));
+        when(variantPromoRepository.findProductsWithDuePromotionChanges(any())).thenReturn(List.of(1, 2));
+        when(productRepository.findByIdForPricing(1)).thenReturn(Optional.of(product));
+
+        indexService.refreshDuePromotions();
+
+        verify(productRepository).findByIdForPricing(1);
+        verify(productRepository).findByIdForPricing(2);
+    }
+
+    @Test
+    void reportsGlobalScopeWhenVariantDiscountIsLessAdvantageous() {
+        when(productRepository.findByIdForPricing(1)).thenReturn(Optional.of(product));
+        Variant variant = Variant.builder().price(new BigDecimal("100.00")).build();
+        variant.setId(10);
+        when(variantRepository.findByProductId(1)).thenReturn(List.of(variant));
+        when(productPromoRepository.findActiveGlobalMaxDiscountPercentByProductId(eq(1), any()))
+                .thenReturn(new BigDecimal("30"));
+        when(variantPromoRepository.findActiveMaxDiscountPercentByProductId(eq(1), any()))
+                .thenReturn(List.of(new VariantDiscountRow(10, new BigDecimal("10"))));
+
+        indexService.refreshProduct(1);
+
+        ArgumentCaptor<CatalogProduct> captor = ArgumentCaptor.forClass(CatalogProduct.class);
+        verify(catalogProductRepository).save(captor.capture());
+        assertEquals("GLOBAL", captor.getValue().getPromoScope());
+        assertEquals(new BigDecimal("70.00"), captor.getValue().getDisplayPrice());
     }
 
     @Test
@@ -147,7 +179,7 @@ class CatalogProductPricingIndexServiceImplTest {
         PromoServiceImpl promoService = new PromoServiceImpl(promoRepository, productPromoRepository,
                 variantPromoRepository, pricing);
         Promo promo = new Promo();
-        when(promoRepository.findById(7)).thenReturn(Optional.of(promo));
+        when(promoRepository.findByIdForUpdate(7)).thenReturn(Optional.of(promo));
         when(productPromoRepository.findProductIdsByPromoId(7)).thenReturn(List.of(1));
         when(variantPromoRepository.findProductIdsByPromoId(7)).thenReturn(List.of(2));
 
@@ -166,7 +198,7 @@ class CatalogProductPricingIndexServiceImplTest {
         CatalogProductPricingIndexService pricing = org.mockito.Mockito.mock(CatalogProductPricingIndexService.class);
         ProductServiceImpl productService = new ProductServiceImpl(productRepository, categoryRepository,
                 variantRepository, stockRepository, productImageRepository, attributeValueRepository,
-                variantAttributeValueRepository, pricing);
+                variantAttributeValueRepository, pricing, org.mockito.Mockito.mock(com.backend.ecommerce.service.ImageUploadService.class));
         Category category = new Category();
         category.setId(5);
         ProductCreateRequest request = new ProductCreateRequest();

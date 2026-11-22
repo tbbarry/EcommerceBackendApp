@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -24,4 +25,6 @@ public class CouponPreviewResponse {
     private BigDecimal discountAmount;
     private BigDecimal taxAmount;
     private BigDecimal total;
+    private boolean couponApplied;
+    private Map<Integer, BigDecimal> unitPrices;
 }

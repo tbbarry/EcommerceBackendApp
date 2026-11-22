@@ -9,6 +9,8 @@ import java.util.List;
 
 public interface VariantAttributeValueRepository
         extends JpaRepository<VariantAttributeValue, Integer> {
+    boolean existsByAttributeValueId(Integer valueId);
+    boolean existsByAttributeValueAttributeId(Integer attributeId);
     
     @Query("SELECT vav FROM VariantAttributeValue vav WHERE vav.variant.id = :variantId")
     List<VariantAttributeValue> findByVariantId(@Param("variantId") Integer variantId);

@@ -17,6 +17,7 @@ import com.backend.ecommerce.repository.UserRepository;
 import com.backend.ecommerce.repository.VerificationTokenRepository;
 import com.backend.ecommerce.service.email.EmailService;
 import com.backend.ecommerce.service.email.EmailTemplate;
+import com.backend.ecommerce.service.email.OrderMessageTemplateService;
 
 
 
@@ -28,22 +29,26 @@ public class AuthService {
     private final PasswordResetTokenRepository resetTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final StoreSettingsService storeSettingsService;
+    private final OrderMessageTemplateService orderMessageTemplates;
     @Value("${app.frontend_app}")
     private String appUrl;
-    @Value("${app.name}")
-    private String appName;
 
 
     public AuthService(UserRepository userRepository,
                        VerificationTokenRepository tokenRepository,
                        PasswordResetTokenRepository resetTokenRepository,
                        PasswordEncoder passwordEncoder,
-                       EmailService emailService) {
+                       EmailService emailService,
+                       StoreSettingsService storeSettingsService,
+                       OrderMessageTemplateService orderMessageTemplates) {
         this.userRepository = userRepository;
         this.tokenRepository = tokenRepository;
         this.resetTokenRepository = resetTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
+        this.storeSettingsService = storeSettingsService;
+        this.orderMessageTemplates = orderMessageTemplates;
     }
 
     // 🔥 REGISTER + EMAIL
@@ -77,9 +82,15 @@ public class AuthService {
 
         // 3️⃣ Envoi email
         String link = appUrl + "/auth/verify?token=" + token;
-        String fullName = user.getFirstname() + " " + user.getLastname();
+        String fullName = displayName(user);
+        String siteName = storeSettingsService.getName();
+        OrderMessageTemplateService.Template emailTemplate =
+                orderMessageTemplates.get(OrderMessageTemplateService.ACCOUNT_ACTIVATION);
 
-        emailService.sendMail(user.getEmail(), fullName, link, appName, EmailTemplate.ACTIVATION_ACCOUNT);
+        emailService.sendAccountMail(user.getEmail(),
+                OrderMessageTemplateService.resolveAccount(emailTemplate.subject(), subjectName(fullName), siteName),
+                OrderMessageTemplateService.resolveAccount(emailTemplate.message(), fullName, siteName),
+                fullName, link, siteName, EmailTemplate.ACTIVATION_ACCOUNT);
     }
 
     // 🔥 VERIFY ACCOUNT
@@ -113,9 +124,27 @@ public class AuthService {
         resetTokenRepository.save(resetToken);
 
         String link = appUrl + "/auth/reset-password?token=" + token;
-        
 
-        emailService.sendMail(user.getEmail(), user.getFirstname(), link, appName, EmailTemplate.RESET_PASSWORD);
+        String siteName = storeSettingsService.getName();
+        String userName = user.getFirstname() == null || user.getFirstname().isBlank()
+                ? displayName(user) : user.getFirstname();
+        OrderMessageTemplateService.Template emailTemplate =
+                orderMessageTemplates.get(OrderMessageTemplateService.PASSWORD_RESET);
+        emailService.sendAccountMail(user.getEmail(),
+                OrderMessageTemplateService.resolveAccount(emailTemplate.subject(), subjectName(userName), siteName),
+                OrderMessageTemplateService.resolveAccount(emailTemplate.message(), userName, siteName),
+                userName, link, siteName, EmailTemplate.RESET_PASSWORD);
+    }
+
+    private String displayName(User user) {
+        String first = user.getFirstname() == null ? "" : user.getFirstname();
+        String last = user.getLastname() == null ? "" : user.getLastname();
+        String name = (first + " " + last).trim();
+        return name.isEmpty() ? "there" : name;
+    }
+
+    private String subjectName(String name) {
+        return name.replace('\r', ' ').replace('\n', ' ');
     }
     
     public void resetPassword(String token, String newPassword) {
@@ -132,6 +161,7 @@ public class AuthService {
 
         // 🔐 encoder nouveau mot de passe
         user.setPassword(passwordEncoder.encode(newPassword));
+        user.setMustChangePassword(false);
 
         userRepository.save(user);
 

@@ -10,14 +10,12 @@ import com.backend.ecommerce.dto.ProductDetailResponse;
 import com.backend.ecommerce.dto.ProductDetailStockSummaryResponse;
 import com.backend.ecommerce.dto.ProductDetailVariantResponse;
 import com.backend.ecommerce.dto.ProductImageResponse;
-import com.backend.ecommerce.entity.AttributeValue;
 import com.backend.ecommerce.entity.Category;
 import com.backend.ecommerce.entity.Product;
 import com.backend.ecommerce.entity.ProductImage;
 import com.backend.ecommerce.entity.ProductPromo;
 import com.backend.ecommerce.entity.Promo;
 import com.backend.ecommerce.entity.Variant;
-import com.backend.ecommerce.entity.VariantAttributeValue;
 import com.backend.ecommerce.entity.VariantPromo;
 import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.ProductImageRepository;
@@ -127,7 +125,7 @@ public class ProductDetailServiceImpl implements ProductDetailService {
         boolean hasVariantSpecificPromo = false;
 
         for (Variant variant : variants) {
-            VariantDescriptor descriptor = extractVariantDescriptor(variant);
+            VariantDescriptor descriptor = VariantDescriptor.from(variant);
             int stock = resolveAvailableStock(variant);
             boolean inStock = stock > 0;
 
@@ -136,7 +134,7 @@ public class ProductDetailServiceImpl implements ProductDetailService {
             BigDecimal appliedDiscount = globalDiscountPercent.max(variantSpecificDiscount);
             BigDecimal finalPrice = computeFinalPrice(basePrice, appliedDiscount);
 
-            if (variantSpecificDiscount.compareTo(BigDecimal.ZERO) > 0) {
+            if (variantSpecificDiscount.compareTo(globalDiscountPercent) > 0) {
                 hasVariantSpecificPromo = true;
             }
 
@@ -202,6 +200,15 @@ public class ProductDetailServiceImpl implements ProductDetailService {
                                 new CatalogVariantAvailabilityResponse(variant.getId(), stock, inStock)
                         );
             }
+        }
+
+        if (variants.isEmpty()) {
+            baseMin = safeMoney(product.getPrice());
+            baseMax = baseMin;
+            finalMin = computeFinalPrice(baseMin, globalDiscountPercent);
+            finalMax = finalMin;
+            discountMin = globalDiscountPercent;
+            discountMax = globalDiscountPercent;
         }
 
         ProductDetailPricingResponse pricing = new ProductDetailPricingResponse(
@@ -331,32 +338,6 @@ public class ProductDetailServiceImpl implements ProductDetailService {
                 .toList();
     }
 
-    private VariantDescriptor extractVariantDescriptor(Variant variant) {
-        String color = null;
-        String size = null;
-
-        for (VariantAttributeValue attributeValueLink : variant.getAttributeValues()) {
-            AttributeValue attributeValue = attributeValueLink.getAttributeValue();
-            if (attributeValue == null || attributeValue.getAttribute() == null) {
-                continue;
-            }
-
-            String attributeName = attributeValue.getAttribute().getName();
-            if (attributeName == null) {
-                continue;
-            }
-
-            if (attributeName.equalsIgnoreCase("Couleur") || attributeName.equalsIgnoreCase("Color")) {
-                color = attributeValue.getValue();
-            }
-            if (attributeName.equalsIgnoreCase("Taille") || attributeName.equalsIgnoreCase("Size")) {
-                size = attributeValue.getValue();
-            }
-        }
-
-        return new VariantDescriptor(color, size);
-    }
-
     private int resolveAvailableStock(Variant variant) {
         if (variant.getStock() == null || variant.getStock().getAvailableQuantity() == null) {
             return 0;
@@ -453,9 +434,6 @@ public class ProductDetailServiceImpl implements ProductDetailService {
                         acc.totalStock
                 ))
                 .toList();
-    }
-
-    private record VariantDescriptor(String color, String size) {
     }
 
     private static final class ColorAccumulator {

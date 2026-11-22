@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import java.math.BigDecimal;
@@ -42,7 +41,6 @@ public class Promo extends BaseEntity {
     @Column(nullable = false)
     private Boolean isActive;
 
-    @NotEmpty
     @Valid
     @Builder.Default
     @OneToMany(mappedBy = "promo", cascade = CascadeType.ALL, orphanRemoval

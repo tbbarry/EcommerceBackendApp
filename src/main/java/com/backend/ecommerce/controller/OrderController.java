@@ -52,7 +52,7 @@ public class OrderController {
     }
 
     // USER ou ADMIN : créer une commande
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<OrderDto> create(@Valid @RequestBody OrderDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.create(dto));

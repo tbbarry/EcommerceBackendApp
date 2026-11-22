@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Activation de compte</title>
+  <title>Activate your account</title>
 </head>
 <body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f4f4f4;">
 
@@ -22,20 +22,14 @@
           <!-- CONTENT -->
           <tr>
             <td style="padding:30px;">
-              <h2>Bienvenue {{user_name}} 👋</h2>
+              <h2>Welcome, {{user_name}} 👋</h2>
 
-              <p>
-                Merci de vous être inscrit sur <b>{{site_name}}</b>.
-              </p>
-
-              <p>
-                Pour activer votre compte, cliquez sur le bouton ci-dessous :
-              </p>
+              <p style="white-space:pre-line;">{{message}}</p>
 
               <p style="text-align:center; margin:30px 0;">
                 <a href="{{link}}"
                    style="background:#007bff; color:#fff; padding:12px 20px; text-decoration:none; border-radius:5px;">
-                  Activer mon compte
+                  Activate my account
                 </a>
               </p>
 
@@ -44,12 +38,12 @@
               </p>
 
               <p>
-                Ce lien expirera dans 24 heures.
+                This link expires in 24 hours.
               </p>
 
               <p>
-                À bientôt,<br>
-                L'équipe {{site_name}}
+                Thank you,<br>
+                The {{site_name}} team
               </p>
 
             </td>
@@ -58,7 +52,7 @@
           <!-- FOOTER -->
           <tr>
             <td style="background:#f0f0f0; padding:20px; text-align:center; font-size:12px; color:#777;">
-              © 2026 {{site_name}} - Tous droits réservés
+              © 2026 {{site_name}} - All rights reserved
             </td>
           </tr>
 

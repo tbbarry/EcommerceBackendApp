@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +24,11 @@ public class Category extends BaseEntity {
     @NotBlank
     @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
+
+    @Builder.Default
+    @Column(nullable = false)
+    @ColumnDefault("0")
+    private Integer displayOrder = 0;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "categoryId")

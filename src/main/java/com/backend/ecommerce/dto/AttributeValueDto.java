@@ -1,5 +1,6 @@
 package com.backend.ecommerce.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class AttributeValueDto {
     private Integer id;
+    @NotBlank
     private String value;
     private Integer attributeId;
     private LocalDateTime createdAt;

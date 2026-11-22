@@ -1,6 +1,9 @@
 package com.backend.ecommerce.controller;
 
 import com.backend.ecommerce.dto.PromoDto;
+import com.backend.ecommerce.dto.PromoAssignmentDto;
+import com.backend.ecommerce.dto.PromoAssignmentRequest;
+import com.backend.ecommerce.service.PromoAssignmentService;
 import com.backend.ecommerce.service.PromoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +27,8 @@ import java.util.List;
 public class PromoController {
 
     private final PromoService promoService;
+    private final PromoAssignmentService promoAssignmentService;
 
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
     public ResponseEntity<List<PromoDto>> findAllActive() {
         return ResponseEntity.ok(promoService.findAllActive());
@@ -37,7 +40,6 @@ public class PromoController {
         return ResponseEntity.ok(promoService.findAll());
     }
 
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<PromoDto> findById(@PathVariable Integer id) {
         return ResponseEntity.ok(promoService.findById(id));
@@ -59,6 +61,27 @@ public class PromoController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
         promoService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{id}/assignments")
+    public List<PromoAssignmentDto> assignments(@PathVariable Integer id) {
+        return promoAssignmentService.list(id);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{id}/assignments")
+    public ResponseEntity<Void> assign(@PathVariable Integer id, @Valid @RequestBody PromoAssignmentRequest request) {
+        promoAssignmentService.add(id, request);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}/assignments/{type}/{assignmentId}")
+    public ResponseEntity<Void> removeAssignment(@PathVariable Integer id, @PathVariable String type,
+                                                  @PathVariable Integer assignmentId) {
+        promoAssignmentService.remove(id, type, assignmentId);
         return ResponseEntity.noContent().build();
     }
 }

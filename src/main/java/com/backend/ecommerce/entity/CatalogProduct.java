@@ -2,12 +2,17 @@ package com.backend.ecommerce.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Column;
 import java.math.BigDecimal;
 import lombok.Builder;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
+
 @Entity
 @Builder
 @NoArgsConstructor
@@ -51,4 +56,10 @@ public class CatalogProduct extends BaseEntity {
     private String brand;
     private String categoryName;
     private Long categoryId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @ColumnDefault("'ACTIVE'")
+    @Builder.Default
+    private ProductStatus status = ProductStatus.ACTIVE;
 }

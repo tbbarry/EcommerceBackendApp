@@ -7,13 +7,13 @@ spring:
 
   sql:
     init:
-      mode: always
+      mode: never
       data-locations: classpath:data.sql
 
   jpa:
     defer-datasource-initialization: true
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     show-sql: true
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
@@ -28,13 +28,22 @@ spring:
             auth: false
             starttls:
               enable: false
+            connectiontimeout: 5000
+            timeout: 5000
+            writetimeout: 5000
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer  
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
 server:
   port: ${SERVER_PORT}
+
 app:
   url: http://localhost:${SERVER_PORT}
   frontend-url: ${APP_FRONTEND_URL:http://localhost:${APP_FRONTEND_PORT}}
@@ -42,6 +51,10 @@ app:
   name: EcommerceApp
   tax:
     rate: 0.20
+  upload:
+    dir: uploads/products
+    base-url: /api/images
+
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION_MS}

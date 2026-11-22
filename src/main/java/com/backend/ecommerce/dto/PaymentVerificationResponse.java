@@ -11,6 +11,7 @@ public record PaymentVerificationResponse(
         PaymentStatus paymentStatus,
         OrderStatus orderStatus,
         String orderId,
-        BigDecimal amount
+        BigDecimal amount,
+        Integer orderDatabaseId
 ) {
 }
