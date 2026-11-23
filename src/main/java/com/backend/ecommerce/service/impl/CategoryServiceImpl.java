@@ -5,7 +5,10 @@ import com.backend.ecommerce.dto.CategoryDto2;
 import com.backend.ecommerce.entity.Category;
 import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.CategoryRepository;
+import com.backend.ecommerce.repository.ProductRepository;
+import com.backend.ecommerce.repository.ProductCategoryRepository;
 import com.backend.ecommerce.service.CategoryService;
+import com.backend.ecommerce.service.CatalogProductPricingIndexService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +22,9 @@ import java.util.List;
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
+    private final ProductCategoryRepository productCategoryRepository;
+    private final CatalogProductPricingIndexService catalogProductPricingIndexService;
 
     @Override
     @Transactional(readOnly = true)
@@ -42,13 +48,24 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryDto update(Integer id, CategoryDto dto) {
         Category entity = getEntityById(id);
+        String oldName = entity.getName();
         applyDtoToEntity(dto, entity);
-        return toDto(categoryRepository.save(entity));
+        Category saved = categoryRepository.save(entity);
+        if (!oldName.equals(saved.getName())) {
+            catalogProductPricingIndexService.refreshProducts(productRepository.findIdsByCategoryId(id));
+        }
+        return toDto(saved);
     }
 
     @Override
     public void delete(Integer id) {
         Category entity = getEntityById(id);
+        if (!entity.getSubCategories().isEmpty()) {
+            throw new IllegalArgumentException("Supprimez ou déplacez d'abord les sous-catégories.");
+        }
+        if (productRepository.existsByCategoryId(id) || productCategoryRepository.existsByCategoryId(id)) {
+            throw new IllegalArgumentException("Cette catégorie est utilisée par des produits.");
+        }
         categoryRepository.delete(entity);
     }
 
@@ -58,6 +75,9 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryRepository
                 .findByParentCategoryIsNullOrderByName()
                 .stream()
+                .sorted(Comparator.comparing(Category::getDisplayOrder, Comparator.nullsLast(Integer::compareTo))
+                        .thenComparing(Category::getName, String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(Category::getId))
                 .map(this::toDto2)
                 .toList();
     }
@@ -73,7 +93,9 @@ public class CategoryServiceImpl implements CategoryService {
         return new CategoryDto2(
                 Long.valueOf(category.getId()),
                 category.getName(),
-                children
+                children,
+                category.getDescription(),
+                category.getDisplayOrder()
         );
     }
 
@@ -83,11 +105,19 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     private void applyDtoToEntity(CategoryDto dto, Category entity) {
-        entity.setName(dto.getName());
-        entity.setDescription(dto.getDescription());
+        entity.setName(dto.getName().trim());
+        entity.setDescription(dto.getDescription().trim());
+        if (dto.getDisplayOrder() != null) {
+            entity.setDisplayOrder(dto.getDisplayOrder());
+        }
         if (dto.getCategoryId() != null) {
-            entity.setParentCategory(categoryRepository.findById(dto.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + dto.getCategoryId())));
+            Category parent = getEntityById(dto.getCategoryId());
+            for (Category ancestor = parent; ancestor != null; ancestor = ancestor.getParentCategory()) {
+                if (entity.getId() != null && entity.getId().equals(ancestor.getId())) {
+                    throw new IllegalArgumentException("Une catégorie ne peut pas être son propre parent ou descendant.");
+                }
+            }
+            entity.setParentCategory(parent);
         } else {
             entity.setParentCategory(null);
         }
@@ -98,6 +128,7 @@ public class CategoryServiceImpl implements CategoryService {
         dto.setId(entity.getId());
         dto.setName(entity.getName());
         dto.setDescription(entity.getDescription());
+        dto.setDisplayOrder(entity.getDisplayOrder());
         dto.setCategoryId(entity.getParentCategory() != null ? entity.getParentCategory().getId() : null);
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());

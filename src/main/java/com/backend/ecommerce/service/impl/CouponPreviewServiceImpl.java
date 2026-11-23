@@ -1,28 +1,23 @@
 package com.backend.ecommerce.service.impl;
 
 import com.backend.ecommerce.dto.CartViewResponse;
-import com.backend.ecommerce.dto.CouponDiscountResult;
 import com.backend.ecommerce.dto.CouponPreviewRequest;
 import com.backend.ecommerce.dto.CouponPreviewResponse;
-import com.backend.ecommerce.entity.Coupon;
 import com.backend.ecommerce.entity.ShippingMethod;
+import com.backend.ecommerce.entity.DeliveryType;
 import com.backend.ecommerce.entity.User;
+import com.backend.ecommerce.exception.BusinessException;
 import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.ShippingMethodRepository;
+import com.backend.ecommerce.repository.CartItemRepository;
 import com.backend.ecommerce.repository.UserRepository;
 import com.backend.ecommerce.service.CartService;
-import com.backend.ecommerce.service.CouponCalculationService;
 import com.backend.ecommerce.service.CouponPreviewService;
-import com.backend.ecommerce.service.CouponService;
 import com.backend.ecommerce.service.SecurityService;
-import com.backend.ecommerce.service.ShippingCalculationService;
-import com.backend.ecommerce.service.TaxService;
+import com.backend.ecommerce.service.PromotionPricingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 @Service
 @RequiredArgsConstructor
@@ -33,10 +28,8 @@ public class CouponPreviewServiceImpl implements CouponPreviewService {
     private final UserRepository userRepository;
     private final ShippingMethodRepository shippingMethodRepository;
     private final CartService cartService;
-    private final CouponService couponService;
-    private final CouponCalculationService couponCalculationService;
-    private final ShippingCalculationService shippingCalculationService;
-    private final TaxService taxService;
+    private final CartItemRepository cartItemRepository;
+    private final PromotionPricingService promotionPricingService;
 
     @Override
     public CouponPreviewResponse preview(Integer userId, CouponPreviewRequest request) {
@@ -46,40 +39,30 @@ public class CouponPreviewServiceImpl implements CouponPreviewService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + resolvedUserId));
 
         CartViewResponse cart = cartService.getCartViewByUserId(resolvedUserId);
-        BigDecimal subtotal = cart.getSubtotal() != null ? cart.getSubtotal() : BigDecimal.ZERO;
-
-        BigDecimal shippingCost = BigDecimal.ZERO;
+        ShippingMethod shippingMethod = null;
         if (request.getShippingMethodId() != null) {
-            ShippingMethod shippingMethod = shippingMethodRepository.findByIdAndActiveTrue(request.getShippingMethodId())
+            shippingMethod = shippingMethodRepository.findByIdAndActiveTrue(request.getShippingMethodId())
                     .orElseThrow(() -> new ResourceNotFoundException("ShippingMethod not found with id: " + request.getShippingMethodId()));
-            shippingCost = shippingCalculationService.calculateShippingCost(subtotal, shippingMethod)
-                    .setScale(2, RoundingMode.HALF_UP);
+            if (!DeliveryType.supportedAtCheckout(shippingMethod.getDeliveryType())) {
+                throw new BusinessException("Ce mode de livraison n'est pas disponible.", "SHIPPING_METHOD_UNAVAILABLE");
+            }
         }
 
-        Coupon coupon = couponService.validateCoupon(request.getCouponCode(), user, subtotal);
-        CouponDiscountResult discountResult = couponCalculationService.calculateDiscount(coupon, subtotal, shippingCost);
-
-        BigDecimal discountedSubtotal = subtotal.subtract(discountResult.getDiscountOnSubtotal())
-                .max(BigDecimal.ZERO)
-                .setScale(2, RoundingMode.HALF_UP);
-        BigDecimal discountedShipping = shippingCost.subtract(discountResult.getDiscountOnShipping())
-                .max(BigDecimal.ZERO)
-                .setScale(2, RoundingMode.HALF_UP);
-
-        BigDecimal taxRate = taxService.getCurrentTaxRate();
-        BigDecimal taxAmount = discountedSubtotal.multiply(taxRate).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal total = discountedSubtotal.add(discountedShipping).add(taxAmount).setScale(2, RoundingMode.HALF_UP);
+        PromotionPricingService.Quote quote = promotionPricingService.quote(
+                cartItemRepository.findByCartId(cart.getCartId()), user, request.getCouponCode(), shippingMethod);
 
         return CouponPreviewResponse.builder()
-                .couponCode(coupon.getCode())
-                .subtotal(subtotal.setScale(2, RoundingMode.HALF_UP))
-                .shippingCost(shippingCost)
-                .taxRate(taxRate)
-                .discountOnSubtotal(discountResult.getDiscountOnSubtotal())
-                .discountOnShipping(discountResult.getDiscountOnShipping())
-                .discountAmount(discountResult.getTotalDiscount())
-                .taxAmount(taxAmount)
-                .total(total)
+                .couponCode(quote.coupon() == null ? null : quote.coupon().getCode())
+                .couponApplied(quote.coupon() != null)
+                .unitPrices(quote.unitPrices())
+                .subtotal(quote.subtotal())
+                .shippingCost(quote.shippingCost())
+                .taxRate(quote.taxRate())
+                .discountOnSubtotal(quote.discount().getDiscountOnSubtotal())
+                .discountOnShipping(quote.discount().getDiscountOnShipping())
+                .discountAmount(quote.discount().getTotalDiscount())
+                .taxAmount(quote.taxAmount())
+                .total(quote.total())
                 .build();
     }
 }

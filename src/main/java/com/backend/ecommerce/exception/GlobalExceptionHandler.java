@@ -16,6 +16,16 @@ import java.util.List;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(org.springframework.security.access.AccessDeniedException ex) {
+        ErrorResponse error = new ErrorResponse();
+        error.setTimestamp(LocalDateTime.now());
+        error.setStatus(HttpStatus.FORBIDDEN.value());
+        error.setError(HttpStatus.FORBIDDEN.getReasonPhrase());
+        error.setMessage("Access denied");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
 
@@ -63,7 +73,7 @@ public class GlobalExceptionHandler {
         error.setTimestamp(LocalDateTime.now());
         error.setStatus(HttpStatus.BAD_REQUEST.value());
         error.setError(HttpStatus.BAD_REQUEST.getReasonPhrase());
-        error.setMessage("JSON invalide dans la requete (verifiez les guillemets, virgules et retours a la ligne)");
+        error.setMessage("Invalid JSON in the request.");
         error.setErrors(null);
 
         return ResponseEntity.badRequest().body(error);
@@ -89,9 +99,9 @@ public class GlobalExceptionHandler {
 
         String message = ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage();
         if (message != null && message.contains("users_email_key")) {
-            message = "Cet email est déjà utilisé";
+            message = "This email address is already in use.";
         } else {
-            message = "Une contrainte de base de données a été violée";
+            message = "The request conflicts with existing data.";
         }
 
         ErrorResponse error = new ErrorResponse();
@@ -135,7 +145,7 @@ public class GlobalExceptionHandler {
         error.setTimestamp(LocalDateTime.now());
         error.setStatus(HttpStatus.UNAUTHORIZED.value());
         error.setError("Unauthorized");
-        error.setMessage("Email ou mot de passe incorrect");
+        error.setMessage("Incorrect email or password.");
         error.setErrors(null);
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
@@ -149,7 +159,7 @@ public class GlobalExceptionHandler {
         error.setTimestamp(LocalDateTime.now());
         error.setStatus(HttpStatus.UNAUTHORIZED.value());
         error.setError("Unauthorized");
-        error.setMessage("Compte désactivé");
+        error.setMessage("Account disabled.");
         error.setErrors(null);
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);

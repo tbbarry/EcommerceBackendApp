@@ -2,8 +2,9 @@ package com.backend.ecommerce.service.email;
 
 public enum EmailTemplate {
 
-    ACTIVATION_ACCOUNT("activation-email.html", "Activation de votre compte - %s"),
-    RESET_PASSWORD("reset-password-email.html", "Réinitialisation du mot de passe - %s");
+    ACTIVATION_ACCOUNT("activation-email.html", "Activate your account - %s"),
+    RESET_PASSWORD("reset-password-email.html", "Reset your password - %s"),
+    ORDER_STATUS("order-status-email.html", "Your order - %s");
 
     private final String fileName;
     private final String subject;

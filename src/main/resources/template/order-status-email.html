@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{title}}</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f6f3;font-family:Arial,sans-serif;color:#203029;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f6f3;">
+    <tr><td align="center" style="padding:28px 14px;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;">
+        <tr><td style="background:#203b2e;color:#ffffff;padding:25px 28px;font-size:20px;font-weight:bold;">{{site_name}}</td></tr>
+        <tr><td style="padding:32px 28px;">
+          <p style="margin:0 0 10px;color:#67806e;font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">{{eyebrow}}</p>
+          <h1 style="margin:0 0 22px;font-size:26px;line-height:1.2;color:#203029;">{{title}}</h1>
+          <p style="margin:0 0 12px;line-height:1.6;">{{greeting}}</p>
+          <p style="margin:0 0 24px;line-height:1.6;white-space:pre-line;">{{message}}</p>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f7f3;border-radius:10px;">
+            <tr><td style="padding:20px 20px 6px;color:#65756a;font-size:13px;">ORDER</td><td align="right" style="padding:20px 20px 6px;font-weight:bold;">{{order_number}}</td></tr>
+            <tr><td style="padding:6px 20px;color:#65756a;font-size:13px;">STATUS</td><td align="right" style="padding:6px 20px;font-weight:bold;">{{status}}</td></tr>
+            <tr><td style="padding:6px 20px 20px;color:#65756a;font-size:13px;">TOTAL</td><td align="right" style="padding:6px 20px 20px;font-weight:bold;">{{total}}</td></tr>
+          </table>
+          <h2 style="margin:28px 0 6px;font-size:16px;color:#203029;">Order items</h2>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0">{{items}}</table>
+          <p style="margin:28px 0;"><a href="{{link}}" style="display:inline-block;background:#203b2e;color:#ffffff;text-decoration:none;padding:14px 22px;border-radius:7px;font-weight:bold;">{{action_label}}</a></p>
+          <p style="margin:0;color:#65756a;line-height:1.6;">Thank you,<br>The {{site_name}} team</p>
+        </td></tr>
+        <tr><td style="padding:20px 28px;background:#f8faf8;color:#7a8a7f;font-size:12px;">{{footer}}</td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>

@@ -44,7 +44,8 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
         SELECT
             c.id,
             c.name,
-            c.category_id AS parentId
+            c.category_id AS parentId,
+            c.display_order AS display_order
         FROM categories c
         WHERE c.id IN (:categoryIds)
 
@@ -54,7 +55,8 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
         SELECT
             p.id,
             p.name,
-            p.category_id AS parentId
+            p.category_id AS parentId,
+            p.display_order AS display_order
         FROM categories p
         INNER JOIN category_tree ct
             ON ct.parentId = p.id
@@ -63,7 +65,8 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
     SELECT DISTINCT
         id,
         name,
-        parentId
+        parentId,
+        display_order AS "displayOrder"
     FROM category_tree
     """, nativeQuery = true)
     List<CategoryRow> findCategoriesAndParents(

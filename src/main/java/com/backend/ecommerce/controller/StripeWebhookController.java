@@ -3,6 +3,8 @@ package com.backend.ecommerce.controller;
 import com.backend.ecommerce.service.StripeWebhookService;
 import com.stripe.model.Event;
 import com.stripe.net.Webhook;
+import com.stripe.exception.SignatureVerificationException;
+import com.google.gson.JsonParseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -25,14 +27,12 @@ public class StripeWebhookController {
             @RequestHeader("Stripe-Signature") String sigHeader
     ) {
 
-        System.out.println("WEBHOOK STRIPE APPELE");
         Event event;
 
         try {
             event = Webhook.constructEvent(payload, sigHeader, webhookSecret);
-            System.out.println("EVENT TYPE = " + event.getType());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Invalid signature");
+        } catch (SignatureVerificationException | JsonParseException e) {
+            return ResponseEntity.badRequest().body("Invalid Stripe webhook");
         }
         stripeWebhookService.handleCheckoutSessionCompleted(event);
         return ResponseEntity.ok("success");

@@ -13,6 +13,7 @@ import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.PaymentRepository;
 import com.backend.ecommerce.repository.OrderRepository;
 import com.backend.ecommerce.service.PaymentService;
+import com.backend.ecommerce.service.email.OrderNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,6 +36,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final KafkaTemplate<String, PaymentCompletedEvent> kafkaTemplate;
     private final StockService stockService;
     private final CartService cartService;
+    private final OrderNotificationService notifications;
 
     @Override
     @Transactional(readOnly = true)
@@ -101,7 +103,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public void processSuccessfulPayment1(Integer orderId, String paymentIntentId, BigDecimal amount) {
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findByIdForUpdate(orderId)
             .orElseThrow(() ->
                     new ResourceNotFoundException(
                             "Order not found: " + orderId
@@ -126,8 +128,10 @@ public class PaymentServiceImpl implements PaymentService {
 
         paymentRepository.save(payment);
 
+        OrderStatus previousStatus = order.getStatus();
         order.setStatus(OrderStatus.PAID);
         orderRepository.save(order);
+        notifications.queuePaymentConfirmed(order, previousStatus);
 
         PaymentCompletedEvent event = PaymentCompletedEvent.builder()
                 .orderId(order.getId())
@@ -145,79 +149,49 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional
-    public void processPaymentCompleted(Integer orderId, String paymentIntentId, BigDecimal amount) {
-
-        log.info("Payment Intent ID: {}", paymentIntentId);
-        log.info("***************************************************************");
-        log.info("Traitement du paiement terminé");
-        log.info("***************************************************************");
-        // 1. Récupérer la commande 
-        Order order = orderRepository.findById(orderId)
+    public void processPaymentCompleted(Integer orderId, String sessionId, String paymentIntentId, BigDecimal amount) {
+        Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Commande introuvable : " + orderId,"ORDER_NOT_FOUND")
                 );
-        log.info("Commande récupérée avec succès : {}", order.getId());
-        log.info("####################################################################");
-        // 2. Vérifier si la commande est déjà payée
-        if (OrderStatus.PAID.equals(order.getStatus())) {
-            log.info(
-                    "La commande {} est déjà payée. Événement ignoré.",
-                    order.getId()
-            );
-            return;
-        }
         Payment payment = paymentRepository
-                .findByOrderId(orderId)
+                .findByStripeCheckoutSessionId(sessionId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Paiement introuvable pour la commande : " + orderId,
+                                "Paiement introuvable pour cette session Stripe.",
                                 "PAYMENT_NOT_FOUND"
                         )
                 );
-
-        if (PaymentStatus.PAID.equals(payment.getStatus())) {
-            log.info(
-                    "Le paiement pour la commande {} est déjà marqué comme PAID. Événement ignoré.",
-                    order.getId()
-            );
+        if (!orderId.equals(payment.getOrder().getId())
+                || order.getTotal().compareTo(amount) != 0
+                || payment.getAmount().compareTo(amount) != 0
+                || (payment.getStripePaymentIntentId() != null
+                    && !payment.getStripePaymentIntentId().equals(paymentIntentId))) {
             throw new BusinessException(
-                    "Le paiement pour cette commande est déjà marqué comme PAID",
-                    "PAYMENT_ALREADY_PAID"
+                    "La session Stripe ne correspond pas au paiement de la commande.",
+                    "PAYMENT_SESSION_MISMATCH"
             );
         }
-        log.info("Paiement récupéré avec succès pour le PaymentIntent : {} avec le montant {}", paymentIntentId, amount);
-
-        if (order.getTotal().compareTo(amount) != 0) {
-            log.error(
-                    "Le montant du paiement ({}) ne correspond pas au total de la commande ({}).",
-                    amount,
-                    order.getTotal()
-            );
-            throw new BusinessException(
-                    "Le montant du paiement ne correspond pas au total de la commande",
-                    "PAYMENT_AMOUNT_MISMATCH"
-            );
+        if (PaymentStatus.PAID.equals(payment.getStatus())
+                && (order.getStatus() == OrderStatus.PAID || order.getStatus() == OrderStatus.PROCESSING
+                    || order.getStatus() == OrderStatus.SHIPPED || order.getStatus() == OrderStatus.DELIVERED)) {
+            return;
+        }
+        if (payment.getStatus() != PaymentStatus.PENDING || order.getStatus() != OrderStatus.PENDING) {
+            throw new BusinessException("Les statuts de la commande et du paiement nécessitent une vérification.",
+                    "INVALID_PAYMENT_STATE");
         }
 
-        // 4. Mettre à jour le paiement
+        stockService.confirmReservations(order.getId());
         payment.setStatus(PaymentStatus.PAID);
         payment.setPaidAt(LocalDateTime.now());
         payment.setStripePaymentIntentId(paymentIntentId);
-        // 5. Mettre à jour la commande
         order.setStatus(OrderStatus.PAID);
-        log.info("####################################################################");
-        log.info("Mise à jour du paiement avec le statut PAID et la date de paiement pour le PaymentIntent {} et la commande {}", paymentIntentId, order.getId());
-
-        // 6. Confirmer les réservations de stock associées à la commande
-        stockService.confirmReservations(order.getId());
-
         paymentRepository.save(payment);
         orderRepository.save(order);
-        log.info("Paiement et commande mis à jour avec succès pour la commande {}", order.getId());
-        log.info("Confirmation des réservations de stock pour la commande {}", order.getId());
-        log.info("Nettoyage du panier pour l'utilisateur {}", order.getUser().getId());
-        cartService.clearCartView(order.getUser().getId());
-        log.info("traitement du paiement terminé pour la commande {}", order.getId());
+        cartService.removePurchasedItems(order);
+        notifications.queuePaymentConfirmed(order, OrderStatus.PENDING);
+        log.info("Paiement confirmé pour la commande {}", order.getId());
     }
 
 
@@ -243,7 +217,8 @@ public class PaymentServiceImpl implements PaymentService {
                 payment.getStatus(),
                 payment.getOrder().getStatus(),
                 payment.getOrder().getOrderNumber(),
-                payment.getAmount()
+                payment.getAmount(),
+                payment.getOrder().getId()
         );
     }
 }

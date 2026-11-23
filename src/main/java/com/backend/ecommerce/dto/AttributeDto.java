@@ -1,5 +1,6 @@
 package com.backend.ecommerce.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,6 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 public class AttributeDto {
     private Integer id;
+    @NotBlank
     private String name;
     private List<AttributeValueDto> values = new ArrayList<>();
     private LocalDateTime createdAt;

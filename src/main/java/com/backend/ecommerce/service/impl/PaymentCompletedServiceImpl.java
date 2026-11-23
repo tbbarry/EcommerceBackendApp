@@ -11,6 +11,7 @@ import com.backend.ecommerce.repository.OrderRepository;
 import com.backend.ecommerce.repository.PaymentRepository;
 import com.backend.ecommerce.service.PaymentCompletedService;
 import com.backend.ecommerce.service.StockService;
+import com.backend.ecommerce.service.email.OrderNotificationService;
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ public class PaymentCompletedServiceImpl implements PaymentCompletedService {
     private final PaymentRepository paymentRepository;
     private final StockService stockService;
     private final CartService cartService;
+    private final OrderNotificationService notifications;
 
 
     @Override
@@ -41,13 +43,14 @@ public class PaymentCompletedServiceImpl implements PaymentCompletedService {
         log.info("Amount : {}", event.getAmount());
 
         // 1. Récupérer la commande
-        Order order = orderRepository.findById(event.getOrderId())
+        Order order = orderRepository.findByIdForUpdate(event.getOrderId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Commande introuvable : " + event.getOrderId(),"ORDER_NOT_FOUND")
                 );
 
         // 2. Vérifier si la commande est déjà payée
-        if (OrderStatus.PAID.equals(order.getStatus())) {
+        if (order.getStatus() == OrderStatus.PAID || order.getStatus() == OrderStatus.PROCESSING
+                || order.getStatus() == OrderStatus.SHIPPED || order.getStatus() == OrderStatus.DELIVERED) {
             log.info(
                     "La commande {} est déjà payée. Événement ignoré.",
                     order.getId()
@@ -77,6 +80,7 @@ public class PaymentCompletedServiceImpl implements PaymentCompletedService {
         payment.setPaidAt(LocalDateTime.now());
 
         // 5. Mettre à jour la commande
+        OrderStatus previousStatus = order.getStatus();
         order.setStatus(OrderStatus.PAID);
         // 6. Confirmer les réservations de stock associées à la commande
         stockService.confirmReservations(order.getId());
@@ -86,7 +90,8 @@ public class PaymentCompletedServiceImpl implements PaymentCompletedService {
         log.info("Paiement et commande mis à jour avec succès pour la commande {}", order.getId());
         log.info("Confirmation des réservations de stock pour la commande {}", order.getId());
         log.info("Nettoyage du panier pour l'utilisateur {}", order.getUser().getId());
-        cartService.clearCartView(order.getUser().getId());
+        cartService.removePurchasedItems(order);
+        notifications.queuePaymentConfirmed(order, previousStatus);
         log.info("traitement du paiement terminé pour la commande {}", order.getId());
     }
 }

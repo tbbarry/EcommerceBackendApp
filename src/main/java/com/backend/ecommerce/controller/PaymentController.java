@@ -3,6 +3,7 @@ package com.backend.ecommerce.controller;
 import com.backend.ecommerce.dto.PaymentDto;
 import com.backend.ecommerce.dto.PaymentVerificationResponse;
 import com.backend.ecommerce.service.PaymentService;
+import com.backend.ecommerce.service.impl.StripeReconciliationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,7 @@ import java.util.List;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final StripeReconciliationService reconciliation;
 
     // ADMIN uniquement : voir tous les paiements
     @PreAuthorize("hasRole('ADMIN')")
@@ -41,7 +43,7 @@ public class PaymentController {
     }
 
     // ADMIN ou propriétaire de la commande
-    @PreAuthorize("hasRole('ADMIN') or @securityService.isOrderOwner(#dto.orderId)")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<PaymentDto> create(@Valid @RequestBody PaymentDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(paymentService.create(dto));
@@ -61,11 +63,18 @@ public class PaymentController {
         paymentService.delete(id);
         return ResponseEntity.noContent().build();
     }
+    @PreAuthorize("hasRole('ADMIN') or @securityService.isCheckoutSessionOwner(#sessionId)")
     @GetMapping("/checkout-session/{sessionId}")
     public ResponseEntity<PaymentVerificationResponse> verifyCheckoutSession(@PathVariable String sessionId) {
 
         return ResponseEntity.ok(
                 paymentService.verifyCheckoutSession(sessionId)
         );
+    }
+
+    @PreAuthorize("hasRole('ADMIN') or @securityService.isCheckoutSessionOwner(#sessionId)")
+    @PostMapping("/checkout-session/{sessionId}/reconcile")
+    public ResponseEntity<PaymentVerificationResponse> reconcileCheckoutSession(@PathVariable String sessionId) {
+        return ResponseEntity.ok(reconciliation.reconcile(sessionId));
     }
 }

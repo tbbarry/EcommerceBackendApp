@@ -24,6 +24,7 @@ public class CartLineResponse {
     private Integer quantity;
     private Integer availableStock;
     private boolean inStock;
+    private BigDecimal baseUnitPrice;
     private BigDecimal unitPrice;
     private BigDecimal lineTotal;
     private String imageUrl;

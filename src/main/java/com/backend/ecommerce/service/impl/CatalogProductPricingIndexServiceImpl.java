@@ -53,7 +53,7 @@ public class CatalogProductPricingIndexServiceImpl implements CatalogProductPric
             return;
         }
 
-        Product product = productRepository.findById(productId).orElse(null);
+        Product product = productRepository.findByIdForPricing(productId).orElse(null);
         if (product == null) {
             return;
         }
@@ -65,6 +65,7 @@ public class CatalogProductPricingIndexServiceImpl implements CatalogProductPric
         catalogProduct.setBrand(product.getBrand());
         catalogProduct.setCategoryId(product.getCategory() == null ? null : product.getCategory().getId().longValue());
         catalogProduct.setCategoryName(product.getCategory() == null ? null : product.getCategory().getName());
+        catalogProduct.setStatus(product.getStatus());
         catalogProduct.setImageUrl(productImageRepository.findByProductId(productId).stream()
             .sorted(Comparator.comparing(ProductImage::isMain).reversed()
                 .thenComparing(ProductImage::getDisplayOrder, Comparator.nullsLast(Comparator.naturalOrder()))
@@ -86,6 +87,7 @@ public class CatalogProductPricingIndexServiceImpl implements CatalogProductPric
             .build()).toList());
 
         LocalDateTime now = LocalDateTime.now();
+        catalogProduct.setUpdatedAt(now);
         BigDecimal globalDiscount = defaultPercent(
             productPromoRepository.findActiveGlobalMaxDiscountPercentByProductId(productId, now)
         );
@@ -95,6 +97,7 @@ public class CatalogProductPricingIndexServiceImpl implements CatalogProductPric
             catalogProduct.setPrice(product.getPrice());
             applyNoVariantPricing(catalogProduct, globalDiscount);
             catalogProductRepository.save(catalogProduct);
+            catalogProductRepository.markPricingAsOf(productId.longValue(), now);
             return;
         }
 
@@ -121,7 +124,7 @@ public class CatalogProductPricingIndexServiceImpl implements CatalogProductPric
             BigDecimal basePrice = safeMoney(variant.getPrice());
             BigDecimal variantSpecific = defaultPercent(variantDiscountMap.get(variant.getId()));
 
-            if (variantSpecific.compareTo(BigDecimal.ZERO) > 0) {
+            if (variantSpecific.compareTo(globalDiscount) > 0) {
                 hasVariantSpecificPromo = true;
             }
 
@@ -158,6 +161,16 @@ public class CatalogProductPricingIndexServiceImpl implements CatalogProductPric
         catalogProduct.setPromoScope(resolvePromoScope(hasDiscount, hasVariantSpecificPromo));
 
         catalogProductRepository.save(catalogProduct);
+        // Keep the pricing snapshot time, even if a promotion changes while the index is being saved.
+        catalogProductRepository.markPricingAsOf(productId.longValue(), now);
+    }
+
+    @Override
+    public void refreshDuePromotions() {
+        LocalDateTime now = LocalDateTime.now();
+        Set<Integer> productIds = new java.util.HashSet<>(productPromoRepository.findProductsWithDuePromotionChanges(now));
+        productIds.addAll(variantPromoRepository.findProductsWithDuePromotionChanges(now));
+        refreshProducts(productIds);
     }
 
     @Override
@@ -170,7 +183,7 @@ public class CatalogProductPricingIndexServiceImpl implements CatalogProductPric
                 .filter(id -> id != null && id > 0)
                 .collect(Collectors.toSet());
 
-        for (Integer productId : uniqueIds) {
+        for (Integer productId : uniqueIds.stream().sorted().toList()) {
             refreshProduct(productId);
         }
     }

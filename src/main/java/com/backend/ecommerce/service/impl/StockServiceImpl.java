@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -310,8 +312,15 @@ public class StockServiceImpl implements StockService {
                         StockReservationStatus.ACTIVE
                 );
 
-        if (reservations.isEmpty()) {
-            return;
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Commande introuvable.", "ORDER_NOT_FOUND"));
+        Map<Integer, Integer> ordered = order.getOrderItems().stream().collect(Collectors.toMap(
+                item -> item.getVariant().getId(), item -> item.getQuantity(), Integer::sum));
+        Map<Integer, Integer> reserved = reservations.stream().collect(Collectors.toMap(
+                reservation -> reservation.getVariant().getId(), StockReservation::getQuantity, Integer::sum));
+        if (ordered.isEmpty() || !ordered.equals(reserved)) {
+            throw new BusinessException("Les réservations de stock sont incomplètes pour cette commande.",
+                    "INCOMPLETE_STOCK_RESERVATIONS");
         }
 
         for (StockReservation reservation : reservations) {

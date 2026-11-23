@@ -8,5 +8,7 @@ public interface CatalogProductPricingIndexService {
 
     void refreshProducts(Collection<Integer> productIds);
 
+    void refreshDuePromotions();
+
     void deleteProduct(Integer productId);
 }

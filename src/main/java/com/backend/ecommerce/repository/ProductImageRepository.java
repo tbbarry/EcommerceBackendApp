@@ -7,7 +7,10 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ProductImageRepository extends JpaRepository<ProductImage, Integer> {
+    boolean existsByVisualAttributeValueId(Integer valueId);
+    boolean existsByVisualAttributeValueAttributeId(Integer attributeId);
     List<ProductImage> findByProductId(Integer productId);
     List<ProductImage> findByProductIdIn(List<Integer> productIds);
     Optional<ProductImage> findByProductIdAndIsMainTrue(Integer productId);
+    long countByProductId(Integer productId);
 }

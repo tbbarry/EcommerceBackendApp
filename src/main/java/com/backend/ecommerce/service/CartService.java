@@ -3,6 +3,7 @@ package com.backend.ecommerce.service;
 import com.backend.ecommerce.dto.CartDto;
 import com.backend.ecommerce.dto.CartItemUpsertRequest;
 import com.backend.ecommerce.dto.CartViewResponse;
+import com.backend.ecommerce.entity.Order;
 
 import java.util.List;
 
@@ -26,6 +27,7 @@ public interface CartService extends CrudService<CartDto, Integer> {
     CartViewResponse removeItemFromCartView(Integer userId, Integer cartItemId);
 
     CartViewResponse clearCartView(Integer userId);
+    void removePurchasedItems(Order order);
 
     CartViewResponse syncCart(Integer userId, List<CartItemUpsertRequest> items, boolean replaceExisting);
 }

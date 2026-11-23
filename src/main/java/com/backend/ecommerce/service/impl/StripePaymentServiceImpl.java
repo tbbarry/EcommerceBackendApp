@@ -3,9 +3,9 @@ package com.backend.ecommerce.service.impl;
 import com.backend.ecommerce.dto.CheckoutSessionData;
 import com.backend.ecommerce.entity.Order;
 import com.backend.ecommerce.service.StripePaymentService;
-import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
+import com.stripe.net.RequestOptions;
 import com.stripe.param.checkout.SessionCreateParams;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,8 +29,6 @@ public class StripePaymentServiceImpl implements StripePaymentService {
 
     @Override
     public CheckoutSessionData createCheckoutSession(Order order) throws StripeException {
-        Stripe.apiKey = stripeSecretKey;
-
         SessionCreateParams params = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
                 .setCustomerEmail(order.getUser().getEmail())
@@ -57,10 +55,18 @@ public class StripePaymentServiceImpl implements StripePaymentService {
                 .putMetadata("orderId", order.getId().toString())
                 .build();
 
-        Session session = Session.create(params);
+        Session session = Session.create(params, stripeOptions());
         String paymentIntentId  = session.getPaymentIntent();
-        System.err.println(paymentIntentId);
 
         return new CheckoutSessionData(session.getUrl(), paymentIntentId, session.getId());
+    }
+
+    @Override
+    public Session retrieveCheckoutSession(String sessionId) throws StripeException {
+        return Session.retrieve(sessionId, stripeOptions());
+    }
+
+    private RequestOptions stripeOptions() {
+        return RequestOptions.builder().setApiKey(stripeSecretKey).build();
     }
 }

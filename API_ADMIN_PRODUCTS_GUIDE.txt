@@ -1,0 +1,380 @@
+📋 ENDPOINTS ADMIN POUR LA GESTION DES PRODUITS
+===============================================
+
+## 🎯 Objectif
+Fournir deux endpoints REST protégés pour permettre aux admins de gérer les produits facilement côté front.
+
+## 🔐 Sécurité
+- Route : `/api/admin/products`
+- Protection : `@PreAuthorize("hasRole('ADMIN')")`
+- Tous les endpoints nécessitent une authentification avec le rôle ADMIN
+
+---
+
+## 📌 ENDPOINT 1 : Liste des produits (Global View)
+
+**Endpoint :**
+```
+GET /api/admin/products?page=0&size=10
+```
+
+**Description :**
+Retourne une liste paginée de tous les produits avec les informations essentielles pour un tableau de bord/grid.
+
+**Paramètres Query :**
+- `page` (optionnel, défaut: 0) - Numéro de page (0-indexed)
+- `size` (optionnel, défaut: 10) - Nombre de produits par page
+
+**Réponse 200 OK :**
+```json
+{
+  "content": [
+    {
+      "id": 1,
+      "name": "T-Shirt Coton",
+      "brand": "Nike",
+      "categoryName": "Vêtements",
+      "price": 29.99,
+      "totalVariants": 3,
+      "totalStock": 150,
+      "status": "ACTIVE",
+      "createdAt": "2026-11-20T10:30:00",
+      "updatedAt": "2026-11-20T15:45:00"
+    },
+    {
+      "id": 2,
+      "name": "Jeans Slim",
+      "brand": "Levi's",
+      "categoryName": "Vêtements",
+      "price": 59.99,
+      "totalVariants": 5,
+      "totalStock": 220,
+      "status": "ACTIVE",
+      "createdAt": "2026-11-19T08:00:00",
+      "updatedAt": "2026-11-20T12:30:00"
+    }
+  ],
+  "pageable": {
+    "pageNumber": 0,
+    "pageSize": 10,
+    "sort": {
+      "empty": true,
+      "sorted": false,
+      "unsorted": true
+    },
+    "offset": 0,
+    "paged": true,
+    "unpaged": false
+  },
+  "last": true,
+  "totalElements": 2,
+  "totalPages": 1,
+  "first": true,
+  "size": 10,
+  "number": 0,
+  "sort": {
+    "empty": true,
+    "sorted": false,
+    "unsorted": true
+  },
+  "numberOfElements": 2,
+  "empty": false
+}
+```
+
+**Cas d'usage côté frontend :**
+- Afficher un tableau de bord avec tous les produits
+- Pagination pour naviguer entre les pages
+- Affichage du stock total et nombre de variantes
+- Accès rapide aux informations essentielles
+
+**Codes d'erreur :**
+- `401 Unauthorized` - Non authentifié
+- `403 Forbidden` - Pas de rôle ADMIN
+
+---
+
+## 📌 ENDPOINT 2 : Détails complets du produit (Detail View)
+
+**Endpoint :**
+```
+GET /api/admin/products/{id}
+```
+
+**Description :**
+Retourne TOUS les détails d'un produit pour édition/gestion complète.
+Inclut : variantes, stocks, images, attributs, dates de modification.
+
+**Paramètres Path :**
+- `id` (requis) - Identifiant du produit
+
+**Réponse 200 OK :**
+```json
+{
+  "id": 1,
+  "name": "T-Shirt Coton Premium",
+  "description": "Un t-shirt 100% coton de haute qualité",
+  "brand": "Nike",
+  "slug": "t-shirt-coton-premium",
+  "price": 29.99,
+  "categoryId": 5,
+  "categoryName": "Vêtements",
+  "status": "ACTIVE",
+  "createdAt": "2026-11-20T10:30:00",
+  "updatedAt": "2026-11-20T15:45:00",
+  "variants": [
+    {
+      "id": 1,
+      "sku": "TSHIRT-BLACK-S",
+      "price": 29.99,
+      "createdAt": "2026-11-20T10:30:00",
+      "updatedAt": "2026-11-20T15:45:00",
+      "stock": {
+        "id": 1,
+        "quantity": 100,
+        "reservedQuantity": 15,
+        "availableQuantity": 85,
+        "createdAt": "2026-11-20T10:30:00",
+        "updatedAt": "2026-11-20T15:45:00"
+      },
+      "attributeValues": [
+        {
+          "id": 10,
+          "attributeId": 2,
+          "attributeName": "Couleur",
+          "attributeValueId": 20,
+          "attributeValueName": "Noir",
+          "createdAt": "2026-11-20T10:30:00",
+          "updatedAt": "2026-11-20T15:45:00"
+        },
+        {
+          "id": 11,
+          "attributeId": 3,
+          "attributeName": "Taille",
+          "attributeValueId": 30,
+          "attributeValueName": "S",
+          "createdAt": "2026-11-20T10:30:00",
+          "updatedAt": "2026-11-20T15:45:00"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "sku": "TSHIRT-BLACK-M",
+      "price": 29.99,
+      "createdAt": "2026-11-20T10:30:00",
+      "updatedAt": "2026-11-20T15:45:00",
+      "stock": {
+        "id": 2,
+        "quantity": 150,
+        "reservedQuantity": 30,
+        "availableQuantity": 120,
+        "createdAt": "2026-11-20T10:30:00",
+        "updatedAt": "2026-11-20T15:45:00"
+      },
+      "attributeValues": [
+        {
+          "id": 12,
+          "attributeId": 2,
+          "attributeName": "Couleur",
+          "attributeValueId": 20,
+          "attributeValueName": "Noir",
+          "createdAt": "2026-11-20T10:30:00",
+          "updatedAt": "2026-11-20T15:45:00"
+        },
+        {
+          "id": 13,
+          "attributeId": 3,
+          "attributeName": "Taille",
+          "attributeValueId": 31,
+          "attributeValueName": "M",
+          "createdAt": "2026-11-20T10:30:00",
+          "updatedAt": "2026-11-20T15:45:00"
+        }
+      ]
+    }
+  ],
+  "images": [
+    {
+      "id": 1,
+      "url": "https://cdn.example.com/tshirt-black-front.jpg",
+      "alt": "T-Shirt noir de face",
+      "main": true,
+      "displayOrder": 0,
+      "visualAttributeValueId": 20,
+      "visualAttributeValueName": "Noir",
+      "createdAt": "2026-11-20T10:30:00",
+      "updatedAt": "2026-11-20T15:45:00"
+    },
+    {
+      "id": 2,
+      "url": "https://cdn.example.com/tshirt-black-back.jpg",
+      "alt": "T-Shirt noir de dos",
+      "main": false,
+      "displayOrder": 1,
+      "visualAttributeValueId": 20,
+      "visualAttributeValueName": "Noir",
+      "createdAt": "2026-11-20T10:30:00",
+      "updatedAt": "2026-11-20T15:45:00"
+    }
+  ]
+}
+```
+
+**Cas d'usage côté frontend :**
+- Afficher un formulaire d'édition complet du produit
+- Gérer les variantes et leurs stocks
+- Visualiser les images du produit
+- Modifier la catégorie, prix, description
+- Vérifier les dates de création/modification
+
+**Codes d'erreur :**
+- `401 Unauthorized` - Non authentifié
+- `403 Forbidden` - Pas de rôle ADMIN
+- `404 Not Found` - Produit n'existe pas
+
+---
+
+## 📊 Comparaison des deux endpoints
+
+| Aspect | Liste (`GET /api/admin/products`) | Détails (`GET /api/admin/products/{id}`) |
+|--------|-----------------------------------|-------------------------------------------|
+| **Données** | Infos essentielles | Toutes les infos + variantes + images |
+| **Cas d'usage** | Tableau de bord, grid produits | Édition/gestion détaillée |
+| **Performance** | Rapide (moins de données) | Plus lent (données complètes) |
+| **Pagination** | Oui | Non (un seul produit) |
+| **Contient variantes** | Nombre seulement | Détails complets |
+| **Contient stocks** | Total aggrégé | Détails par variante |
+
+---
+
+## 🏗️ Structure des données créées
+
+### DTOs créés :
+
+1. **ProductAdminListResponse** (Liste)
+   - Pour l'affichage dans un tableau/grid
+   - Infos générales du produit
+   - Compteurs (variantes, stock)
+
+2. **ProductAdminDetailResponse** (Détails)
+   - Toutes les informations du produit
+   - Liste complète des variantes avec stocks
+   - Liste des images
+
+3. **VariantAdminResponse** (Variante détaillée)
+   - Infos de la variante
+   - Stock associé
+   - Attributs (taille, couleur, etc.)
+
+### Fichiers créés :
+
+```
+src/main/java/com/backend/ecommerce/
+├── dto/
+│   ├── ProductAdminListResponse.java      (Nouveau)
+│   ├── ProductAdminDetailResponse.java    (Nouveau)
+│   └── VariantAdminResponse.java          (Nouveau)
+├── controller/
+│   └── AdminProductController.java        (Nouveau)
+└── service/
+    ├── AdminProductService.java           (Nouveau - Interface)
+    └── impl/
+        └── AdminProductServiceImpl.java    (Nouveau - Implémentation)
+```
+
+---
+
+## 🚀 Exemple d'utilisation côté frontend (Angular)
+
+### Récupérer la liste des produits :
+```typescript
+// service: admin-product.service.ts
+getProductsList(page: number = 0, size: number = 10): Observable<Page<ProductAdminListResponse>> {
+  return this.http.get<Page<ProductAdminListResponse>>(`/api/admin/products`, {
+    params: { page, size }
+  });
+}
+
+// component
+ngOnInit() {
+  this.adminProductService.getProductsList().subscribe(response => {
+    this.products = response.content;
+    this.totalPages = response.totalPages;
+  });
+}
+```
+
+### Récupérer les détails d'un produit :
+```typescript
+// service
+getProductDetail(id: number): Observable<ProductAdminDetailResponse> {
+  return this.http.get<ProductAdminDetailResponse>(`/api/admin/products/${id}`);
+}
+
+// component (édition)
+editProduct(id: number) {
+  this.adminProductService.getProductDetail(id).subscribe(product => {
+    this.form.patchValue({
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      brand: product.brand,
+      categoryId: product.categoryId
+    });
+    this.variants = product.variants;
+    this.images = product.images;
+  });
+}
+```
+
+---
+
+## 🔧 Configuration & Sécurité
+
+✅ Endpoints protégés par `@PreAuthorize("hasRole('ADMIN')")`
+✅ Lecture seule (@Transactional(readOnly = true))
+✅ Gestion des erreurs avec ResourceNotFoundException
+✅ Pagination sur la liste
+✅ Données optimisées pour l'admin (pas de données publiques sensibles)
+
+---
+
+## 📝 Notes futures (Améliorations possibles)
+
+1. **Filtrage** : Ajouter des filtres (par catégorie, marque, statut)
+   ```
+   GET /api/admin/products?page=0&size=10&brand=Nike&status=ACTIVE
+   ```
+
+2. **Tri** : Ajouter le tri par date, prix, nom
+   ```
+   GET /api/admin/products?page=0&size=10&sort=updatedAt,desc
+   ```
+
+3. **Recherche** : Ajouter une recherche par nom/SKU
+   ```
+   GET /api/admin/products?page=0&size=10&search=tshirt
+   ```
+
+4. **Statut du produit** : Ajouter un champ `status` à l'entité Product
+   - Implémenter la logique de visibilité selon le statut
+
+5. **Logs d'audit** : Enregistrer qui a consulté/modifié quoi et quand
+
+---
+
+## ✅ Vérification
+
+Voici les commandes pour tester :
+
+```bash
+# Liste des produits
+curl -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  "http://localhost:8080/api/admin/products?page=0&size=10"
+
+# Détails d'un produit
+curl -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  "http://localhost:8080/api/admin/products/1"
+```
+

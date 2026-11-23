@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface ProductCategoryRepository extends JpaRepository<ProductCategory, Integer> {
+	boolean existsByCategoryId(Integer categoryId);
 	@Query("""
 		select distinct pc
 		from ProductCategory pc

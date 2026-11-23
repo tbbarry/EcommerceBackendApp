@@ -2,7 +2,11 @@ package com.backend.ecommerce.security;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.security.MessageDigest;
 import java.util.Date;
+import java.util.Base64;
+import javax.crypto.Mac;
+import java.security.GeneralSecurityException;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,9 +29,10 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String email) {
+    public String generateToken(UserDetails userDetails) {
         return Jwts.builder()
-                .setSubject(email)
+                .setSubject(userDetails.getUsername())
+                .claim("credentials", credentialFingerprint(userDetails))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
                 .signWith(getSigningKey())
@@ -55,7 +60,22 @@ public class JwtUtil {
     }
 
     public Boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+        Claims claims = extractAllClaims(token);
+        String fingerprint = claims.get("credentials", String.class);
+        return claims.getSubject().equals(userDetails.getUsername()) && !isTokenExpired(token)
+                && fingerprint != null
+                && MessageDigest.isEqual(fingerprint.getBytes(StandardCharsets.US_ASCII),
+                        credentialFingerprint(userDetails).getBytes(StandardCharsets.US_ASCII));
+    }
+
+    private String credentialFingerprint(UserDetails userDetails) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(getSigningKey());
+            byte[] fingerprint = mac.doFinal(("credentials:" + userDetails.getPassword()).getBytes(StandardCharsets.UTF_8));
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(fingerprint);
+        } catch (GeneralSecurityException ex) {
+            throw new IllegalStateException("Cannot verify token credentials", ex);
+        }
     }
 }

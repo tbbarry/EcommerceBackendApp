@@ -20,7 +20,6 @@ import java.util.List;
 @AllArgsConstructor
 public class VariantFullRequest {
 
-    @NotBlank
     private String sku;
 
     @NotNull
@@ -33,5 +32,5 @@ public class VariantFullRequest {
 
 
     @Valid
-    private List<VariantAttributeValueRequest> attributeValues = new ArrayList<>();
+    private List<VariantAttributeValueRequest> attributeValueIds = new ArrayList<>();
 }

@@ -12,6 +12,25 @@ import java.util.List;
 
 public interface VariantPromoRepository extends JpaRepository<VariantPromo, Integer> {
 
+    boolean existsByPromoIdAndVariantId(Integer promoId, Integer variantId);
+
+    @Modifying
+    @Query("DELETE FROM VariantPromo vp WHERE vp.variant.id IN :variantIds")
+    void deleteByVariantIds(@Param("variantIds") List<Integer> variantIds);
+
+    @Query("SELECT vp FROM VariantPromo vp JOIN FETCH vp.variant v JOIN FETCH v.product WHERE vp.promo.id = :promoId")
+    List<VariantPromo> findAssignmentsByPromoId(@Param("promoId") Integer promoId);
+
+    @Query("""
+        SELECT DISTINCT vp.variant.product.id FROM VariantPromo vp
+        JOIN vp.promo p
+        LEFT JOIN CatalogProduct cp ON cp.productId = vp.variant.product.id
+        WHERE p.isActive = true AND (cp.id IS NULL
+            OR (p.startDate > cp.updatedAt AND p.startDate <= :now)
+            OR (p.endDate >= cp.updatedAt AND p.endDate < :now))
+    """)
+    List<Integer> findProductsWithDuePromotionChanges(@Param("now") LocalDateTime now);
+
     @Modifying
     @Query("DELETE FROM VariantPromo vp WHERE vp.promo.id = :promoId")
     void deleteByPromoId(@Param("promoId") Integer promoId);

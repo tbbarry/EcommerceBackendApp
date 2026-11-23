@@ -8,6 +8,7 @@ import com.backend.ecommerce.exception.ResourceNotFoundException;
 import com.backend.ecommerce.repository.AttributeRepository;
 import com.backend.ecommerce.repository.AttributeValueRepository;
 import com.backend.ecommerce.repository.VariantAttributeValueRepository;
+import com.backend.ecommerce.repository.ProductImageRepository;
 import com.backend.ecommerce.service.CatalogProductPricingIndexService;
 import com.backend.ecommerce.service.AttributeValueService;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class AttributeValueServiceImpl implements AttributeValueService {
     private final AttributeValueRepository attributeValueRepository;
     private final AttributeRepository attributeRepository;
     private final VariantAttributeValueRepository variantAttributeValueRepository;
+    private final ProductImageRepository productImageRepository;
     private final CatalogProductPricingIndexService catalogProductPricingIndexService;
 
     @Override
@@ -46,7 +48,7 @@ public class AttributeValueServiceImpl implements AttributeValueService {
                 .orElseThrow(() -> new ResourceNotFoundException("Attribute not found with id: " + request.getAttributeId()));
         
         AttributeValue entity = AttributeValue.builder()
-                .value(request.getValue())
+                .value(request.getValue().trim())
                 .attribute(attribute)
                 .build();
         
@@ -59,7 +61,7 @@ public class AttributeValueServiceImpl implements AttributeValueService {
                 .orElseThrow(() -> new ResourceNotFoundException("Attribute not found with id: " + dto.getAttributeId()));
         
         AttributeValue entity = new AttributeValue();
-        entity.setValue(dto.getValue());
+        entity.setValue(dto.getValue().trim());
         entity.setAttribute(attribute);
         
         return toDto(attributeValueRepository.save(entity));
@@ -75,7 +77,7 @@ public class AttributeValueServiceImpl implements AttributeValueService {
             entity.setAttribute(attribute);
         }
         
-        entity.setValue(dto.getValue());
+        entity.setValue(dto.getValue().trim());
         
         AttributeValue saved = attributeValueRepository.save(entity);
         // Mettre a jour les facettes des produits qui utilisent cette valeur.
@@ -87,6 +89,10 @@ public class AttributeValueServiceImpl implements AttributeValueService {
     @Override
     public void delete(Integer id) {
         AttributeValue entity = getEntityById(id);
+        if (variantAttributeValueRepository.existsByAttributeValueId(id)
+                || productImageRepository.existsByVisualAttributeValueId(id)) {
+            throw new IllegalArgumentException("Cette valeur est utilisée par des variantes ou des images.");
+        }
         attributeValueRepository.delete(entity);
     }
 

@@ -46,6 +46,10 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private boolean enabled;
 
+    @Column(nullable = false)
+    @org.hibernate.annotations.ColumnDefault("false")
+    private boolean mustChangePassword;
+
     @Valid
     @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)

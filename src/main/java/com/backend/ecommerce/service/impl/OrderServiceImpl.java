@@ -36,12 +36,12 @@ import com.backend.ecommerce.repository.PaymentRepository;
 import com.backend.ecommerce.repository.ShippingMethodRepository;
 import com.backend.ecommerce.repository.UserRepository;
 import com.backend.ecommerce.repository.VariantRepository;
-import com.backend.ecommerce.service.CouponCalculationService;
 import com.backend.ecommerce.service.CouponService;
 import com.backend.ecommerce.service.OrderService;
-import com.backend.ecommerce.service.ShippingCalculationService;
+import com.backend.ecommerce.service.PromotionPricingService;
 import com.backend.ecommerce.service.StockService;
 import com.backend.ecommerce.service.StripePaymentService;
+import com.backend.ecommerce.service.email.OrderNotificationService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stripe.exception.StripeException;
@@ -70,9 +70,8 @@ import java.util.concurrent.ThreadLocalRandom;
 public class OrderServiceImpl implements OrderService {
 
     private final TaxServiceImpl taxServiceImpl;
-    private final ShippingCalculationService shippingCalculationService;
     private final CouponService couponService;
-    private final CouponCalculationService couponCalculationService;
+    private final PromotionPricingService promotionPricingService;
 
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
@@ -88,6 +87,7 @@ public class OrderServiceImpl implements OrderService {
     private final StockService stockService;
     private final IdempotencyKeyRepository idempotencyKeyRepository;
     private final ObjectMapper objectMapper;
+    private final OrderNotificationService notifications;
 
     // ============================================================
     // CRUD
@@ -127,10 +127,13 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderDto update(Integer id, OrderDto dto) {
-        Order entity = getEntityById(id);
+        Order entity = orderRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id, "ORDER_NOT_FOUND"));
+        OrderStatus previousStatus = entity.getStatus();
         applyDtoToEntity(dto, entity);
-
-        return toDto(orderRepository.save(entity));
+        Order saved = orderRepository.save(entity);
+        notifications.queueStatusChange(saved, previousStatus);
+        return toDto(saved);
     }
 
     @Override
@@ -257,6 +260,10 @@ public class OrderServiceImpl implements OrderService {
                                 )
                         );
 
+        if (!DeliveryType.supportedAtCheckout(shippingMethod.getDeliveryType())) {
+            throw new BusinessException("Ce mode de livraison n'est pas disponible.", "SHIPPING_METHOD_UNAVAILABLE");
+        }
+
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() ->
                         new BusinessException(
@@ -278,86 +285,31 @@ public class OrderServiceImpl implements OrderService {
         // 2. CALCUL DU SOUS-TOTAL
         // ============================================================
 
-        BigDecimal subtotal = computeCartSubtotal(cartItems);
+        PromotionPricingService.Quote quote = promotionPricingService.quote(
+                cartItems, user, request.getCouponCode(), shippingMethod);
+        BigDecimal subtotal = quote.subtotal();
 
 
         // ============================================================
         // 3. CALCUL DES FRAIS DE LIVRAISON
         // ============================================================
 
-        BigDecimal shippingCost =
-                shippingCalculationService
-                        .calculateShippingCost(
-                                subtotal,
-                                shippingMethod
-                        )
-                        .setScale(2, RoundingMode.HALF_UP);
-
-
         // ============================================================
         // 4. APPLICATION DU COUPON
         // ============================================================
 
-        Coupon appliedCoupon = null;
-
-        CouponDiscountResult discountResult =
-                CouponDiscountResult.builder()
-                        .discountOnSubtotal(BigDecimal.ZERO)
-                        .discountOnShipping(BigDecimal.ZERO)
-                        .totalDiscount(BigDecimal.ZERO)
-                        .build();
-
-        if (!isBlank(request.getCouponCode())) {
-
-            appliedCoupon =
-                    couponService.validateCoupon(
-                            request.getCouponCode(),
-                            user,
-                            subtotal
-                    );
-
-            discountResult =
-                    couponCalculationService.calculateDiscount(
-                            appliedCoupon,
-                            subtotal,
-                            shippingCost
-                    );
-        }
+        Coupon appliedCoupon = quote.coupon();
+        CouponDiscountResult discountResult = quote.discount();
 
 
         // ============================================================
         // 5. CALCUL DES MONTANTS FINAUX
         // ============================================================
 
-        BigDecimal effectiveSubtotal =
-                subtotal
-                        .subtract(
-                                discountResult.getDiscountOnSubtotal()
-                        )
-                        .max(BigDecimal.ZERO)
-                        .setScale(2, RoundingMode.HALF_UP);
-
-        BigDecimal effectiveShippingCost =
-                shippingCost
-                        .subtract(
-                                discountResult.getDiscountOnShipping()
-                        )
-                        .max(BigDecimal.ZERO)
-                        .setScale(2, RoundingMode.HALF_UP);
-
-        BigDecimal taxRate =
-                taxServiceImpl.getCurrentTaxRate();
-
-        BigDecimal taxAmount =
-                effectiveSubtotal
-                        .multiply(taxRate)
-                        .setScale(2, RoundingMode.HALF_UP);
-
-        BigDecimal total =
-                effectiveSubtotal
-                        .add(effectiveShippingCost)
-                        .add(taxAmount)
-                        .setScale(2, RoundingMode.HALF_UP);
+        BigDecimal effectiveShippingCost = quote.effectiveShipping();
+        BigDecimal taxRate = quote.taxRate();
+        BigDecimal taxAmount = quote.taxAmount();
+        BigDecimal total = quote.total();
 
 
         // ============================================================
@@ -455,7 +407,7 @@ public class OrderServiceImpl implements OrderService {
 
             Variant variant = cartItem.getVariant();
 
-            BigDecimal unitPrice = variant.getPrice();
+            BigDecimal unitPrice = quote.unitPrices().get(variant.getId());
 
             BigDecimal lineTotal =
                     unitPrice
@@ -471,6 +423,7 @@ public class OrderServiceImpl implements OrderService {
             //l'image snapshot determination 
 
             String imageUrlSnapshot = resolveVariantImageUrl(variant);
+            VariantDescriptor descriptor = VariantDescriptor.from(variant);
             
             OrderItem orderItem =
                     OrderItem.builder()
@@ -481,9 +434,9 @@ public class OrderServiceImpl implements OrderService {
                             .totalPrice(lineTotal)
                             .productNameSnapshot(variant.getProduct().getName())
                             .variantSkuSnapshot(variant.getSku())
-                            .colorSnapshot("Rouge")
+                            .colorSnapshot(descriptor.color() == null ? "" : descriptor.color())
                             .productDescriptionSnapshot(variant.getProduct().getDescription())
-                            .sizeSnapshot("M")
+                            .sizeSnapshot(descriptor.size())
                             .imageUrlSnapshot(imageUrlSnapshot)
                             .build();
 
@@ -978,38 +931,6 @@ public class OrderServiceImpl implements OrderService {
         order.setTaxAmount(taxAmount);
         order.setTotal(total);
     }
-
-
-    private BigDecimal computeCartSubtotal(
-            List<CartItem> cartItems
-    ) {
-
-        BigDecimal subtotal = BigDecimal.ZERO;
-
-        for (CartItem item : cartItems) {
-
-            BigDecimal lineTotal =
-                    item.getVariant()
-                            .getPrice()
-                            .multiply(
-                                    BigDecimal.valueOf(
-                                            item.getQuantity()
-                                    )
-                            )
-                            .setScale(
-                                    2,
-                                    RoundingMode.HALF_UP
-                            );
-
-            subtotal = subtotal.add(lineTotal);
-        }
-
-        return subtotal.setScale(
-                2,
-                RoundingMode.HALF_UP
-        );
-    }
-
 
 
     // ============================================================

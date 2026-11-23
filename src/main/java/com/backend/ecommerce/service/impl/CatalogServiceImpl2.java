@@ -12,6 +12,7 @@ import com.backend.ecommerce.repository.CatalogFacetRepository;
 import com.backend.ecommerce.repository.CatalogProductRepository;
 import com.backend.ecommerce.repository.CategoryRepository;
 import com.backend.ecommerce.service.CatalogService2;
+import com.backend.ecommerce.service.CatalogProductPricingIndexService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -32,12 +34,14 @@ public class CatalogServiceImpl2 implements CatalogService2 {
     private final CatalogProductRepository catalogProductRepository;
     private final CatalogFacetRepository facetRepository;
     private final CategoryRepository categoryRepository;
+    private final CatalogProductPricingIndexService pricingIndexService;
 
 
     
     
 public CatalogResponse search(CatalogSearchRequest request) {
 
+    pricingIndexService.refreshDuePromotions();
     List<Long> categoryIds = null;
 
     if (request.getCategoryId() != null) {
@@ -146,7 +150,7 @@ public CatalogResponse search(CatalogSearchRequest request) {
     for (CategoryRow row : rows) {
         nodes.put(
             row.getId(),
-            new Node(row.getId(), row.getName(), row.getParentId())
+            new Node(row.getId(), row.getName(), row.getParentId(), row.getDisplayOrder())
         );
     }
 
@@ -169,6 +173,9 @@ public CatalogResponse search(CatalogSearchRequest request) {
 
     // Conversion vers les DTO immutables
     return roots.stream()
+            .sorted(Comparator.comparing((Node node) -> node.displayOrder, Comparator.nullsLast(Integer::compareTo))
+                    .thenComparing(node -> node.name, String.CASE_INSENSITIVE_ORDER)
+                    .thenComparing(node -> node.id))
             .map(this::toDto)
             .toList();
 }
@@ -178,6 +185,8 @@ private CategoryDto2 toDto(Node node) {
                 node.id,
                 node.name,
                 node.children.stream()
+                        .sorted(Comparator.comparing((Node child) -> child.name, String.CASE_INSENSITIVE_ORDER)
+                                .thenComparing(child -> child.id))
                         .map(this::toDto)
                         .toList()
         );
@@ -188,12 +197,14 @@ private static class Node {
     Long id;
     String name;
     Long parentId;
+    Integer displayOrder;
     List<Node> children = new ArrayList<>();
 
-    Node(Long id, String name, Long parentId) {
+    Node(Long id, String name, Long parentId, Integer displayOrder) {
         this.id = id;
         this.name = name;
         this.parentId = parentId;
+        this.displayOrder = displayOrder;
     }
 }       
 /* 

@@ -6,6 +6,7 @@ import com.backend.ecommerce.dto.CartLineResponse;
 import com.backend.ecommerce.dto.CartViewResponse;
 import com.backend.ecommerce.entity.Cart;
 import com.backend.ecommerce.entity.CartItem;
+import com.backend.ecommerce.entity.Order;
 import com.backend.ecommerce.entity.Product;
 import com.backend.ecommerce.entity.ProductImage;
 import com.backend.ecommerce.entity.Stock;
@@ -19,6 +20,7 @@ import com.backend.ecommerce.repository.ProductImageRepository;
 import com.backend.ecommerce.repository.UserRepository;
 import com.backend.ecommerce.repository.VariantRepository;
 import com.backend.ecommerce.service.CartService;
+import com.backend.ecommerce.service.PromotionPricingService;
 import com.backend.ecommerce.service.TaxService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +50,7 @@ public class CartServiceImpl implements CartService {
     private final VariantRepository variantRepository;
     private final ProductImageRepository productImageRepository;
     private final TaxService taxService;
+    private final PromotionPricingService promotionPricingService;
 
     @Override
     @Transactional(readOnly = true)
@@ -207,6 +210,20 @@ public class CartServiceImpl implements CartService {
         log.info("Clearing cart view for userId: {}", userId);
         clearCartInternal(userId);
         return toCartView(getOrCreateCart(userId));
+    }
+
+    @Override
+    public void removePurchasedItems(Order order) {
+        cartRepository.findByUserId(order.getUser().getId()).ifPresent(cart -> {
+            for (CartItem item : cartItemRepository.findByCartId(cart.getId())) {
+                boolean purchasedUnchanged = item.getUpdatedAt() != null && order.getDateOrder() != null
+                        && !item.getUpdatedAt().isAfter(order.getDateOrder())
+                        && order.getOrderItems().stream().anyMatch(ordered ->
+                                ordered.getVariant().getId().equals(item.getVariant().getId())
+                                        && ordered.getQuantity().equals(item.getQuantity()));
+                if (purchasedUnchanged) cartItemRepository.delete(item);
+            }
+        });
     }
 
     @Override
@@ -446,6 +463,8 @@ public class CartServiceImpl implements CartService {
                 cartItemRepository.findByCartId(
                         cart.getId()
                 );
+        Map<Integer, BigDecimal> promotionalPrices =
+                promotionPricingService.promotionalUnitPrices(items, LocalDateTime.now());
 
         List<Integer> productIds = items.stream()
                 .map(CartItem::getVariant)
@@ -479,6 +498,7 @@ public class CartServiceImpl implements CartService {
         for (CartItem item : items) {
 
             Variant variant = item.getVariant();
+            VariantDescriptor descriptor = VariantDescriptor.from(variant);
 
             Product product = variant.getProduct();
 
@@ -487,8 +507,9 @@ public class CartServiceImpl implements CartService {
                             product.getId()
                     );
 
+            BigDecimal unitPrice = promotionalPrices.get(variant.getId());
             BigDecimal lineTotal =
-                    variant.getPrice()
+                    unitPrice
                             .multiply(
                                     BigDecimal.valueOf(
                                             item.getQuantity()
@@ -528,8 +549,8 @@ public class CartServiceImpl implements CartService {
                             product.getName(),
                             product.getSlug(),
                             product.getBrand(),
-                            "Rouge",
-                            "S",
+                            descriptor.color(),
+                            descriptor.size(),
                             item.getQuantity(),
 
                             // Le frontend continue
@@ -541,6 +562,7 @@ public class CartServiceImpl implements CartService {
                             inStock,
 
                             variant.getPrice(),
+                            unitPrice,
                             lineTotal,
                             image != null
                                     ? image.getUrl()
