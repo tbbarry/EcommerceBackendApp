@@ -177,7 +177,7 @@ public class PaymentServiceImpl implements PaymentService {
                     || order.getStatus() == OrderStatus.SHIPPED || order.getStatus() == OrderStatus.DELIVERED)) {
             return;
         }
-        if (payment.getStatus() != PaymentStatus.PENDING || order.getStatus() != OrderStatus.PENDING) {
+        if (payment.getStatus() != PaymentStatus.PENDING || order.getStatus() != OrderStatus.PENDING_PAYMENT) {
             throw new BusinessException("Les statuts de la commande et du paiement nécessitent une vérification.",
                     "INVALID_PAYMENT_STATE");
         }
@@ -190,7 +190,7 @@ public class PaymentServiceImpl implements PaymentService {
         paymentRepository.save(payment);
         orderRepository.save(order);
         cartService.removePurchasedItems(order);
-        notifications.queuePaymentConfirmed(order, OrderStatus.PENDING);
+        notifications.queuePaymentConfirmed(order, OrderStatus.PENDING_PAYMENT);
         log.info("Paiement confirmé pour la commande {}", order.getId());
     }
 

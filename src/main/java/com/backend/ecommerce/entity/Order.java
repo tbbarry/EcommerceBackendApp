@@ -114,6 +114,11 @@ public class Order extends BaseEntity {
     @Column(nullable = false)
     private OrderStatus status;
 
+    @Builder.Default
+    @Column(nullable = false)
+    @org.hibernate.annotations.ColumnDefault("15")
+    private Integer reservationTimeoutMinutes = 15;
+
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "userId", nullable = false)

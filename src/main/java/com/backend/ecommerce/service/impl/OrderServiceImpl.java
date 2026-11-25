@@ -335,7 +335,7 @@ public class OrderServiceImpl implements OrderService {
         Order order = Order.builder()
                 .orderNumber(generateOrderNumber())
                 .dateOrder(LocalDateTime.now())
-                .status(OrderStatus.PENDING)
+                .status(OrderStatus.PENDING_PAYMENT)
 
                 .user(user)
                 .deliveryAddress(address)
@@ -701,7 +701,7 @@ public class OrderServiceImpl implements OrderService {
         entity.setStatus(
                 dto.getStatus() != null
                         ? dto.getStatus()
-                        : OrderStatus.PENDING
+                        : OrderStatus.PENDING_PAYMENT
         );
 
         if (dto.getDeliveryAddressId() == null) {

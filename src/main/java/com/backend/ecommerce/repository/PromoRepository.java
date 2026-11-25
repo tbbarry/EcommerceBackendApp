@@ -27,4 +27,11 @@ public interface PromoRepository extends JpaRepository<Promo, Integer> {
         AND p.endDate >= :now
     """)
     List<Promo> findAllActive(@Param("now") LocalDateTime now);
+
+    @Query("""
+        SELECT p FROM Promo p
+        WHERE p.isActive = true
+        AND p.endDate <= :now
+    """)
+    List<Promo> findExpiredPromos(@Param("now") LocalDateTime now);
 }

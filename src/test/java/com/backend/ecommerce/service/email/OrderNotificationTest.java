@@ -70,10 +70,10 @@ class OrderNotificationTest {
     void queueCapturesOnlyActualRelevantTransitions() {
         User user = User.builder().firstname("Léa").email("lea@example.test").build();
         Order order = Order.builder().user(user).orderNumber("CMD-1").total(new BigDecimal("25.00"))
-                .status(OrderStatus.PENDING).build();
+                .status(OrderStatus.PENDING_PAYMENT).build();
         order.setId(8);
         OrderNotificationService service = new OrderNotificationService(repository, objectMapper, new OrderMessageTemplateService(templateRepository), "admin@example.test");
-        service.queueStatusChange(order, OrderStatus.PENDING);
+        service.queueStatusChange(order, OrderStatus.PENDING_PAYMENT);
         service.queueStatusChange(order, OrderStatus.CANCELLED);
         verifyNoInteractions(repository);
 
@@ -101,7 +101,7 @@ class OrderNotificationTest {
         order.setId(8);
         OrderNotificationService service = new OrderNotificationService(repository, objectMapper, new OrderMessageTemplateService(templateRepository), "admin@example.test");
 
-        service.queuePaymentConfirmed(order, OrderStatus.PENDING);
+        service.queuePaymentConfirmed(order, OrderStatus.PENDING_PAYMENT);
         service.queuePaymentConfirmed(order, OrderStatus.PAID);
         ArgumentCaptor<OrderEmailNotification> captured = ArgumentCaptor.forClass(OrderEmailNotification.class);
         verify(repository, times(2)).save(captured.capture());
@@ -156,7 +156,7 @@ class OrderNotificationTest {
                 .status(OrderStatus.PAID).build();
         order.setId(8);
         new OrderNotificationService(repository, objectMapper, new OrderMessageTemplateService(templateRepository), "admin@example.test")
-                .queueStatusChange(order, OrderStatus.PENDING);
+                .queueStatusChange(order, OrderStatus.PENDING_PAYMENT);
         ArgumentCaptor<OrderEmailNotification> captured = ArgumentCaptor.forClass(OrderEmailNotification.class);
         verify(repository).save(captured.capture());
         assertEquals("lea@example.test", captured.getValue().getRecipient());

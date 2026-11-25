@@ -10,7 +10,9 @@ import java.time.LocalDateTime;
 import com.backend.ecommerce.enums.StockReservationStatus;
 
 @Entity
-@Table(name = "stock_reservations")
+@Table(name = "stock_reservations", indexes = {
+        @Index(name = "idx_stock_reservations_expires", columnList = "expires_at,status")
+})
 @Getter
 @Setter
 @NoArgsConstructor

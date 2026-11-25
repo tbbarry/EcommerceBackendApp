@@ -160,10 +160,24 @@ public class CatalogProductSearchRepositoryImpl
             );
         }
 
+        // =====================================================
+        // 4.5 TRIAGE
+        // =====================================================
 
-        // =====================================================
-        // 5. PAGINATION
-        // =====================================================
+        switch (request.getSort() != null ? request.getSort() : "latest") {
+            case "price-asc":
+                query.orderBy(cb.asc(product.get("price")));
+                break;
+            case "price-desc":
+                query.orderBy(cb.desc(product.get("price")));
+                break;
+            case "name":
+                query.orderBy(cb.asc(product.get("name")));
+                break;
+            default: // latest
+                query.orderBy(cb.desc(product.get("productId")));
+                break;
+        }
 
         TypedQuery<ProductCardDto> typedQuery =
                 entityManager.createQuery(query);

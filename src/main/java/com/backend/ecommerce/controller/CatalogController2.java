@@ -32,7 +32,8 @@ public CatalogResponse search(
         @RequestParam(required = false) BigDecimal minPrice,
         @RequestParam(required = false) BigDecimal maxPrice,
         @RequestParam(required = false) Long categoryId,
-        @RequestParam(required = false) String facets
+        @RequestParam(required = false) String facets,
+        @RequestParam(defaultValue = "latest") String sort
 ) {
 
     CatalogSearchRequest request = new CatalogSearchRequest();
@@ -42,6 +43,7 @@ public CatalogResponse search(
     request.setQuery(query);
     request.setMinPrice(minPrice);
     request.setMaxPrice(maxPrice);
+    request.setSort(sort);
 
     if (categoryId != null) {
         request.setCategoryId(categoryId);
