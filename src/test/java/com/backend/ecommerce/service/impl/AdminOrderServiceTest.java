@@ -74,9 +74,9 @@ class AdminOrderServiceTest {
                 () -> service.advance(1, new AdminOrderStatusRequest(OrderStatus.PAID, OrderStatus.SHIPPED)));
         assertThrows(BusinessException.class,
                 () -> service.advance(1, new AdminOrderStatusRequest(OrderStatus.PROCESSING, OrderStatus.SHIPPED)));
-        order.setStatus(OrderStatus.PENDING);
+        order.setStatus(OrderStatus.PENDING_PAYMENT);
         assertThrows(BusinessException.class,
-                () -> service.advance(1, new AdminOrderStatusRequest(OrderStatus.PENDING, OrderStatus.PROCESSING)));
+                () -> service.advance(1, new AdminOrderStatusRequest(OrderStatus.PENDING_PAYMENT, OrderStatus.PROCESSING)));
         verify(repository, never()).save(any());
         verifyNoInteractions(notifications);
     }

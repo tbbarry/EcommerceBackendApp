@@ -27,6 +27,10 @@ public class CatalogSearchRequest {
      */
     private Long categoryId;
 
+    /**
+     * Tri: "name", "price-asc", "price-desc", "latest"
+     */
+    private String sort = "latest";
 
     /**
      * Facettes dynamiques :

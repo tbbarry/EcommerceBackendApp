@@ -51,7 +51,7 @@ public class OrderNotificationService {
     }
 
     private void queue(Order order, OrderStatus previousStatus, boolean paymentConfirmed) {
-        if (order.getStatus() == previousStatus || order.getStatus() == OrderStatus.PENDING) return;
+        if (order.getStatus() == previousStatus || order.getStatus() == OrderStatus.PENDING_PAYMENT) return;
 
         String items;
         try {
@@ -60,7 +60,7 @@ public class OrderNotificationService {
             throw new IllegalStateException("Impossible de préparer les articles pour la notification.", e);
         }
         notifications.save(notification(order, order.getUser().getEmail(), false, items));
-        if (paymentConfirmed && previousStatus == OrderStatus.PENDING && order.getStatus() == OrderStatus.PAID) {
+        if (paymentConfirmed && previousStatus == OrderStatus.PENDING_PAYMENT && order.getStatus() == OrderStatus.PAID) {
             notifications.save(notification(order, adminEmail, true, items));
         }
     }

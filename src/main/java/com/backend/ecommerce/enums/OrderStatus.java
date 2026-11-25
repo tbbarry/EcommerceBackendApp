@@ -2,7 +2,8 @@ package com.backend.ecommerce.enums;
 
 public enum OrderStatus {
 
-    PENDING,
+    PENDING_PAYMENT,
+    PAYMENT_EXPIRED,
     PAID,
     PROCESSING,
     SHIPPED,

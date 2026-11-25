@@ -48,6 +48,11 @@ app:
   url: http://localhost:${SERVER_PORT}
   frontend-url: ${APP_FRONTEND_URL:http://localhost:${APP_FRONTEND_PORT}}
   frontend_app: ${FRONTEND_APP}
+  stock:
+    reservation-timeout-minutes: 15
+  scheduler:
+    stock-release-cron: 0 */5 * * * *
+    enabled: true
   name: EcommerceApp
   tax:
     rate: 0.20

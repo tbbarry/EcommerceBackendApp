@@ -61,7 +61,7 @@ class StripePaymentFlowTest {
 
     @BeforeEach
     void setUp() {
-        order = Order.builder().status(OrderStatus.PENDING).total(new BigDecimal("89.00")).build();
+        order = Order.builder().status(OrderStatus.PENDING_PAYMENT).total(new BigDecimal("89.00")).build();
         order.setId(1);
         payment = Payment.builder().order(order).amount(new BigDecimal("89.00"))
                 .status(PaymentStatus.PENDING).stripeCheckoutSessionId("cs_test_1").build();
@@ -79,7 +79,7 @@ class StripePaymentFlowTest {
         assertEquals("pi_test_1", payment.getStripePaymentIntentId());
         verify(stock, times(1)).confirmReservations(1);
         verify(cart, times(1)).removePurchasedItems(order);
-        verify(notifications, times(1)).queuePaymentConfirmed(order, OrderStatus.PENDING);
+        verify(notifications, times(1)).queuePaymentConfirmed(order, OrderStatus.PENDING_PAYMENT);
     }
 
     @Test

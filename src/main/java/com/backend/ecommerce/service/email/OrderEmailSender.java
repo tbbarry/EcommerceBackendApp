@@ -116,7 +116,8 @@ public class OrderEmailSender {
                     "Your order has been marked as delivered. We hope you love it!");
             case CANCELLED -> new Content("Your order was canceled", "Canceled",
                     "Your order has been canceled.");
-            case PENDING -> throw new IllegalArgumentException("Une commande en attente ne doit pas être notifiée");
+            case PENDING_PAYMENT, PAYMENT_EXPIRED ->
+                    throw new IllegalArgumentException("Ce statut de commande ne dispose pas de notification");
         };
     }
 
